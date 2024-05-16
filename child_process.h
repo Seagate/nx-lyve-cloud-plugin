@@ -4,18 +4,23 @@
 
 #include <string>
 
+struct processReturn {
+    int errCode; // 0 if successful, failed otherwise
+    std::string output; // std err and std out from cloudfuse command
+};
+
 class CloudfuseMngr {
 public:
     CloudfuseMngr(std::string mountDir, std::string configFile);
-    bool dryRun();
-    bool mount();
-    bool unmount();
+    processReturn dryRun();
+    processReturn mount();
+    processReturn unmount();
     bool isInstalled();
     bool isMounted();
 private:
     std::string mountDir;
     std::string configFile;
-    int spawnProcess(char *const argv[], char *const envp[]);
+    processReturn spawnProcess(char *const argv[], char *const envp[]);
 };
 
 #endif

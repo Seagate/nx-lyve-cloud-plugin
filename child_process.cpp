@@ -10,7 +10,9 @@ CloudfuseMngr::CloudfuseMngr(std::string mountDir, std::string configFile) {
     this->configFile = configFile;
 }
 
-int CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]) {
+processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]) {
+    processReturn ret;
+
     int pipefd[2];
     if (pipe(pipefd) == -1) {
         throw std::runtime_error("Failed to create pipe.");
@@ -26,24 +28,25 @@ int CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]) {
 
         char buffer[4096];
         int bytesRead;
-        //std::cout << "Output from Child: ";
-        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0) {
-            buffer[bytesRead] = '\0';
-            //std::cout << buffer;
+        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
+            ret.output.append(buffer, bytesRead);
         }
-        //std::cout << '\n';
+
         close(pipefd[0]); // Close read end of pipe
         
         // Wait for cloudfuse command to stop
         int status;
         waitpid(pid, &status, 0);
         if (WIFEXITED(status)) {
-            return WEXITSTATUS(status);
+            ret.errCode = WEXITSTATUS(status);
+            return ret;
         } else if (WIFSIGNALED(status)) {
-            return WTERMSIG(status);
+            ret.errCode = WTERMSIG(status);
+            return ret;
         }
-        
-        return -1;
+
+        ret.errCode = WTERMSIG(status);
+        return ret;
     } else {
         // Child process
         close(pipefd[0]); // Close read end of pipe
@@ -62,35 +65,31 @@ int CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]) {
     }
 }
 
-bool CloudfuseMngr::dryRun() {
+processReturn CloudfuseMngr::dryRun() {
     std::string configArg = "--config-file=" + configFile;
     char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("mount"), const_cast<char*>(mountDir.c_str()), const_cast<char*>(configArg.c_str()), const_cast<char*>("--dry-run"), NULL};
     
-    int ret = spawnProcess(argv, NULL);
-    return ret == 0;
+    return spawnProcess(argv, NULL);
+}
+
+processReturn CloudfuseMngr::mount() {
+    std::string configArg = "--config-file=" + configFile;
+    char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("mount"), const_cast<char*>(mountDir.c_str()), const_cast<char*>(configArg.c_str()), NULL};
+    
+    return spawnProcess(argv, NULL);
+}
+
+processReturn CloudfuseMngr::unmount() {
+    char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("unmount"), const_cast<char*>(mountDir.c_str()), const_cast<char*>("-z"), NULL};
+    char *const envp[] = {const_cast<char*>("PATH=/bin"), NULL};
+
+    return spawnProcess(argv, envp);
 }
 
 bool CloudfuseMngr::isInstalled() {
     char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("version"), NULL};
     
-    int ret = spawnProcess(argv, NULL);
-    return ret == 0;
-}
-
-bool CloudfuseMngr::mount() {
-    std::string configArg = "--config-file=" + configFile;
-    char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("mount"), const_cast<char*>(mountDir.c_str()), const_cast<char*>(configArg.c_str()), NULL};
-    
-    int ret = spawnProcess(argv, NULL);
-    return ret == 0;
-}
-
-bool CloudfuseMngr::unmount() {
-    char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("unmount"), const_cast<char*>(mountDir.c_str()), const_cast<char*>("-z"), NULL};
-    char *const envp[] = {const_cast<char*>("PATH=/bin"), NULL};
-
-    int ret = spawnProcess(argv, envp);
-    return ret == 0;
+    return spawnProcess(argv, NULL).errCode == 0;
 }
 
 bool CloudfuseMngr::isMounted() {
@@ -135,10 +134,10 @@ int main() {
 
     std::cout << "\n" << "Starting cloudfuse with incorrect config file" << '\n';
     std::cout << "Is cloudfuse installed: " << errCf.isInstalled() << '\n';
-    std::cout << "Try dry run: " << errCf.dryRun() << '\n';
-    std::cout << "Try mount: " << errCf.mount() << '\n';
+    std::cout << "Try dry run: " << errCf.dryRun().errCode << '\n';
+    std::cout << "Try mount: " << errCf.mount().errCode << '\n';
     std::cout << "Is cloudfuse mounted: " << errCf.isMounted() << '\n';
-    std::cout << "Try unmount: " << errCf.unmount() << '\n';
+    std::cout << "Try unmount: " << errCf.unmount().errCode << '\n';
 
     // Run test with existing config file
     configFile = "config.yaml";
@@ -146,10 +145,10 @@ int main() {
 
     std::cout << "\n" << "Starting cloudfuse with correct config file" << '\n';
     std::cout << "Is cloudfuse installed: " << workingCf.isInstalled() << '\n';
-    std::cout << "Try dry run: " << workingCf.dryRun() << '\n';
-    std::cout << "Try mount: " << workingCf.mount() << '\n';
+    std::cout << "Try dry run: " << workingCf.dryRun().errCode << '\n';
+    std::cout << "Try mount: " << workingCf.mount().errCode << '\n';
     std::cout << "Is cloudfuse mounted: " << workingCf.isMounted() << '\n';
-    std::cout << "Try unmount: " << workingCf.unmount() << '\n';
+    std::cout << "Try unmount: " << workingCf.unmount().errCode << '\n';
 
     return 0;
 }
