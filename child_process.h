@@ -20,7 +20,11 @@ public:
 private:
     std::string mountDir;
     std::string configFile;
+    #ifdef _WIN32
+    processReturn spawnProcess(wchar_t *argv);
+    #elif defined(__linux__) || defined(__APPLE__)
     processReturn spawnProcess(char *const argv[], char *const envp[]);
+    #endif
 };
 
 #endif

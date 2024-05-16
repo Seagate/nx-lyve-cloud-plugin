@@ -1,3 +1,4 @@
+#if defined(__linux__) || defined(__APPLE__)
 #include "child_process.h"
 #include <iostream>
 #include <stdio.h>
@@ -152,3 +153,5 @@ int main() {
 
     return 0;
 }
+
+#endif
