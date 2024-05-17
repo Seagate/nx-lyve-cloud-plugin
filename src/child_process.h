@@ -12,8 +12,8 @@ struct processReturn {
 class CloudfuseMngr {
 public:
     CloudfuseMngr(std::string mountDir, std::string configFile);
-    processReturn dryRun();
-    processReturn mount();
+    processReturn dryRun(std::string accessKeyId, std::string secretAccessKey, std::string region, std::string endpoint, std::string bucketName);
+    processReturn mount(std::string accessKeyId, std::string secretAccessKey, std::string region, std::string endpoint, std::string bucketName);
     processReturn unmount();
     bool isInstalled();
     bool isMounted();
