@@ -104,14 +104,12 @@ if(WIN32)
     string(CONCAT testConfigContent
         "${testConfigFileHeader}\n"
         "../../stub_analytics_plugin/$<CONFIG>/stub_analytics_plugin.dll\n"
-        "../../sample_analytics_plugin/$<CONFIG>/sample_analytics_plugin.dll\n"
     )
 else()
     set(testConfigFile ${CMAKE_CURRENT_BINARY_DIR}/analytics_plugin_ut.cfg)
     string(CONCAT testConfigContent
         "${testConfigFileHeader}\n"
         "../stub_analytics_plugin/libstub_analytics_plugin.so\n"
-        "../sample_analytics_plugin/libsample_analytics_plugin.so\n"
     )
 endif()
 
