@@ -4,13 +4,8 @@
 
 #include "settings/plugin.h"
 
-extern "C" NX_PLUGIN_API nx::sdk::IPlugin* createNxPluginByIndex(int instanceIndex)
+extern "C" NX_PLUGIN_API nx::sdk::IPlugin* createNxPlugin()
 {
     using namespace nx::vms_server_plugins::analytics::stub;
-
-    switch (instanceIndex)
-    {
-        case 0: return new settings::Plugin();
-        default: return nullptr;
-    }
+    return new settings::Plugin();
 }
