@@ -2,7 +2,6 @@
 
 #include <nx/kit/debug.h>
 
-#include "sdk_features/plugin.h"
 #include "settings/plugin.h"
 
 extern "C" NX_PLUGIN_API nx::sdk::IPlugin* createNxPluginByIndex(int instanceIndex)
@@ -12,7 +11,6 @@ extern "C" NX_PLUGIN_API nx::sdk::IPlugin* createNxPluginByIndex(int instanceInd
     switch (instanceIndex)
     {
         case 0: return new settings::Plugin();
-        case 8: return new sdk_features::Plugin();
         default: return nullptr;
     }
 }
