@@ -18,7 +18,7 @@ public:
 
 protected:
     virtual nx::sdk::Result<nx::sdk::analytics::IEngine*> doObtainEngine() override;
-    virtual std::string instanceId() const override { return "nx.stub.settings"; }
+    virtual std::string instanceId() const override { return "seagate.cloudfuse"; }
     virtual std::string manifestString() const override;
 };
 

@@ -30,7 +30,7 @@ static const std::string kIsActive = "isActive";
 static const std::string kMinValue = "minValue";
 static const std::string kMaxValue = "maxValue";
 static const std::string kActiveSettingsSectionCaption = "Active settings section";
-static const std::string kActiveSettingsGroupBoxCaption = "Active settings";
+static const std::string kAdvancedSettingsGroupBoxCaption = "Advanced Settings";
 
 static const std::string kActiveComboBoxId = "activeComboBox";
 static const std::string kAdditionalComboBoxId = "additionalComboBox";
@@ -50,17 +50,24 @@ static const std::string kDefaultActiveRadioButtonGroupValue = "Some value";
 static const std::string kActiveMinValueId = "activeMinValue";
 static const std::string kActiveMaxValueId = "activeMaxValue";
 
-static const std::string kShowMessageButtonId = "showMessageButton";
+static const std::string kCheckCredentialsButtonId = "checkCredentialsButton";
+static const std::string kChangeEndpointButtonId = "changeEndpointButton";
 static const std::string kShowUrlButtonId = "showUrlButton";
-static const std::string kParametersModel = /*suppress newline*/ 1 + R"json(
+static const std::string kChangeEndpointModel = /*suppress newline*/ 1 + R"json(
 {
     "type": "Settings",
     "items":
     [
         {
             "type": "TextField",
-            "name": "parameter",
-            "caption": "Parameter"
+            "name": "endpointUrl",
+            "caption": "Endpoint URL",
+            "description": "Set a different endpoint (different region or service)",
+            "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com"
+        },
+        {
+            "type": "Banner",
+            "text": "e.g. https://s3.us-east-1.lyvecloud.seagate.com"
         }
     ]
 }
@@ -76,149 +83,57 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
     [
         {
             "type": "GroupBox",
-            "caption": "Example Stub Engine settings",
+            "caption": "Credentials",
             "items":
             [
                 {
                     "type": "TextField",
-                    "name": "text",
-                    "caption": "Text Field",
-                    "description": "A text field",
-                    "defaultValue": "a text"
+                    "name": "keyId",
+                    "caption": "Access Key ID",
+                    "description": "Cloud bucket access key ID",
+                    "defaultValue": "",
+                    "validationErrorMessage": "Access key ID must be 20 alphanumeric characters",
+                    "validationRegex": "^[A-Z2-7]{16,2048}$",
+                    "validationRegexFlags": "i",
+                    "isActive": true
                 },
                 {
                     "type": "PasswordField",
-                    "name": "passwordField1",
-                    "caption": "Password Field",
-                    "description": "A password field",
-                    "defaultValue": "1234",
-                    "validationErrorMessage": "Password must contain only digits",
-                    "validationRegex": "^[0-9]+$",
-                    "validationRegexFlags": "i"
+                    "name": "secretKey",
+                    "caption": "Secret Key",
+                    "description": "Cloud bucket secret key",
+                    "defaultValue": "",
+                    "validationErrorMessage": "Secret key must be 40 alphanumeric-plus-slash characters",
+                    "validationRegex": "^[A-Z0-9\\+\\\/]{40}$",
+                    "validationRegexFlags": "i",
+                    "isActive": true
                 },
                 {
-                    "type": "SpinBox",
-                    "name": "testSpinBox",
-                    "caption": "Spin Box",
-                    "defaultValue": 42,
-                    "minValue": 0,
-                    "maxValue": 100
-                },
-                {
-                    "type": "SpinBox",
-                    "name": ")json" + kEnginePluginSideSetting + R"json(",
-                    "caption": "Spin Box (plugin side)",
-                    "defaultValue": 42,
-                    "minValue": 0,
-                    "maxValue": 100
-                },
-                {
-                    "type": "DoubleSpinBox",
-                    "name": "testDoubleSpinBox",
-                    "caption": "Double Spin Box",
-                    "defaultValue": 3.1415,
-                    "minValue": 0.0,
-                    "maxValue": 100.0
-                },
-                {
-                    "type": "ComboBox",
-                    "name": "testComboBox",
-                    "caption": "Combo Box",
-                    "defaultValue": "value2",
-                    "range": ["value1", "value2", "value3"]
-                },
-                {
-                    "type": "CheckBox",
-                    "name": "testCheckBox",
-                    "caption": "Check Box",
-                    "defaultValue": true
-                },
-                {
-                    "type": "Link",
-                    "caption": "Customer Support",
-                    "url": "https://example.com/"
-                },
-                {
-                    "type": "Banner",
-                    "icon": "info",
-                    "text": "Some text"
-                },
-                {
-                    "type": "Placeholder",
-                    "header": "Header",
-                    "description": "Description",
-                    "icon": "default"
+                    "type": "Button",
+                    "name": ")json" + kCheckCredentialsButtonId + R"json(",
+                    "caption": "Check Credentials...",
+                    "isActive": true
                 }
             ]
         },
         {
             "type": "GroupBox",
-            "caption": ")json" + kActiveSettingsGroupBoxCaption + R"json(",
+            "caption": ")json" + kAdvancedSettingsGroupBoxCaption + R"json(",
             "items":
             [
                 {
-                    "type": "ComboBox",
-                    "name": ")json" + kActiveComboBoxId + R"json(",
-                    "caption": "Active ComboBox",
-                    "defaultValue": "Some value",
-                    "isActive": true,
-                    "range":
-                    [
-                        "Some value",
-                        ")json" + kShowAdditionalComboBoxValue + R"json("
-                    ]
-                },
-                {
-                    "type": "CheckBox",
-                    "name": ")json" + kActiveCheckBoxId + R"json(",
-                    "caption": "Active CheckBox",
-                    "defaultValue": false,
-                    "isActive": true
-                },
-                {
-                    "type": "RadioButtonGroup",
-                    "name": ")json" + kActiveRadioButtonGroupId + R"json(",
-                    "caption": "Active RadioButton Group",
-                    "defaultValue": "Some value",
-                    "isActive": true,
-                    "range":
-                    [
-                        "Some value",
-                        ")json" + kShowAdditionalRadioButtonValue + R"json("
-                    ]
-                },
-                {
-                    "type": "SpinBox",
-                    "name": ")json" + kActiveMinValueId + R"json(",
-                    "caption": "Active Minimum",
-                    "defaultValue": 42,
-                    "minValue": 0,
-                    "maxValue": 42,
-                    "isActive": true
-                },
-                {
-                    "type": "SpinBox",
-                    "name": ")json" + kActiveMaxValueId + R"json(",
-                    "caption": "Active Maximum",
-                    "defaultValue": 42,
-                    "minValue": 42,
-                    "maxValue": 100,
-                    "isActive": true
-                },
-                {
                     "type": "Button",
-                    "name": ")json" + kShowMessageButtonId + R"json(",
-                    "caption": "Show Message...",
+                    "name": ")json" + kChangeEndpointButtonId + R"json(",
+                    "caption": "Change S3 Endpoint...",
                     "isActive": true,
-                    "parametersModel": )json" + kParametersModel + R"json(
-                },
-                {
-                    "type": "Button",
-                    "name": ")json" + kShowUrlButtonId + R"json(",
-                    "caption": "Show Webpage...",
-                    "isActive": true
+                    "parametersModel": )json" + kChangeEndpointModel + R"json(
                 }
             ]
+        },
+        {
+            "type": "Link",
+            "caption": "Plugin Website",
+            "url": "https://github.com/Seagate/nx-lyve-cloud-plugin"
         }
     ]
 }
@@ -688,10 +603,10 @@ static const std::string kRegularSettingsModelPart2 = /*suppress newline*/ 1 + R
                 },
                 {
                     "type": "Button",
-                    "name": ")json" + kShowMessageButtonId + R"json(",
+                    "name": ")json" + kChangeEndpointButtonId + R"json(",
                     "caption": "Show Message...",
                     "isActive": true,
-                    "parametersModel": )json" + kParametersModel + R"json(
+                    "parametersModel": )json" + kChangeEndpointModel + R"json(
                 },
                 {
                     "type": "Button",

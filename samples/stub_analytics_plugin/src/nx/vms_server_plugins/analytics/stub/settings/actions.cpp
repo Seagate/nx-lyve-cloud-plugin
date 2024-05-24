@@ -18,21 +18,27 @@ nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(
 {
     using namespace nx::sdk;
 
-    if (settingId == kShowMessageButtonId)
+    if (settingId == kCheckCredentialsButtonId)
     {
+        // run Cloudfuse --dry-run to check credentials
+        // hard-coding a response for now
+        const char* cloudfuseOutput = "Cloudfuse call not implemented!";
+        bool success = false;
+        // possible responses to user
+        std::string successMessage = "✅ Credentials verified";
+        std::string failureMessage = "❌ Cloud connection or authentication error";
+        std::string resultMessage;
+
+        // build action response
         const auto actionResponse = makePtr<ActionResponse>();
-        const char* const param = params->value("parameter");
+        if (success) {
+            resultMessage = successMessage;
+        } else {
+            resultMessage = failureMessage;
+        }
         actionResponse->setMessageToUser(
-            "Message Example. \nParameter: " + nx::kit::utils::toString(param));
+            resultMessage + " \nCheck Output: " + nx::kit::utils::toString(cloudfuseOutput));
 
-        return actionResponse;
-
-    }
-
-    if (settingId == kShowUrlButtonId)
-    {
-        const auto actionResponse = makePtr<ActionResponse>();
-        actionResponse->setActionUrl("https://example.com/");
         return actionResponse;
     }
 

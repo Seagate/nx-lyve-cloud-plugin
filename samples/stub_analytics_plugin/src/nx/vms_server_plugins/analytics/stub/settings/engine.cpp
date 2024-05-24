@@ -97,7 +97,7 @@ bool Engine::processActiveSettings(
     auto activeSettingsGroupBoxIt = std::find_if(items.begin(), items.end(),
         [](Json& item)
         {
-            return item[kCaption].string_value() == kActiveSettingsGroupBoxCaption;
+            return item[kCaption].string_value() == kAdvancedSettingsGroupBoxCaption;
         });
 
     if (activeSettingsGroupBoxIt == items.cend())

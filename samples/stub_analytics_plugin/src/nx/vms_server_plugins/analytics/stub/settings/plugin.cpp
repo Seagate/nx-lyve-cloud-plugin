@@ -27,10 +27,10 @@ std::string Plugin::manifestString() const
     return /*suppress newline*/ 1 + (const char*) R"json(
 {
     "id": ")json" + instanceId() + R"json(",
-    "name": "Stub: Settings",
-    "description": "A plugin for testing and debugging Settings.",
-    "version": "1.0.0",
-    "vendor": "Plugin vendor",
+    "name": "Lyve Cloud Backup Storage",
+    "description": "Connect a cloud storage container as a backup location.",
+    "version": "0.1.0",
+    "vendor": "Seagate Technology",
     "engineSettingsModel": )json" + kEngineSettingsModel + R"json(
 }
 )json";
