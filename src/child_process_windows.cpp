@@ -46,11 +46,11 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
         exit(1);
     }
 
-    ZeroMemory( &si, sizeof(si) );
+    ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     si.hStdOutput = hWrite;
     si.hStdError = hWrite;
-    ZeroMemory( &pi, sizeof(pi) );
+    ZeroMemory(&pi, sizeof(pi));
 
     DWORD dwRet;
     LPWSTR pszOldVal = (LPWSTR) malloc(4096*sizeof(WCHAR));
@@ -69,16 +69,16 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
 
     // Start the child process. 
     if( !CreateProcessW( 
-        NULL,           // No module name (use command line)
-        LPWSTR(argv),           // Command line
-        NULL,           // Process handle not inheritable
-        NULL,           // Thread handle not inheritable
-        FALSE,          // Set handle inheritance to FALSE
-        CREATE_UNICODE_ENVIRONMENT,              // No creation flags
-        LPVOID(newEnv.c_str()),  // Use new environment
-        NULL,           // Use parent's starting directory 
-        &si,            // Pointer to STARTUPINFO structure
-        &pi )           // Pointer to PROCESS_INFORMATION structure
+        NULL,                       // No module name (use command line)
+        LPWSTR(argv),               // Command line
+        NULL,                       // Process handle not inheritable
+        NULL,                       // Thread handle not inheritable
+        FALSE,                      // Set handle inheritance to FALSE
+        CREATE_UNICODE_ENVIRONMENT, // Use unicode environment
+        LPVOID(newEnv.c_str()),     // Use new environment
+        NULL,                       // Use parent's starting directory 
+        &si,                        // Pointer to STARTUPINFO structure
+        &pi )                       // Pointer to PROCESS_INFORMATION structure
     ) 
     {
         CloseHandle(hWrite);
@@ -98,7 +98,7 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
 
     // Wait until child process exits.
     unsigned long errCode;
-    WaitForSingleObject(pi.hProcess, INFINITE );
+    WaitForSingleObject(pi.hProcess, INFINITE);
     GetExitCodeProcess(pi.hProcess, &errCode);
     ret.errCode = errCode;
 
@@ -109,29 +109,49 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
     return ret;
 }
 
-processReturn CloudfuseMngr::dryRun(std::wstring accessKeyId, std::wstring secretAccessKey, std::wstring region, std::wstring endpoint, std::wstring bucketName) {
-    std::wstring configArg = L"./cloudfuse.exe mount " + mountDir + L" --config-file=" + configFile + L" --dry-run";
+processReturn CloudfuseMngr::genS3Config(std::wstring accessKeyId, std::wstring secretAccessKey, std::wstring region, std::wstring endpoint, std::wstring bucketName, std::wstring passphrase) {
+    std::wstring argv = L"./cloudfuse.exe gen-test-config --config-file=nx_plugin_config.yaml --output-file=temp.yaml";
     std::wstring aws_access_key_id_env = L"AWS_ACCESS_KEY_ID=" + accessKeyId;
     std::wstring aws_secret_access_key_env = L"AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
     std::wstring aws_region_env = L"AWS_REGION=" + region;
-    std::wstring envp = aws_access_key_id_env + L'\0'+ aws_secret_access_key_env + L'\0' + aws_region_env + L'\0' + L'\0';
+    std::wstring endpoint_env = L"ENDPOINT=" + endpoint;
+    std::wstring bucket_name_env = L"BUCKET_NAME=" + bucketName;
+    std::wstring envp = aws_access_key_id_env + L'\0'+ aws_secret_access_key_env + L'\0' + aws_region_env + L'\0' + endpoint_env + L'\0' + bucket_name_env + L'\0' + L'\0';
     
-    return spawnProcess(const_cast<wchar_t*>(configArg.c_str()), envp);
+    processReturn ret = spawnProcess(const_cast<wchar_t*>(argv.c_str()), envp);
+
+    if (ret.errCode == 0) {
+        return encryptConfig(passphrase);
+    }
+
+    return ret;
 }
 
-processReturn CloudfuseMngr::mount(std::wstring accessKeyId, std::wstring secretAccessKey, std::wstring region, std::wstring endpoint, std::wstring bucketName) {
-    std::wstring configArg = L"./cloudfuse.exe mount " + mountDir + L" --config-file=" + configFile;
-    std::wstring aws_access_key_id_env = L"AWS_ACCESS_KEY_ID=" + accessKeyId;
-    std::wstring aws_secret_access_key_env = L"AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
-    std::wstring aws_region_env = L"AWS_REGION=" + region;
-    std::wstring envp = aws_access_key_id_env + L'\0'+ aws_secret_access_key_env + L'\0' + aws_region_env + L'\0' + L'\0';
+processReturn CloudfuseMngr::encryptConfig(std::wstring passphrase) {
+    std::wstring argv = L"./cloudfuse.exe secure encrypt --config-file=temp.yaml --output-file=" + configFile + L" --passphrase=" + passphrase;
+    std::wstring envp = L"";
+    
+    return spawnProcess(const_cast<wchar_t*>(argv.c_str()), envp);
+}
 
-    return spawnProcess(const_cast<wchar_t*>(configArg.c_str()), envp);
+processReturn CloudfuseMngr::dryRun(std::wstring passphrase) {
+    std::wstring argv = L"./cloudfuse.exe mount " + mountDir + L" --config-file=" + configFile + L" --passphrase=" + passphrase + L" --dry-run";
+    std::wstring envp = L"";
+
+    std::wcout << argv << std::endl;
+    
+    return spawnProcess(const_cast<wchar_t*>(argv.c_str()), envp);
+}
+
+processReturn CloudfuseMngr::mount(std::wstring passphrase) {
+    std::wstring argv = L"./cloudfuse.exe mount " + mountDir + L" --config-file=" + configFile + L" --passphrase=" + passphrase;
+    std::wstring envp = L"";
+
+    return spawnProcess(const_cast<wchar_t*>(argv.c_str()), envp);
 }
 
 processReturn CloudfuseMngr::unmount() {
-    std::wstring configArg = L"cloudfuse unmount " + mountDir;
-    std::wstring argv = std::wstring(configArg.begin(), configArg.end());
+    std::wstring argv = L"cloudfuse unmount " + mountDir;
     std::wstring envp = L"";
     
     return spawnProcess(const_cast<wchar_t*>(argv.c_str()), envp);
