@@ -52,20 +52,24 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
     si.hStdError = hWrite;
     ZeroMemory(&pi, sizeof(pi));
 
-    DWORD dwRet;
-    LPWSTR pszOldVal = (LPWSTR) malloc(4096*sizeof(WCHAR));
-    if (NULL == pszOldVal) {
+    LPVOID lpvEnv = GetEnvironmentStringsW();
+
+    // If the returned pointer is NULL, exit.
+    if (lpvEnv == NULL) {
+        printf("GetEnvironmentStrings failed (%d)\n", GetLastError()); 
         exit(1);
     }
-
-    dwRet = GetEnvironmentVariableW(L"AppData", pszOldVal, 4096);
-    std::wstring envnew = L"AppData=";
-    for (int i = 0; i < dwRet; i++) {
-        envnew += pszOldVal[i];
+    
+    // Append current environment to new environment variables
+    LPTSTR lpszVariable = (LPTSTR) lpvEnv;
+    while (*lpszVariable) {
+        envp += lpszVariable;
+        envp += L'\0';
+        lpszVariable += lstrlen(lpszVariable) + 1;
     }
-    envnew += L'\0';
 
-    std::wstring newEnv = envnew + envp;
+    // Environment block must be double null terminated
+    envp += L'\0';
 
     // Start the child process. 
     if( !CreateProcessW( 
@@ -75,7 +79,7 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
         NULL,                       // Thread handle not inheritable
         FALSE,                      // Set handle inheritance to FALSE
         CREATE_UNICODE_ENVIRONMENT, // Use unicode environment
-        LPVOID(newEnv.c_str()),     // Use new environment
+        (LPVOID)envp.c_str(),     // Use new environment
         NULL,                       // Use parent's starting directory 
         &si,                        // Pointer to STARTUPINFO structure
         &pi )                       // Pointer to PROCESS_INFORMATION structure
@@ -116,7 +120,7 @@ processReturn CloudfuseMngr::genS3Config(std::wstring accessKeyId, std::wstring 
     std::wstring aws_region_env = L"AWS_REGION=" + region;
     std::wstring endpoint_env = L"ENDPOINT=" + endpoint;
     std::wstring bucket_name_env = L"BUCKET_NAME=" + bucketName;
-    std::wstring envp = aws_access_key_id_env + L'\0'+ aws_secret_access_key_env + L'\0' + aws_region_env + L'\0' + endpoint_env + L'\0' + bucket_name_env + L'\0' + L'\0';
+    std::wstring envp = aws_access_key_id_env + L'\0'+ aws_secret_access_key_env + L'\0' + aws_region_env + L'\0' + endpoint_env + L'\0' + bucket_name_env + L'\0';
     
     processReturn ret = spawnProcess(const_cast<wchar_t*>(argv.c_str()), envp);
 
