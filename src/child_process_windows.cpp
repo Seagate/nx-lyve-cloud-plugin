@@ -30,26 +30,36 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
 
+    // Set the bInheritHandle flag so pipe handles are inherited. 
     SECURITY_ATTRIBUTES sa;
     sa.nLength = sizeof(sa);
     sa.lpSecurityDescriptor = NULL;
     sa.bInheritHandle = TRUE;
 
-    HANDLE hRead, hWrite;
-
+    HANDLE hReadStdOut, hWriteStdOut, hReadStdErr, hWriteStdErr;
     // Create a pipe for the child process's STDOUT. 
-    if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+    if (!CreatePipe(&hReadStdOut, &hWriteStdOut, &sa, 0)) {
         exit(1); 
     }
     // Ensure the read handle to the pipe for STDOUT is not inherited.
-    if (!SetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0) ){
+    if (!SetHandleInformation(hReadStdOut, HANDLE_FLAG_INHERIT, 0) ){
+        exit(1);
+    }
+
+    // Create a pipe for the child process's STDERR. 
+    if (!CreatePipe(&hReadStdErr, &hWriteStdErr, &sa, 0)) {
+        exit(1); 
+    }
+    // Ensure the read handle to the pipe for STDERR is not inherited.
+    if (!SetHandleInformation(hReadStdErr, HANDLE_FLAG_INHERIT, 0) ){
         exit(1);
     }
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
-    si.hStdOutput = hWrite;
-    si.hStdError = hWrite;
+    si.hStdOutput = hWriteStdOut;
+    si.hStdError = hWriteStdErr;
+    si.dwFlags |= STARTF_USESTDHANDLES;
     ZeroMemory(&pi, sizeof(pi));
 
     LPVOID lpvEnv = GetEnvironmentStringsW();
@@ -85,17 +95,24 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
         &pi )                       // Pointer to PROCESS_INFORMATION structure
     ) 
     {
-        CloseHandle(hWrite);
-        CloseHandle(hRead);
+        CloseHandle(hWriteStdOut);
+        CloseHandle(hReadStdOut);
+        CloseHandle(hWriteStdErr);
+        CloseHandle(hReadStdErr);
         printf( "CreateProcess failed (%d).\n", GetLastError() );
         return ret;
     }
-    CloseHandle(hWrite);
+    CloseHandle(hWriteStdOut);
+    CloseHandle(hWriteStdErr);
 
     const int BUFSIZE = 4096;
     DWORD bytesRead;
     CHAR buffer[BUFSIZE];
-    while (ReadFile(hRead, buffer, BUFSIZE-1, &bytesRead, NULL) && bytesRead > 0) {
+    while (ReadFile(hReadStdOut, buffer, BUFSIZE-1, &bytesRead, NULL) && bytesRead > 0) {
+        buffer[bytesRead] = 0;
+        ret.output.append(buffer);
+    }
+    while (ReadFile(hReadStdErr, buffer, BUFSIZE-1, &bytesRead, NULL) && bytesRead > 0) {
         buffer[bytesRead] = 0;
         ret.output.append(buffer);
     }
@@ -107,9 +124,10 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
     ret.errCode = errCode;
 
     // Close process and thread handles.
-    CloseHandle(hRead);
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
+    CloseHandle(hReadStdOut);
+    CloseHandle(hReadStdErr);
     return ret;
 }
 
