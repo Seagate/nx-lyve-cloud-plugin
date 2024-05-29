@@ -87,7 +87,7 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
         LPWSTR(argv),               // Command line
         NULL,                       // Process handle not inheritable
         NULL,                       // Thread handle not inheritable
-        FALSE,                      // Set handle inheritance to FALSE
+        TRUE,                      // Set handle inheritance to FALSE
         CREATE_UNICODE_ENVIRONMENT, // Use unicode environment
         (LPVOID)envp.c_str(),     // Use new environment
         NULL,                       // Use parent's starting directory 
@@ -102,8 +102,17 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
         printf( "CreateProcess failed (%d).\n", GetLastError() );
         return ret;
     }
+
     CloseHandle(hWriteStdOut);
     CloseHandle(hWriteStdErr);
+
+    // Wait until child process exits.
+    unsigned long errCode;
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    GetExitCodeProcess(pi.hProcess, &errCode);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    ret.errCode = errCode;
 
     const int BUFSIZE = 4096;
     DWORD bytesRead;
@@ -117,15 +126,7 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
         ret.output.append(buffer);
     }
 
-    // Wait until child process exits.
-    unsigned long errCode;
-    WaitForSingleObject(pi.hProcess, INFINITE);
-    GetExitCodeProcess(pi.hProcess, &errCode);
-    ret.errCode = errCode;
-
-    // Close process and thread handles.
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
+    // Close handles.
     CloseHandle(hReadStdOut);
     CloseHandle(hReadStdErr);
     return ret;
