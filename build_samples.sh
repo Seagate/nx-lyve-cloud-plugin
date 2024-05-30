@@ -34,7 +34,7 @@ fi
 
 case "$(uname -s)" in #< Check if running in Windows from Cygwin/MinGW.
     CYGWIN*|MINGW*)
-        GEN_OPTIONS=( -Ax64 )
+        GEN_OPTIONS=( -G "MinGW Makefiles" -DCMAKE_C_COMPILER="C:/msys64/ucrt64/bin/gcc.exe" -DCMAKE_CXX_COMPILER="C:/msys64/ucrt64/bin/g++.exe" )
         BASE_DIR=$(cygpath -w "$BASE_DIR") #< Windows-native cmake requires Windows path.
         BUILD_OPTIONS=()
         if [[ $BUILD_TYPE == Release ]]
