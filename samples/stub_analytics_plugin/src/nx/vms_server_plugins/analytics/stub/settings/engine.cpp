@@ -77,9 +77,7 @@ std::string Engine::manifestString() const
     "capabilities": ")json" + buildCapabilities() + R"json(",
     "deviceAgentSettingsModel":
 )json"
-        + kRegularSettingsModelPart1
-        + kEnglishCitiesSettingsModelPart
-        + kRegularSettingsModelPart2
+        + kEngineSettingsModel
         + R"json(
 }
 )json";
