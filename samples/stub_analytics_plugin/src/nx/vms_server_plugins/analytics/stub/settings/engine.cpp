@@ -30,6 +30,7 @@ Engine::Engine(Plugin* plugin):
     nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()),
     m_plugin(plugin)
 {
+    NX_PRINT << "cloudfuse Engine::Engine" << std::endl;
     for (const auto& entry: kActiveSettingsRules)
     {
         const ActiveSettingsBuilder::ActiveSettingKey key = entry.first;
@@ -53,6 +54,7 @@ Engine::~Engine()
 
 void Engine::doObtainDeviceAgent(Result<IDeviceAgent*>* outResult, const IDeviceInfo* deviceInfo)
 {
+    NX_PRINT << "cloudfuse Engine::doObtainDeviceAgent" << std::endl;
     *outResult = new DeviceAgent(this, deviceInfo);
 }
 
@@ -72,6 +74,7 @@ static std::string buildCapabilities()
 
 std::string Engine::manifestString() const
 {
+    NX_PRINT << "cloudfuse Engine::manifestString" << std::endl;
     std::string result = /*suppress newline*/ 1 + (const char*) R"json(
 {
     "capabilities": ")json" + buildCapabilities() + R"json(",
@@ -90,6 +93,7 @@ bool Engine::processActiveSettings(
     std::map<std::string, std::string>* values,
     const std::vector<std::string>& settingIdsToUpdate) const
 {
+    NX_PRINT << "cloudfuse Engine::processActiveSettings" << std::endl;
     Json::array items = (*model)[kItems].array_items();
 
     auto activeSettingsGroupBoxIt = std::find_if(items.begin(), items.end(),
@@ -130,11 +134,18 @@ bool Engine::processActiveSettings(
 
 Result<const ISettingsResponse*> Engine::settingsReceived()
 {
+    NX_PRINT << "cloudfuse Engine::settingsReceived" << std::endl;
     std::string parseError;
     Json::object model = Json::parse(kEngineSettingsModel, parseError).object_items();
 
     std::map<std::string, std::string> values = currentSettings();
-    values[kEnginePluginSideSetting] = kEnginePluginSideSettingValue;
+    for (std::map<std::string, std::string>::iterator it = values.begin(); it != values.end(); it++) {
+        NX_PRINT << it->first << ":" << it->second << std::endl;
+        NX_OUTPUT << it->first << ":" << it->second << std::endl;
+    }
+    std::string keyId = values[kKeyIdTextFieldId];
+    std::string secretKey = values[kSecretKeyPasswordFieldId];
+    // TODO: mount the bucket with these credentials
 
     if (!processActiveSettings(&model, &values))
         return error(ErrorCode::internalError, "Unable to process the active settings section");
@@ -148,6 +159,7 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
 
 void Engine::getPluginSideSettings(Result<const ISettingsResponse*>* outResult) const
 {
+    NX_PRINT << "cloudfuse Engine::getPluginSideSettings" << std::endl;
     auto settingsResponse = new SettingsResponse();
     settingsResponse->setValue(kEnginePluginSideSetting, kEnginePluginSideSettingValue);
 
@@ -158,6 +170,7 @@ void Engine::doGetSettingsOnActiveSettingChange(
     Result<const IActiveSettingChangedResponse*>* outResult,
     const IActiveSettingChangedAction* activeSettingChangedAction)
 {
+    NX_PRINT << "cloudfuse Engine::doGetSettingsOnActiveSettingChange" << std::endl;
     std::string parseError;
     Json::object model = Json::parse(
         activeSettingChangedAction->settingsModel(), parseError).object_items();
