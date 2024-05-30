@@ -6,9 +6,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-CloudfuseMngr::CloudfuseMngr(std::string mountDir, std::string configFile) {
+CloudfuseMngr::CloudfuseMngr(std::string mountDir, std::string configFile, std::string fileCachePath) {
     this->mountDir = mountDir;
     this->configFile = configFile;
+    this->fileCachePath = fileCachePath;
+    templateFile = "./nx_plugin_config.yaml";
 }
 
 processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]) {
@@ -66,32 +68,44 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
     }
 }
 
-processReturn CloudfuseMngr::dryRun(std::string accessKeyId, std::string secretAccessKey, std::string region, std::string endpoint, std::string bucketName) {
-    std::string configArg = "--config-file=" + configFile;
-    std::string endpointArg = "--endpoint=" + endpoint;
-    std::string bucketNameArg = "--bucket-name=" + bucketName;
-    char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("mount"), const_cast<char*>(mountDir.c_str()), const_cast<char*>(configArg.c_str()),
-        const_cast<char*>(endpointArg.c_str()), const_cast<char*>(bucketNameArg.c_str()), const_cast<char*>("--dry-run"), NULL};
-
-    std::string aws_access_key_id_env = "AWS_ACCESS_KEY_ID=" + accessKeyId;
-    std::string aws_secret_access_key_env = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
-    std::string aws_region_env = "AWS_REGION=" + region;
-    char *const envp[] = {const_cast<char*>(aws_access_key_id_env.c_str()), const_cast<char*>(aws_secret_access_key_env.c_str()), const_cast<char*>(aws_region_env.c_str()), NULL};
+processReturn CloudfuseMngr::genS3Config(std::string region, std::string endpoint, std::string bucketName, std::string passphrase) {
+    std::string configArg = "--config-file=" + templateFile;
+    std::string outputArg = "--output-file=" + configFile;
+    std::string fileCachePathArg = "--temp-path=" + fileCachePath;
+    std::string passphraseArg = "--passphrase=" + passphrase;
+    char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("gen-config"), const_cast<char*>(configArg.c_str()),
+        const_cast<char*>(outputArg.c_str()), const_cast<char*>(fileCachePathArg.c_str()), const_cast<char*>(passphraseArg.c_str()), NULL};
     
-    return spawnProcess(argv, NULL);
+    std::string bucketNameEnv = "BUCKET_NAME=" + bucketName;
+    std::string endpointEnv = "ENDPOINT=" + endpoint;
+    std::string regionEnv = "AWS_REGION=" + region;
+    char *const envp[] = {const_cast<char*>(bucketNameEnv.c_str()), const_cast<char*>(endpointEnv.c_str()), const_cast<char*>(regionEnv.c_str()), NULL};
+
+    return spawnProcess(argv, envp);
 }
 
-processReturn CloudfuseMngr::mount(std::string accessKeyId, std::string secretAccessKey, std::string region, std::string endpoint, std::string bucketName) {
+processReturn CloudfuseMngr::dryRun(std::string accessKeyId, std::string secretAccessKey, std::string passphrase) {
     std::string configArg = "--config-file=" + configFile;
-    std::string endpointArg = "--endpoint=" + endpoint;
-    std::string bucketNameArg = "--bucket-name=" + bucketName;
+    std::string passphraseArg = "--passphrase=" + passphrase;
     char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("mount"), const_cast<char*>(mountDir.c_str()), const_cast<char*>(configArg.c_str()),
-        const_cast<char*>(endpointArg.c_str()), const_cast<char*>(bucketNameArg.c_str()), NULL};
+        const_cast<char*>(passphraseArg.c_str()), const_cast<char*>("--dry-run"), NULL};
+
+    std::string awsAccessKeyIdEnv = "AWS_ACCESS_KEY_ID=" + accessKeyId;
+    std::string awsSecretAccessKeyEnv = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
+    char *const envp[] = {const_cast<char*>(awsAccessKeyIdEnv.c_str()), const_cast<char*>(awsSecretAccessKeyEnv.c_str()), NULL};
     
-    std::string aws_access_key_id_env = "AWS_ACCESS_KEY_ID=" + accessKeyId;
-    std::string aws_secret_access_key_env = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
-    std::string aws_region_env = "AWS_REGION=" + region;
-    char *const envp[] = {const_cast<char*>(aws_access_key_id_env.c_str()), const_cast<char*>(aws_secret_access_key_env.c_str()), const_cast<char*>(aws_region_env.c_str()), NULL};
+    return spawnProcess(argv, envp);
+}
+
+processReturn CloudfuseMngr::mount(std::string accessKeyId, std::string secretAccessKey, std::string passphrase) {
+    std::string configArg = "--config-file=" + configFile;
+    std::string passphraseArg = "--passphrase=" + passphrase;
+    char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("mount"), const_cast<char*>(mountDir.c_str()), const_cast<char*>(configArg.c_str()), 
+        const_cast<char*>(passphraseArg.c_str()), NULL};
+    
+    std::string awsAccessKeyIdEnv = "AWS_ACCESS_KEY_ID=" + accessKeyId;
+    std::string awsSecretAccessKeyEnv = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
+    char *const envp[] = {const_cast<char*>(awsAccessKeyIdEnv.c_str()), const_cast<char*>(awsSecretAccessKeyEnv.c_str()), NULL};
 
     return spawnProcess(argv, envp);
 }
