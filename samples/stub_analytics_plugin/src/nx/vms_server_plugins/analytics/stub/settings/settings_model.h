@@ -53,6 +53,9 @@ static const std::string kGermanCitiesSettingsModelPart = /*suppress newline*/ 1
 static const std::string kRegularSettingsModelPart2 = /*suppress newline*/ 1 + R"json(")json";
 // ------------------------------------------------------------------------------------------------
 
+static const std::string kKeyIdTextFieldId = "keyId";
+static const std::string kSecretKeyPasswordFieldId = "secretKey";
+
 static const std::string kCheckCredentialsButtonId = "checkCredentialsButton";
 
 static const std::string kChangeEndpointButtonId = "changeEndpointButton";
@@ -89,7 +92,7 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
             [
                 {
                     "type": "TextField",
-                    "name": "keyId",
+                    "name": ")json" + kKeyIdTextFieldId + R"json(",
                     "caption": "Access Key ID",
                     "description": "Cloud bucket access key ID",
                     "defaultValue": "",
@@ -100,7 +103,7 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                 },
                 {
                     "type": "PasswordField",
-                    "name": "secretKey",
+                    "name": ")json" + kSecretKeyPasswordFieldId + R"json(",
                     "caption": "Secret Key",
                     "description": "Cloud bucket secret key",
                     "defaultValue": "",
