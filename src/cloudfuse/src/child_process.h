@@ -12,7 +12,7 @@ struct processReturn {
 class CloudfuseMngr {
 public:
     #ifdef _WIN32
-    CloudfuseMngr(std::wstring mountDir, std::wstring configFile);
+    CloudfuseMngr(std::wstring mountDir, std::wstring configFile, std::wstring fileCachePath);
     processReturn dryRun(std::wstring passphrase);
     processReturn mount(std::wstring passphrase);
     processReturn genS3Config(std::wstring accessKeyId, std::wstring secretAccessKey, std::wstring region, std::wstring endpoint, std::wstring bucketName, std::wstring passphrase);
@@ -28,6 +28,8 @@ private:
     #ifdef _WIN32
     std::wstring mountDir;
     std::wstring configFile;
+    std::wstring fileCachePath;
+    std::wstring templateFile;
     processReturn spawnProcess(wchar_t* argv, std::wstring envp);
     processReturn encryptConfig(std::wstring passphrase);
     #elif defined(__linux__) || defined(__APPLE__)

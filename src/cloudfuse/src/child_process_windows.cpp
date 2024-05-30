@@ -19,9 +19,11 @@
 #include <UserEnv.h>
 #include <cstdlib>
 
-CloudfuseMngr::CloudfuseMngr(std::wstring mountDir, std::wstring configFile) {
+CloudfuseMngr::CloudfuseMngr(std::wstring mountDir, std::wstring configFile, std::wstring fileCachePath) {
     this->mountDir = mountDir;
     this->configFile = configFile;
+    this->fileCachePath = fileCachePath;
+    templateFile = L"./nx_plugin_config.yaml";
 }
 
 processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
@@ -133,26 +135,13 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t* argv, std::wstring envp) {
 }
 
 processReturn CloudfuseMngr::genS3Config(std::wstring accessKeyId, std::wstring secretAccessKey, std::wstring region, std::wstring endpoint, std::wstring bucketName, std::wstring passphrase) {
-    std::wstring argv = L"./cloudfuse.exe gen-test-config --config-file=nx_plugin_config.yaml --output-file=temp.yaml";
+    std::wstring argv = L"./cloudfuse.exe gen-config --config-file=" + templateFile + L" --output-file=" + configFile + L" --temp-path=" + fileCachePath + L" --passphrase=" + passphrase;
     std::wstring aws_access_key_id_env = L"AWS_ACCESS_KEY_ID=" + accessKeyId;
     std::wstring aws_secret_access_key_env = L"AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
     std::wstring aws_region_env = L"AWS_REGION=" + region;
     std::wstring endpoint_env = L"ENDPOINT=" + endpoint;
     std::wstring bucket_name_env = L"BUCKET_NAME=" + bucketName;
     std::wstring envp = aws_access_key_id_env + L'\0'+ aws_secret_access_key_env + L'\0' + aws_region_env + L'\0' + endpoint_env + L'\0' + bucket_name_env + L'\0';
-    
-    processReturn ret = spawnProcess(const_cast<wchar_t*>(argv.c_str()), envp);
-
-    if (ret.errCode == 0) {
-        return encryptConfig(passphrase);
-    }
-
-    return ret;
-}
-
-processReturn CloudfuseMngr::encryptConfig(std::wstring passphrase) {
-    std::wstring argv = L"./cloudfuse.exe secure encrypt --config-file=temp.yaml --output-file=" + configFile + L" --passphrase=" + passphrase;
-    std::wstring envp = L"";
     
     return spawnProcess(const_cast<wchar_t*>(argv.c_str()), envp);
 }
