@@ -59,7 +59,7 @@ case "$(uname -s)" in #< Check if running in Windows from Cygwin/MinGW.
 esac
 
 (set -x #< Log each command.
-    rm -rf "$BUILD_DIR/"
+    # rm -rf "$BUILD_DIR/"
 )
 
 for SOURCE_DIR in "$BASE_DIR/samples"/*
