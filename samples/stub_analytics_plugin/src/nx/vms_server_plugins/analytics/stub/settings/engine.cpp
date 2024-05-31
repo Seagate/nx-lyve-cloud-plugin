@@ -160,9 +160,12 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
 
     // Create mount directory if it does not exist
     if (fs::exists(mountDir)) {
+        // Unmmount before mounting
+        cfManager.unmount();
+        
         fs::file_status s = fs::status(mountDir);
-        if ((s.permissions() & (fs::perms::owner_all | fs::perms::group_all)) != fs::perms::owner_all) {
-            fs::permissions(mountDir, fs::perms::owner_all | fs::perms::group_all, fs::perm_options::add, errCode);
+        if ((s.permissions() & fs::perms::all) != fs::perms::all) {
+            fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode) {
                 return error(ErrorCode::internalError, "Unable to set mount directory permission with error: ");
             }
@@ -171,7 +174,7 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
         if (!fs::create_directory(mountDir, errCode)) {
             return error(ErrorCode::internalError, "Unable to create mount directory with error: " + errCode.message() + mountDir);
         }
-        fs::permissions(mountDir, fs::perms::owner_all | fs::perms::group_all, fs::perm_options::add, errCode);
+        fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
         if (errCode) {
             return error(ErrorCode::internalError, "Unable to set mount directory permissions with error: " + errCode.message());
         }
@@ -180,8 +183,8 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     // Create file cache if it does not exist
     if (fs::exists(fileCacheDir)) {
         fs::file_status s = fs::status(fileCacheDir);
-        if ((s.permissions() & (fs::perms::owner_all | fs::perms::group_all)) != fs::perms::owner_all) {
-            fs::permissions(fileCacheDir, fs::perms::owner_all | fs::perms::group_all, fs::perm_options::add, errCode);
+        if ((s.permissions() & fs::perms::all) != fs::perms::all) {
+            fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode) {
                 return error(ErrorCode::internalError, "Unable to set mount directory permission with error: ");
             }
@@ -190,7 +193,7 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
         if (!fs::create_directory(fileCacheDir, errCode)) {
             return error(ErrorCode::internalError, "Unable to create file cache directory with error: " + errCode.message());
         }
-        fs::permissions(fileCacheDir, fs::perms::owner_all | fs::perms::group_all, fs::perm_options::add, errCode);
+        fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
         if (errCode) {
             return error(ErrorCode::internalError, "Unable to set file cache directory permissions with error: " + errCode.message());
         }
