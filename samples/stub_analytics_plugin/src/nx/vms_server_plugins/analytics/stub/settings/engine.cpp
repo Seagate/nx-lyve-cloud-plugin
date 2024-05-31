@@ -162,7 +162,7 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     if (fs::exists(mountDir)) {
         // Unmmount before mounting
         cfManager.unmount();
-        
+
         fs::file_status s = fs::status(mountDir);
         if ((s.permissions() & fs::perms::all) != fs::perms::all) {
             fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
