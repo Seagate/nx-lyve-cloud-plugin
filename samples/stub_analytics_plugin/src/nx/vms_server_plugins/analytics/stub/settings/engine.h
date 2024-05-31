@@ -7,7 +7,7 @@
 #include <nx/sdk/analytics/helpers/plugin.h>
 #include <nx/sdk/analytics/helpers/engine.h>
 
-#include <cloudfuse/src/child_process.h>
+#include <cloudfuse/child_process.h>
 
 namespace nx {
 namespace vms_server_plugins {
