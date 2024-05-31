@@ -16,6 +16,12 @@
 #include <nx/sdk/helpers/error.h>
 #include <nx/vms_server_plugins/analytics/stub/utils.h>
 
+//
+#include <filesystem>
+
+namespace fs = std::filesystem;
+//
+
 namespace nx {
 namespace vms_server_plugins {
 namespace analytics {
@@ -28,7 +34,8 @@ using namespace nx::kit;
 
 Engine::Engine(Plugin* plugin):
     nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()),
-    m_plugin(plugin)
+    m_plugin(plugin),
+    cfManager()
 {
     NX_PRINT << "cloudfuse Engine::Engine" << std::endl;
     for (const auto& entry: kActiveSettingsRules)
@@ -145,8 +152,74 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     }
     std::string keyId = values[kKeyIdTextFieldId];
     std::string secretKey = values[kSecretKeyPasswordFieldId];
-    // TODO: mount the bucket with these credentials
+    
+    std::string mountDir = cfManager.getMountDir();
+    std::string fileCacheDir = cfManager.getFileCacheDir();
+    std::string passphrase = "123123123123123123123123";
+    std::error_code errCode;
 
+    // Create mount directory if it does not exist
+    if (fs::exists(mountDir)) {
+        fs::file_status s = fs::status(mountDir);
+        if ((s.permissions() & (fs::perms::owner_all | fs::perms::group_all)) != fs::perms::owner_all) {
+            fs::permissions(mountDir, fs::perms::owner_all | fs::perms::group_all, fs::perm_options::add, errCode);
+            if (errCode) {
+                return error(ErrorCode::internalError, "Unable to set mount directory permission with error: ");
+            }
+        }
+    } else {
+        if (!fs::create_directory(mountDir, errCode)) {
+            return error(ErrorCode::internalError, "Unable to create mount directory with error: " + errCode.message() + mountDir);
+        }
+        fs::permissions(mountDir, fs::perms::owner_all | fs::perms::group_all, fs::perm_options::add, errCode);
+        if (errCode) {
+            return error(ErrorCode::internalError, "Unable to set mount directory permissions with error: " + errCode.message());
+        }
+    }
+
+    // Create file cache if it does not exist
+    if (fs::exists(fileCacheDir)) {
+        fs::file_status s = fs::status(fileCacheDir);
+        if ((s.permissions() & (fs::perms::owner_all | fs::perms::group_all)) != fs::perms::owner_all) {
+            fs::permissions(fileCacheDir, fs::perms::owner_all | fs::perms::group_all, fs::perm_options::add, errCode);
+            if (errCode) {
+                return error(ErrorCode::internalError, "Unable to set mount directory permission with error: ");
+            }
+        }
+    } else {
+        if (!fs::create_directory(fileCacheDir, errCode)) {
+            return error(ErrorCode::internalError, "Unable to create file cache directory with error: " + errCode.message());
+        }
+        fs::permissions(fileCacheDir, fs::perms::owner_all | fs::perms::group_all, fs::perm_options::add, errCode);
+        if (errCode) {
+            return error(ErrorCode::internalError, "Unable to set file cache directory permissions with error: " + errCode.message());
+        }
+    }
+
+    if (!cfManager.isInstalled()) {
+        return error(ErrorCode::internalError, "Cloudfuse is not installed");
+    }
+
+    processReturn dryGenConfig = cfManager.genS3Config("us-east-1", "https://s3.us-east-1.lyvecloud.seagate.com", "stxe1-srg-lens-lab1", passphrase);
+    if (dryGenConfig.errCode != 0) {
+        return error(ErrorCode::internalError, "Unable to generate config file with error: " + dryGenConfig.output);
+    }
+
+    processReturn dryRunRet = cfManager.dryRun(keyId, secretKey, passphrase);
+    if (dryRunRet.errCode != 0) {
+        return error(ErrorCode::internalError, "Unable to dryrun with error: " + dryRunRet.output);
+    }
+
+    processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
+    if (mountRet.errCode != 0) {
+        return error(ErrorCode::internalError, "Unable to launch mount with error: " + mountRet.output);
+    }
+
+    if (!cfManager.isMounted()) {
+        return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
+    }
+
+    //
     if (!processActiveSettings(&model, &values))
         return error(ErrorCode::internalError, "Unable to process the active settings section");
 

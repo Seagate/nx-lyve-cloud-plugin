@@ -6,11 +6,25 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-CloudfuseMngr::CloudfuseMngr(std::string mountDir, std::string configFile, std::string fileCachePath) {
+CloudfuseMngr::CloudfuseMngr() {
+    std::string homeEnv;
+    const char *home = std::getenv("HOME");
+    if (home == nullptr) {
+        homeEnv = "";
+    } else {
+        homeEnv = home;
+    }
+    mountDir = homeEnv + "/cloudfuse";
+    fileCacheDir = homeEnv + "/cloudfuse_cache";
+    configFile = homeEnv + "/nx_plugin_config.aes";
+    templateFile = homeEnv + "/nx_plugin_config.yaml";
+}
+
+CloudfuseMngr::CloudfuseMngr(std::string mountDir, std::string fileCacheDir, std::string configFile, std::string templateFile) {
     this->mountDir = mountDir;
     this->configFile = configFile;
-    this->fileCachePath = fileCachePath;
-    templateFile = "./nx_plugin_config.yaml";
+    this->fileCacheDir = fileCacheDir;
+    this->templateFile = templateFile;
 }
 
 processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]) {
@@ -71,7 +85,7 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
 processReturn CloudfuseMngr::genS3Config(std::string region, std::string endpoint, std::string bucketName, std::string passphrase) {
     std::string configArg = "--config-file=" + templateFile;
     std::string outputArg = "--output-file=" + configFile;
-    std::string fileCachePathArg = "--temp-path=" + fileCachePath;
+    std::string fileCachePathArg = "--temp-path=" + fileCacheDir;
     std::string passphraseArg = "--passphrase=" + passphrase;
     char *const argv[] = {const_cast<char*>("/bin/cloudfuse"), const_cast<char*>("gen-config"), const_cast<char*>(configArg.c_str()),
         const_cast<char*>(outputArg.c_str()), const_cast<char*>(fileCachePathArg.c_str()), const_cast<char*>(passphraseArg.c_str()), NULL};
@@ -155,6 +169,14 @@ bool CloudfuseMngr::isMounted() {
 
     
     return false;
+}
+
+std::string CloudfuseMngr::getMountDir() {
+    return mountDir;
+}
+
+std::string CloudfuseMngr::getFileCacheDir() {
+    return fileCacheDir;
 }
 
 #endif

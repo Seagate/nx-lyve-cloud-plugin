@@ -17,10 +17,13 @@ public:
     processReturn mount(std::wstring passphrase);
     processReturn genS3Config(std::wstring accessKeyId, std::wstring secretAccessKey, std::wstring region, std::wstring endpoint, std::wstring bucketName, std::wstring passphrase);
     #elif defined(__linux__) || defined(__APPLE__)
-    CloudfuseMngr(std::string mountDir, std::string configFile, std::string fileCachePath);
+    CloudfuseMngr();
+    CloudfuseMngr(std::string mountDir, std::string fileCacheDir, std::string configFile, std::string templateFile);
     processReturn dryRun(std::string accessKeyId, std::string secretAccessKey, std::string passphrase);
     processReturn mount(std::string accessKeyId, std::string secretAccessKey, std::string passphrase);
     processReturn genS3Config(std::string region, std::string endpoint, std::string bucketName, std::string passphrase);
+    std::string getMountDir();
+    std::string getFileCacheDir();
     #endif
     processReturn unmount();
     bool isInstalled();
@@ -36,7 +39,7 @@ private:
     #elif defined(__linux__) || defined(__APPLE__)
     std::string mountDir;
     std::string configFile;
-    std::string fileCachePath;
+    std::string fileCacheDir;
     std::string templateFile;
     processReturn spawnProcess(char *const argv[], char *const envp[]);
     #endif
