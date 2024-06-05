@@ -213,12 +213,4 @@ bool CloudfuseMngr::isMounted() {
     return false;
 }
 
-std::string CloudfuseMngr::getMountDir() {
-    return mountDir;
-}
-
-std::string CloudfuseMngr::getFileCacheDir() {
-    return fileCacheDir;
-}
-
 #endif
