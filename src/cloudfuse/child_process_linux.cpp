@@ -1,4 +1,4 @@
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__)
 #include "child_process.h"
 #include <fstream>
 #include <sys/wait.h>

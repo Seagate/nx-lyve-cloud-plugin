@@ -17,6 +17,9 @@
 #include <nx/vms_server_plugins/analytics/stub/utils.h>
 
 //
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -152,7 +155,6 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     }
     std::string keyId = values[kKeyIdTextFieldId];
     std::string secretKey = values[kSecretKeyPasswordFieldId];
-    
     std::string mountDir = cfManager.getMountDir();
     std::string fileCacheDir = cfManager.getFileCacheDir();
     std::string passphrase = "123123123123123123123123";
@@ -162,7 +164,9 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     if (fs::exists(mountDir)) {
         // Unmmount before mounting
         cfManager.unmount();
-
+    
+        #if defined(__linux__)
+        // On Linux we need to check the folder has the correct permissions
         fs::file_status s = fs::status(mountDir);
         if ((s.permissions() & fs::perms::all) != fs::perms::all) {
             fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
@@ -170,14 +174,18 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
                 return error(ErrorCode::internalError, "Unable to set mount directory permission with error: ");
             }
         }
+        #endif
     } else {
+        #if defined(__linux__)
+        // On Linux we need to create the folder if it does not yet exist
         if (!fs::create_directory(mountDir, errCode)) {
-            return error(ErrorCode::internalError, "Unable to create mount directory with error: " + errCode.message() + mountDir);
+            return error(ErrorCode::internalError, "Unable to create mount directory with error: " + errCode.message());
         }
         fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
         if (errCode) {
             return error(ErrorCode::internalError, "Unable to set mount directory permissions with error: " + errCode.message());
         }
+        #endif
     }
 
     // Create file cache if it does not exist
@@ -203,20 +211,40 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
         return error(ErrorCode::internalError, "Cloudfuse is not installed");
     }
 
+    #if defined(__linux__)
     processReturn dryGenConfig = cfManager.genS3Config("us-east-1", "https://s3.us-east-1.lyvecloud.seagate.com", "stxe1-srg-lens-lab1", passphrase);
+    #elif defined(_WIN32)
+    processReturn dryGenConfig = cfManager.genS3Config(keyId, secretKey, "us-east-1", "https://s3.us-east-1.lyvecloud.seagate.com", "stxe1-srg-lens-lab1", passphrase);
+    #endif
+
     if (dryGenConfig.errCode != 0) {
         return error(ErrorCode::internalError, "Unable to generate config file with error: " + dryGenConfig.output);
     }
 
+    #if defined(__linux__)
     processReturn dryRunRet = cfManager.dryRun(keyId, secretKey, passphrase);
+    #elif defined(_WIN32)
+    processReturn dryRunRet = cfManager.dryRun(passphrase);
+    #endif
+
     if (dryRunRet.errCode != 0) {
         return error(ErrorCode::internalError, "Unable to dryrun with error: " + dryRunRet.output);
     }
 
+    #if defined(__linux__)
     processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
+    #elif defined(_WIN32)
+    processReturn mountRet = cfManager.mount(passphrase);
+    #endif
+
     if (mountRet.errCode != 0) {
         return error(ErrorCode::internalError, "Unable to launch mount with error: " + mountRet.output);
     }
+
+    // On Windows, mount does not show up immediately, so need to wait
+    #ifdef _WIN32
+    Sleep(2000);
+    #endif
 
     if (!cfManager.isMounted()) {
         return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
