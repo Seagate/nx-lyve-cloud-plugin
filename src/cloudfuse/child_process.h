@@ -1,7 +1,3 @@
-// MyFile.h
-#ifndef CHILD_PROCESS_H
-#define MYFILECHILD_PROCESS_H_H
-
 #include <string>
 
 struct processReturn {
@@ -40,5 +36,3 @@ private:
     processReturn spawnProcess(char *const argv[], char *const envp[]);
     #endif
 };
-
-#endif
