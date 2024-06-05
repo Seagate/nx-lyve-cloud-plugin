@@ -1,11 +1,8 @@
 #if defined(__linux__) || defined(__APPLE__)
 #include "child_process.h"
 #include <fstream>
-#include <iostream>
-#include <stdio.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 std::string config_template = R"(
 allow-other: true
