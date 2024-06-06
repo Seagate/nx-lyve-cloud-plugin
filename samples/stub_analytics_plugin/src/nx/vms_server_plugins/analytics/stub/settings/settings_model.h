@@ -55,10 +55,11 @@ static const std::string kRegularSettingsModelPart2 = /*suppress newline*/ 1 + R
 
 static const std::string kKeyIdTextFieldId = "keyId";
 static const std::string kSecretKeyPasswordFieldId = "secretKey";
-
-static const std::string kCheckCredentialsButtonId = "checkCredentialsButton";
-
+// advanced
 static const std::string kChangeEndpointButtonId = "changeEndpointButton";
+static const std::string kChangeConfigPassphraseButtonId = "changePassphraseButton";
+// endpoint URL pop-up dialog
+static const std::string kEndpointUrlTextFieldId = "endpointUrl";
 static const std::string kChangeEndpointModel = /*suppress newline*/ 1 + R"json(
 {
     "type": "Settings",
@@ -66,14 +67,34 @@ static const std::string kChangeEndpointModel = /*suppress newline*/ 1 + R"json(
     [
         {
             "type": "TextField",
-            "name": "endpointUrl",
+            "name": ")json" + kEndpointUrlTextFieldId + R"json(",
             "caption": "Endpoint URL",
             "description": "Set a different endpoint (different region or service)",
             "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com"
+            "validationErrorMessage": "Endpoint must begin with 'http[s]://'",
+            "validationRegex": "^https?://.+$",
+            "validationRegexFlags": "i",
         },
         {
             "type": "Banner",
             "text": "e.g. https://s3.us-east-1.lyvecloud.seagate.com"
+        }
+    ]
+}
+)json";
+// config passphrase pop-up dialog
+static const std::string kPassphrasePasswordFieldId = "configPassphrase";
+static const std::string kChangePassphraseModel = /*suppress newline*/ 1 + R"json("
+{
+    "type": "Settings",
+    "items":
+    [
+        {
+            "type": "PasswordField",
+            "name": ")json" + kPassphrasePasswordFieldId + R"json(",
+            "caption": "Config Passphrase",
+            "description": "Choose passphrase to encrypt S3 credentials in config file",
+            "defaultValue": ""
         }
     ]
 }
@@ -111,12 +132,6 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                     "validationRegex": "^[A-Z0-9\\+\\\/]{40}$",
                     "validationRegexFlags": "i",
                     "isActive": true
-                },
-                {
-                    "type": "Button",
-                    "name": ")json" + kCheckCredentialsButtonId + R"json(",
-                    "caption": "Check Credentials...",
-                    "isActive": true
                 }
             ]
         },
@@ -131,6 +146,13 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                     "caption": "Change S3 Endpoint...",
                     "isActive": true,
                     "parametersModel": )json" + kChangeEndpointModel + R"json(
+                },
+                {
+                    "type": "Button",
+                    "name": ")json" + kChangeConfigPassphraseButtonId + R"json(",
+                    "caption": "Change Config Passphrase...",
+                    "isActive": true,
+                    "parametersModel": )json" + kChangePassphraseModel + R"json(
                 }
             ]
         },
