@@ -3,6 +3,7 @@
 #include "actions.h"
 
 #include <nx/kit/utils.h>
+#include <nx/kit/debug.h>
 
 #include "settings_model.h"
 
@@ -17,6 +18,8 @@ nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(
 	nx::sdk::Ptr<const nx::sdk::IStringMap> params)
 {
     using namespace nx::sdk;
+    NX_PRINT << "cloudfuse actions.cpp:generateActionResponse(" << settingId << ")" << std::endl;
+    dumpStringMap("cloudfuse", NULL, params.get());
 
     if (settingId == kCheckCredentialsButtonId)
     {
@@ -43,6 +46,25 @@ nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(
     }
 
     return nullptr;
+}
+
+void dumpStringMap(
+    const char* prefix, const char* appendix, const nx::sdk::IStringMap* stringMap)
+{
+    if (!stringMap)
+    {
+        NX_PRINT << prefix << "    null" << appendix;
+        return;
+    }
+
+    NX_PRINT << prefix << "{";
+    for (int i = 0; i < stringMap->count(); ++i)
+    {
+        NX_PRINT << prefix << "    " << nx::kit::utils::toString(stringMap->key(i)) << ": "
+            << nx::kit::utils::toString(stringMap->value(i))
+            << ((i == stringMap->count() - 1) ? "" : ",");
+    }
+    NX_PRINT << prefix << "}" << appendix;
 }
 
 } // namespace settings
