@@ -13,6 +13,10 @@ namespace analytics {
 namespace stub {
 namespace settings {
 
+
+void dumpStringMap(
+    const char* prefix, const char* appendix, const nx::sdk::IStringMap* stringMap);
+
 nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(
 	const std::string& settingId,
 	nx::sdk::Ptr<const nx::sdk::IStringMap> params)

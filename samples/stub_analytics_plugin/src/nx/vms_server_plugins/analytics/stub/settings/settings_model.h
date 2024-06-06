@@ -55,6 +55,7 @@ static const std::string kRegularSettingsModelPart2 = /*suppress newline*/ 1 + R
 
 static const std::string kKeyIdTextFieldId = "keyId";
 static const std::string kSecretKeyPasswordFieldId = "secretKey";
+static const std::string kCheckCredentialsButtonId = "checkCredentialsButton";
 // advanced
 static const std::string kChangeEndpointButtonId = "changeEndpointButton";
 static const std::string kChangeConfigPassphraseButtonId = "changePassphraseButton";
@@ -70,10 +71,10 @@ static const std::string kChangeEndpointModel = /*suppress newline*/ 1 + R"json(
             "name": ")json" + kEndpointUrlTextFieldId + R"json(",
             "caption": "Endpoint URL",
             "description": "Set a different endpoint (different region or service)",
-            "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com"
+            "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com",
             "validationErrorMessage": "Endpoint must begin with 'http[s]://'",
             "validationRegex": "^https?://.+$",
-            "validationRegexFlags": "i",
+            "validationRegexFlags": "i"
         },
         {
             "type": "Banner",
