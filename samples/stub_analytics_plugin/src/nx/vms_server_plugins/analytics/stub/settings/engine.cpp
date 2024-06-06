@@ -155,6 +155,8 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     }
     std::string keyId = values[kKeyIdTextFieldId];
     std::string secretKey = values[kSecretKeyPasswordFieldId];
+    std::string endpointUrl = "https://s3.us-east-1.lyvecloud.seagate.com";
+    std::string endpointRegion = "us-east-1";
     std::string mountDir = cfManager.getMountDir();
     std::string fileCacheDir = cfManager.getFileCacheDir();
     std::string passphrase = "123123123123123123123123";
@@ -212,9 +214,9 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     }
 
     #if defined(__linux__)
-    processReturn dryGenConfig = cfManager.genS3Config("us-east-1", "https://s3.us-east-1.lyvecloud.seagate.com", "stxe1-srg-lens-lab1", passphrase);
+    processReturn dryGenConfig = cfManager.genS3Config(endpointRegion, endpointUrl, "stxe1-srg-lens-lab1", passphrase);
     #elif defined(_WIN32)
-    processReturn dryGenConfig = cfManager.genS3Config(keyId, secretKey, "us-east-1", "https://s3.us-east-1.lyvecloud.seagate.com", "stxe1-srg-lens-lab1", passphrase);
+    processReturn dryGenConfig = cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, "stxe1-srg-lens-lab1", passphrase);
     #endif
 
     if (dryGenConfig.errCode != 0) {
