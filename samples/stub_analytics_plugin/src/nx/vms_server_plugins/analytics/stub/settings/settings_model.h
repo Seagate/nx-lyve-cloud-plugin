@@ -95,7 +95,9 @@ static const std::string kChangePassphraseModel = /*suppress newline*/ 1 + R"jso
             "name": ")json" + kPassphrasePasswordFieldId + R"json(",
             "caption": "Config Passphrase",
             "description": "Choose passphrase to encrypt S3 credentials in config file",
-            "defaultValue": ""
+            "defaultValue": "",
+            "validationErrorMessage": "The base64-encoded config passphrase should be 24, 32, or 44 characters in length.",
+            "validationRegex": "^[A-Za-z0-9+/]*={0,3}$"
         }
     ]
 }
