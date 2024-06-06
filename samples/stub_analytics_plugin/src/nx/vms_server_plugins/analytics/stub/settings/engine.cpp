@@ -3,6 +3,10 @@
 #include "engine.h"
 
 #include <algorithm>
+#include <filesystem>
+#include <openssl/buffer.h>
+#include <openssl/rand.h>
+#include <string.h>
 
 #include "actions.h"
 #include "active_settings_rules.h"
@@ -19,9 +23,6 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
-#include <filesystem>
-#include <openssl/rand.h>
-#include <string.h>
 
 namespace fs = std::filesystem;
 
@@ -160,11 +161,23 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     std::string mountDir = cfManager.getMountDir();
     std::string fileCacheDir = cfManager.getFileCacheDir();
     std::string passphrase = "";
-    // Generate passphrase if passphrase is empty
+    // Generate passphrase if user did not provide one
     if (passphrase == "") {
         unsigned char key[32]; // AES-256 key
         if (RAND_bytes(key, sizeof(key))) {
-            passphrase = std::string(reinterpret_cast<char*>(key), 32);
+            // Need to encode passphrase to base64 to pass to cloudfuse
+            BIO *bmem, *b64;
+            BUF_MEM *bptr;
+
+            b64 = BIO_new(BIO_f_base64());
+            bmem = BIO_new(BIO_s_mem());
+            b64 = BIO_push(b64, bmem);
+            BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+            BIO_write(b64, key, 32);
+            BIO_flush(b64);
+            BIO_get_mem_ptr(b64, &bptr);
+            
+            passphrase = std::string(bptr->data, bptr->length);
         } else {
             return error(ErrorCode::internalError, "OpenSSL Error: Unable to generate secure passphrase");
         }
