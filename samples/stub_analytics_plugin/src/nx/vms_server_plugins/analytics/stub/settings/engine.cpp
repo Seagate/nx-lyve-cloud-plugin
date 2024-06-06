@@ -16,14 +16,14 @@
 #include <nx/sdk/helpers/error.h>
 #include <nx/vms_server_plugins/analytics/stub/utils.h>
 
-//
 #ifdef _WIN32
 #include <windows.h>
 #endif
 #include <filesystem>
+#include <openssl/rand.h>
+#include <string.h>
 
 namespace fs = std::filesystem;
-//
 
 namespace nx {
 namespace vms_server_plugins {
@@ -159,7 +159,17 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     std::string endpointRegion = "us-east-1";
     std::string mountDir = cfManager.getMountDir();
     std::string fileCacheDir = cfManager.getFileCacheDir();
-    std::string passphrase = "123123123123123123123123";
+    std::string passphrase = "";
+    // Generate passphrase if passphrase is empty
+    if (passphrase == "") {
+        unsigned char key[32]; // AES-256 key
+        if (RAND_bytes(key, sizeof(key))) {
+            passphrase = std::string(reinterpret_cast<char*>(key), 32);
+        } else {
+            return error(ErrorCode::internalError, "OpenSSL Error: Unable to generate secure passphrase");
+        }
+    }
+
     std::error_code errCode;
 
     // Create mount directory if it does not exist
@@ -173,7 +183,7 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
         if ((s.permissions() & fs::perms::all) != fs::perms::all) {
             fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode) {
-                return error(ErrorCode::internalError, "Unable to set mount directory permission with error: ");
+                return error(ErrorCode::internalError, "Unable to set mount directory permission with error: " + errCode.message());
             }
         }
         #endif
@@ -196,7 +206,7 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
         if ((s.permissions() & fs::perms::all) != fs::perms::all) {
             fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode) {
-                return error(ErrorCode::internalError, "Unable to set mount directory permission with error: ");
+                return error(ErrorCode::internalError, "Unable to set mount directory permission with error: " + errCode.message());
             }
         }
     } else {
@@ -252,7 +262,6 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
         return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
     }
 
-    //
     if (!processActiveSettings(&model, &values))
         return error(ErrorCode::internalError, "Unable to process the active settings section");
 
