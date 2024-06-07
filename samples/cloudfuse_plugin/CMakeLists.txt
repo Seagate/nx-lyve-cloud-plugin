@@ -1,7 +1,14 @@
 ## Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-cmake_minimum_required(VERSION 3.14)
-project(stub_analytics_plugin)
+cmake_minimum_required(VERSION 3.16...3.29)
+
+project(
+    cloudfuse_plugin
+    VERSION 0.1.0
+    DESCRIPTION "VMS Plugin for Lyve Cloud"
+    HOMEPAGE_URL "https://github.com/Seagate/nx-lyve-cloud-plugin"
+    LANGUAGES CXX
+)
 
 set(metadataSdkDir "" CACHE PATH "Path to unpacked VMS Metadata SDK zip.")
 if(metadataSdkDir STREQUAL "")
@@ -10,9 +17,6 @@ if(metadataSdkDir STREQUAL "")
         message(FATAL_ERROR "Define metadataSdkDir cache variable to point to the unzipped SDK.")
     endif()
 endif()
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -63,19 +67,23 @@ target_link_libraries(nx_sdk PRIVATE nx_kit)
 target_compile_definitions(nx_sdk PRIVATE NX_PLUGIN_API=${API_EXPORT_MACRO}) #< for nxLibContext()
 
 #--------------------------------------------------------------------------------------------------
-# Define stub_analytics_plugin lib, dynamic, depends on nx_kit and nx_sdk.
+# Define cloudfuse_plugin lib, dynamic, depends on nx_kit and nx_sdk.
+find_package(OpenSSL REQUIRED)
+set(CLOUDFUSE_PLUGIN_SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+file(GLOB_RECURSE CLOUDFUSE_PLUGIN_SRC CONFIGURE_DEPENDS ${CLOUDFUSE_PLUGIN_SRC_DIR}/*)
 
-set(STUB_ANALYTICS_PLUGIN_SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-file(GLOB_RECURSE STUB_ANALYTICS_PLUGIN_SRC CONFIGURE_DEPENDS ${STUB_ANALYTICS_PLUGIN_SRC_DIR}/*)
+add_library(cloudfuse_plugin SHARED ${CLOUDFUSE_PLUGIN_SRC})
+target_include_directories(cloudfuse_plugin PRIVATE ${CLOUDFUSE_PLUGIN_SRC_DIR})
+target_link_libraries(cloudfuse_plugin PRIVATE nx_kit nx_sdk OpenSSL::SSL)
 
-add_library(stub_analytics_plugin SHARED ${STUB_ANALYTICS_PLUGIN_SRC})
-target_include_directories(stub_analytics_plugin PRIVATE ${STUB_ANALYTICS_PLUGIN_SRC_DIR})
-target_link_libraries(stub_analytics_plugin PRIVATE nx_kit nx_sdk)
-
-target_compile_definitions(stub_analytics_plugin
+target_compile_definitions(cloudfuse_plugin
     PRIVATE NX_PLUGIN_API=${API_EXPORT_MACRO}
 )
 
+target_compile_features(cloudfuse_plugin PUBLIC cxx_std_17)
+set_target_properties(cloudfuse_plugin PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(cloudfuse_plugin PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+
 if(NOT WIN32)
-    target_link_libraries(stub_analytics_plugin PRIVATE pthread)
+    target_link_libraries(cloudfuse_plugin PRIVATE pthread)
 endif()
