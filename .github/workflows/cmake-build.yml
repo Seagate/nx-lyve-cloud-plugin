@@ -6,7 +6,7 @@ on:
   push:
     branches: [ "main", "add-github-actions" ]
   pull_request:
-    branches: [ "main", "add-github-actions" ]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -27,10 +27,16 @@ jobs:
         build_type: [Release]
         c_compiler: [gcc, clang]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             c_compiler: gcc
             cpp_compiler: g++
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
+            c_compiler: clang
+            cpp_compiler: clang++
+          - os: ubuntu-20.04
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: ubuntu-20.04
             c_compiler: clang
             cpp_compiler: clang++
   
@@ -39,9 +45,7 @@ jobs:
 
     - name: Build using CMake
       run: >
-        ./build_samples.sh 
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} 
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} 
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} 
-        -S ${{ github.workspace }}
+        ./build_samples.sh
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         --no-tests
