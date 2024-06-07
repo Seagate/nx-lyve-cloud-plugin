@@ -388,7 +388,7 @@ struct JsonParser final {
     template <typename T>
     T fail(string &&msg, const T err_ret) {
         if (!failed)
-            err = std::std::move(msg);
+            err = std::move(msg);
         failed = true;
         return err_ret;
     }
