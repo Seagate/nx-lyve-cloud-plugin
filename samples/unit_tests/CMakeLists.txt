@@ -103,13 +103,13 @@ if(WIN32)
     set(testConfigFile ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/analytics_plugin_ut.cfg)
     string(CONCAT testConfigContent
         "${testConfigFileHeader}\n"
-        "../../stub_analytics_plugin/$<CONFIG>/stub_analytics_plugin.dll\n"
+        "../../cloudfuse_plugin/$<CONFIG>/cloudfuse_plugin.dll\n"
     )
 else()
     set(testConfigFile ${CMAKE_CURRENT_BINARY_DIR}/analytics_plugin_ut.cfg)
     string(CONCAT testConfigContent
         "${testConfigFileHeader}\n"
-        "../stub_analytics_plugin/libstub_analytics_plugin.so\n"
+        "../cloudfuse_plugin/libcloudfuse_plugin.so\n"
     )
 endif()
 
