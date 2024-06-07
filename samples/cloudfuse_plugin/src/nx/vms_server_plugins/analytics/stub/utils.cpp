@@ -3,13 +3,17 @@
 #include "utils.h"
 
 #include <algorithm>
-#include <vector>
 #include <fstream>
+#include <vector>
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
+namespace nx
+{
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
 
 using namespace nx::sdk;
 
@@ -19,12 +23,12 @@ bool toBool(std::string str)
     return str == "true" || str == "1";
 }
 
-bool startsWith(const std::string& str, const std::string& prefix)
+bool startsWith(const std::string &str, const std::string &prefix)
 {
     return str.rfind(prefix, 0) == 0;
 }
 
-std::vector<char> loadFile(const std::string& path)
+std::vector<char> loadFile(const std::string &path)
 {
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open())
@@ -33,16 +37,14 @@ std::vector<char> loadFile(const std::string& path)
     return std::vector<char>(std::istreambuf_iterator<char>(file), {});
 }
 
-std::string imageFormatFromPath(const std::string& path)
+std::string imageFormatFromPath(const std::string &path)
 {
-    auto endsWith =
-        [](const std::string& str, const std::string& suffix)
-        {
-            if (suffix.size() > str.size())
-                return false;
+    auto endsWith = [](const std::string &str, const std::string &suffix) {
+        if (suffix.size() > str.size())
+            return false;
 
-            return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
-        };
+        return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
+    };
 
     if (endsWith(path, ".jpg") || endsWith(path, ".jpeg"))
         return "image/jpeg";
@@ -56,25 +58,20 @@ std::string imageFormatFromPath(const std::string& path)
     return "";
 }
 
-bool isHttpOrHttpsUrl(const std::string& path)
+bool isHttpOrHttpsUrl(const std::string &path)
 {
-    auto startsWith =
-        [](const std::string& str, const std::string& prefix)
-        {
-            if (prefix.size() > str.size())
-                return false;
+    auto startsWith = [](const std::string &str, const std::string &prefix) {
+        if (prefix.size() > str.size())
+            return false;
 
-            return std::equal(prefix.begin(), prefix.end(), str.begin());
-        };
+        return std::equal(prefix.begin(), prefix.end(), str.begin());
+    };
 
     return startsWith(path, "http://") || startsWith(path, "https://");
 }
 
-std::string join(
-    const std::vector<std::string>& strings,
-    const std::string& delimiter,
-    const std::string& itemPrefix,
-    const std::string& itemPostfix)
+std::string join(const std::vector<std::string> &strings, const std::string &delimiter, const std::string &itemPrefix,
+                 const std::string &itemPostfix)
 {
     std::string result;
     for (size_t i = 0; i < strings.size(); ++i)
@@ -87,7 +84,7 @@ std::string join(
     return result;
 }
 
-std::map<std::string, std::string> toStdMap(const Ptr<const IStringMap>& sdkMap)
+std::map<std::string, std::string> toStdMap(const Ptr<const IStringMap> &sdkMap)
 {
     std::map<std::string, std::string> result;
     if (!sdkMap)

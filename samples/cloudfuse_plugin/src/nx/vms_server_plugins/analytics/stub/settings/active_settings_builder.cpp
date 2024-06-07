@@ -2,34 +2,34 @@
 
 #include "active_settings_builder.h"
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
-namespace settings {
+namespace nx
+{
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
+namespace settings
+{
 
 using namespace nx::sdk;
 
-void ActiveSettingsBuilder::addRule(
-    const std::string& activeSettingName,
-    const std::string& activeSettingValue,
-    ActiveSettingHandler activeSettingHandler)
+void ActiveSettingsBuilder::addRule(const std::string &activeSettingName, const std::string &activeSettingValue,
+                                    ActiveSettingHandler activeSettingHandler)
 {
     ActiveSettingKey key{activeSettingName, activeSettingValue};
     m_rules[key] = activeSettingHandler;
 }
 
-void ActiveSettingsBuilder::addDefaultRule(
-    const std::string& activeSettingName,
-    ActiveSettingHandler activeSettingHandler)
+void ActiveSettingsBuilder::addDefaultRule(const std::string &activeSettingName,
+                                           ActiveSettingHandler activeSettingHandler)
 {
     m_defaultRules[activeSettingName] = activeSettingHandler;
 }
 
-void ActiveSettingsBuilder::updateSettings(
-    const std::string& activeSettingName,
-    nx::kit::Json* inOutSettingsModel,
-    std::map<std::string, std::string>* inOutSettingsValues) const
+void ActiveSettingsBuilder::updateSettings(const std::string &activeSettingName, nx::kit::Json *inOutSettingsModel,
+                                           std::map<std::string, std::string> *inOutSettingsValues) const
 {
     ActiveSettingKey key{activeSettingName, (*inOutSettingsValues)[activeSettingName]};
 
@@ -42,7 +42,7 @@ void ActiveSettingsBuilder::updateSettings(
         defaultRulesIt->second(inOutSettingsModel, inOutSettingsValues);
 }
 
-bool ActiveSettingsBuilder::ActiveSettingKey::operator<(const ActiveSettingKey& other) const
+bool ActiveSettingsBuilder::ActiveSettingKey::operator<(const ActiveSettingKey &other) const
 {
     if (activeSettingName != other.activeSettingName)
         return activeSettingName < other.activeSettingName;

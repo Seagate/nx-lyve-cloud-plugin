@@ -2,13 +2,18 @@
 
 #include "stub_analytics_plugin_settings_ini.h"
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
-namespace settings {
+namespace nx
+{
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
+namespace settings
+{
 
-Ini& ini()
+Ini &ini()
 {
     static Ini ini;
     return ini;

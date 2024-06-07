@@ -11,45 +11,43 @@
 #include <nx/sdk/i_string_map.h>
 #include <nx/sdk/result.h>
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
-namespace settings {
+namespace nx
+{
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
+namespace settings
+{
 
 class ActiveSettingsBuilder
 {
-public:
-    using ActiveSettingHandler = std::function<void(
-        nx::kit::Json* /*inOutModel*/,
-        std::map<std::string, std::string>* /*inOutValues*/)>;
+  public:
+    using ActiveSettingHandler =
+        std::function<void(nx::kit::Json * /*inOutModel*/, std::map<std::string, std::string> * /*inOutValues*/)>;
 
     struct ActiveSettingKey
     {
         std::string activeSettingName;
         std::string activeSettingValue;
 
-        bool operator<(const ActiveSettingKey& other) const;
+        bool operator<(const ActiveSettingKey &other) const;
     };
 
-public:
+  public:
     ActiveSettingsBuilder() = default;
 
-    void addRule(
-        const std::string& activeSettingName,
-        const std::string& activeSettingValue,
-        ActiveSettingHandler activeSettingHandler);
+    void addRule(const std::string &activeSettingName, const std::string &activeSettingValue,
+                 ActiveSettingHandler activeSettingHandler);
 
-    void addDefaultRule(
-        const std::string& activeSettingName,
-        ActiveSettingHandler activeSettingHandler);
+    void addDefaultRule(const std::string &activeSettingName, ActiveSettingHandler activeSettingHandler);
 
-    void updateSettings(
-        const std::string& activeSettingName,
-        nx::kit::Json* inOutSettingsModel,
-        std::map<std::string, std::string>* inOutSettingsValues) const;
+    void updateSettings(const std::string &activeSettingName, nx::kit::Json *inOutSettingsModel,
+                        std::map<std::string, std::string> *inOutSettingsValues) const;
 
-private:
+  private:
     std::map<ActiveSettingKey, ActiveSettingHandler> m_rules;
     std::map</*activeSettingName*/ std::string, ActiveSettingHandler> m_defaultRules;
 };

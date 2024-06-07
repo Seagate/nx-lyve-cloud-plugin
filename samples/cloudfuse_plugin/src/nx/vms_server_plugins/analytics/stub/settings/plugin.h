@@ -5,20 +5,28 @@
 #include <nx/sdk/analytics/helpers/plugin.h>
 #include <nx/sdk/analytics/i_engine.h>
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
-namespace settings {
-
-class Plugin: public nx::sdk::analytics::Plugin
+namespace nx
 {
-public:
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
+namespace settings
+{
+
+class Plugin : public nx::sdk::analytics::Plugin
+{
+  public:
     Plugin() = default;
 
-protected:
-    virtual nx::sdk::Result<nx::sdk::analytics::IEngine*> doObtainEngine() override;
-    virtual std::string instanceId() const override { return "seagate.cloudfuse"; }
+  protected:
+    virtual nx::sdk::Result<nx::sdk::analytics::IEngine *> doObtainEngine() override;
+    virtual std::string instanceId() const override
+    {
+        return "seagate.cloudfuse";
+    }
     virtual std::string manifestString() const override;
 };
 

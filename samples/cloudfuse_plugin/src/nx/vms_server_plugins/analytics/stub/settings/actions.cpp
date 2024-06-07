@@ -2,24 +2,26 @@
 
 #include "actions.h"
 
-#include <nx/kit/utils.h>
 #include <nx/kit/debug.h>
+#include <nx/kit/utils.h>
 
 #include "settings_model.h"
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
-namespace settings {
+namespace nx
+{
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
+namespace settings
+{
 
+void dumpStringMap(const char *prefix, const char *appendix, const nx::sdk::IStringMap *stringMap);
 
-void dumpStringMap(
-    const char* prefix, const char* appendix, const nx::sdk::IStringMap* stringMap);
-
-nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(
-	const std::string& settingId,
-	nx::sdk::Ptr<const nx::sdk::IStringMap> params)
+nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(const std::string &settingId,
+                                                             nx::sdk::Ptr<const nx::sdk::IStringMap> params)
 {
     using namespace nx::sdk;
     NX_PRINT << "cloudfuse actions.cpp:generateActionResponse(" << settingId << ")" << std::endl;
@@ -29,7 +31,7 @@ nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(
     {
         // run Cloudfuse --dry-run to check credentials
         // hard-coding a response for now
-        const char* cloudfuseOutput = "Cloudfuse call not implemented!";
+        const char *cloudfuseOutput = "Cloudfuse call not implemented!";
         bool success = false;
         // possible responses to user
         std::string successMessage = "✅ Credentials verified";
@@ -38,13 +40,16 @@ nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(
 
         // build action response
         const auto actionResponse = makePtr<ActionResponse>();
-        if (success) {
+        if (success)
+        {
             resultMessage = successMessage;
-        } else {
+        }
+        else
+        {
             resultMessage = failureMessage;
         }
-        actionResponse->setMessageToUser(
-            resultMessage + " \nCheck Output: " + nx::kit::utils::toString(cloudfuseOutput));
+        actionResponse->setMessageToUser(resultMessage +
+                                         " \nCheck Output: " + nx::kit::utils::toString(cloudfuseOutput));
 
         return actionResponse;
     }
@@ -52,8 +57,7 @@ nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(
     return nullptr;
 }
 
-void dumpStringMap(
-    const char* prefix, const char* appendix, const nx::sdk::IStringMap* stringMap)
+void dumpStringMap(const char *prefix, const char *appendix, const nx::sdk::IStringMap *stringMap)
 {
     if (!stringMap)
     {
@@ -65,8 +69,7 @@ void dumpStringMap(
     for (int i = 0; i < stringMap->count(); ++i)
     {
         NX_PRINT << prefix << "    " << nx::kit::utils::toString(stringMap->key(i)) << ": "
-            << nx::kit::utils::toString(stringMap->value(i))
-            << ((i == stringMap->count() - 1) ? "" : ",");
+                 << nx::kit::utils::toString(stringMap->value(i)) << ((i == stringMap->count() - 1) ? "" : ",");
     }
     NX_PRINT << prefix << "}" << appendix;
 }

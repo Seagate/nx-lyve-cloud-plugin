@@ -7,47 +7,37 @@
 #include <nx/sdk/i_string.h>
 #include <nx/sdk/i_string_map.h>
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
-namespace settings {
+namespace nx
+{
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
+namespace settings
+{
+
+extern const std::map<ActiveSettingsBuilder::ActiveSettingKey, ActiveSettingsBuilder::ActiveSettingHandler>
+    kActiveSettingsRules;
 
 extern const std::map<
-    ActiveSettingsBuilder::ActiveSettingKey,
-    ActiveSettingsBuilder::ActiveSettingHandler> kActiveSettingsRules;
+    /*activeSettingName*/ std::string, ActiveSettingsBuilder::ActiveSettingHandler>
+    kDefaultActiveSettingsRules;
 
-extern const std::map<
-    /*activeSettingName*/ std::string,
-    ActiveSettingsBuilder::ActiveSettingHandler> kDefaultActiveSettingsRules;
+void showAdditionalComboBox(nx::kit::Json *inOutModel, std::map<std::string, std::string> *inOutValues);
 
-void showAdditionalComboBox(
-    nx::kit::Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues);
+void hideAdditionalComboBox(nx::kit::Json *inOutModel, std::map<std::string, std::string> *inOutValues);
 
-void hideAdditionalComboBox(
-    nx::kit::Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues);
+void showAdditionalCheckBox(nx::kit::Json *inOutModel, std::map<std::string, std::string> *inOutValues);
 
-void showAdditionalCheckBox(
-    nx::kit::Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues);
+void hideAdditionalCheckBox(nx::kit::Json *inOutModel, std::map<std::string, std::string> *inOutValues);
 
-void hideAdditionalCheckBox(
-    nx::kit::Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues);
+void showAdditionalRadioButton(nx::kit::Json *inOutModel, std::map<std::string, std::string> *inOutValues);
 
-void showAdditionalRadioButton(
-    nx::kit::Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues);
+void hideAdditionalRadioButton(nx::kit::Json *inOutModel, std::map<std::string, std::string> *inOutValues);
 
-void hideAdditionalRadioButton(
-    nx::kit::Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues);
-
-void updateMinMaxSpinBoxes(
-    nx::kit::Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues);
+void updateMinMaxSpinBoxes(nx::kit::Json *inOutModel, std::map<std::string, std::string> *inOutValues);
 
 } // namespace settings
 } // namespace stub

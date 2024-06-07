@@ -3,18 +3,23 @@
 #include "active_settings_rules.h"
 #include "settings_model.h"
 
-#include <string>
 #include <algorithm>
+#include <string>
 
 #include <nx/kit/json.h>
 #include <nx/sdk/helpers/string.h>
 #include <nx/sdk/helpers/string_map.h>
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
-namespace settings {
+namespace nx
+{
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
+namespace settings
+{
 
 using namespace nx::sdk;
 using namespace nx::kit;
@@ -22,7 +27,8 @@ using namespace nx::kit;
 const std::string kAdditionalComboBoxSetting = R"json(
     {
         "type": "ComboBox",
-        "name": ")json" + kAdditionalComboBoxId + R"json(",
+        "name": ")json" + kAdditionalComboBoxId +
+                                               R"json(",
         "caption": "Additional ComboBox",
         "defaultValue": "Value 1",
         "range":
@@ -36,7 +42,8 @@ const std::string kAdditionalComboBoxSetting = R"json(
 const std::string kAdditionalCheckBoxSetting = R"json(
     {
         "type": "CheckBox",
-        "name": ")json" + kAdditionalCheckBoxId + R"json(",
+        "name": ")json" + kAdditionalCheckBoxId +
+                                               R"json(",
         "caption": "Additional CheckBox",
         "defaultValue": false
     }
@@ -46,47 +53,33 @@ const std::string kAdditionalRadioButton = "Hide me";
 
 // ------------------------------------------------------------------------------------------------
 
-const std::map<
-    ActiveSettingsBuilder::ActiveSettingKey,
-    ActiveSettingsBuilder::ActiveSettingHandler> kActiveSettingsRules =
-{
-    {{kActiveComboBoxId, kShowAdditionalComboBoxValue}, showAdditionalComboBox},
-    {{kActiveCheckBoxId, kShowAdditionalCheckBoxValue}, showAdditionalCheckBox},
-    {{kActiveRadioButtonGroupId, kShowAdditionalRadioButtonValue}, showAdditionalRadioButton},
-    {{kActiveRadioButtonGroupId, kHideAdditionalRadioButtonValue}, hideAdditionalRadioButton}
-};
+const std::map<ActiveSettingsBuilder::ActiveSettingKey, ActiveSettingsBuilder::ActiveSettingHandler>
+    kActiveSettingsRules = {{{kActiveComboBoxId, kShowAdditionalComboBoxValue}, showAdditionalComboBox},
+                            {{kActiveCheckBoxId, kShowAdditionalCheckBoxValue}, showAdditionalCheckBox},
+                            {{kActiveRadioButtonGroupId, kShowAdditionalRadioButtonValue}, showAdditionalRadioButton},
+                            {{kActiveRadioButtonGroupId, kHideAdditionalRadioButtonValue}, hideAdditionalRadioButton}};
 
 const std::map<
-    /*activeSettingName*/ std::string,
-    ActiveSettingsBuilder::ActiveSettingHandler> kDefaultActiveSettingsRules =
-{
-    {kActiveComboBoxId, hideAdditionalComboBox},
-    {kActiveCheckBoxId, hideAdditionalCheckBox},
-    {kActiveMaxValueId, updateMinMaxSpinBoxes},
-    {kActiveMinValueId, updateMinMaxSpinBoxes},
+    /*activeSettingName*/ std::string, ActiveSettingsBuilder::ActiveSettingHandler>
+    kDefaultActiveSettingsRules = {
+        {kActiveComboBoxId, hideAdditionalComboBox},
+        {kActiveCheckBoxId, hideAdditionalCheckBox},
+        {kActiveMaxValueId, updateMinMaxSpinBoxes},
+        {kActiveMinValueId, updateMinMaxSpinBoxes},
 };
 
 // ------------------------------------------------------------------------------------------------
 
-static Json::array::iterator findSetting(
-    const std::string& settingName,
-    nx::kit::Json::array* inOutSettings)
+static Json::array::iterator findSetting(const std::string &settingName, nx::kit::Json::array *inOutSettings)
 {
-    auto findByName =
-        [&](const nx::kit::Json& value)
-        {
-            return value[kName].string_value() == settingName;
-        };
+    auto findByName = [&](const nx::kit::Json &value) { return value[kName].string_value() == settingName; };
 
     return std::find_if(inOutSettings->begin(), inOutSettings->end(), findByName);
 }
 
-void showAdditionalSetting(
-    Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues,
-    const std::string activeSettingName,
-    const std::string additionalSettingTemplate,
-    const std::string additionalSettingValue)
+void showAdditionalSetting(Json *inOutModel, std::map<std::string, std::string> *inOutValues,
+                           const std::string activeSettingName, const std::string additionalSettingTemplate,
+                           const std::string additionalSettingValue)
 {
     Json::array items = inOutModel->array_items();
 
@@ -104,10 +97,8 @@ void showAdditionalSetting(
         inOutValues->emplace(newItemName, additionalSettingValue);
 }
 
-void hideAdditionalSetting(
-    Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues,
-    const std::string additionalSettingId)
+void hideAdditionalSetting(Json *inOutModel, std::map<std::string, std::string> *inOutValues,
+                           const std::string additionalSettingId)
 {
     Json::array items = inOutModel->array_items();
     const auto it = findSetting(additionalSettingId, &items);
@@ -118,11 +109,8 @@ void hideAdditionalSetting(
     inOutValues->erase(additionalSettingId);
 }
 
-void showAdditionalSettingOption(
-    Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues,
-    const std::string& activeSettingName,
-    const std::string& additionalSettingOption)
+void showAdditionalSettingOption(Json *inOutModel, std::map<std::string, std::string> *inOutValues,
+                                 const std::string &activeSettingName, const std::string &additionalSettingOption)
 {
     Json::array items = inOutModel->array_items();
 
@@ -146,12 +134,9 @@ void showAdditionalSettingOption(
         inOutValues->emplace(activeSettingName, additionalSettingOption);
 }
 
-void hideAdditionalSettingOption(
-    Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues,
-    const std::string& activeSettingName,
-    const std::string& additionalSettingValue,
-    const std::string& newAdditionalSettingValue)
+void hideAdditionalSettingOption(Json *inOutModel, std::map<std::string, std::string> *inOutValues,
+                                 const std::string &activeSettingName, const std::string &additionalSettingValue,
+                                 const std::string &newAdditionalSettingValue)
 {
     Json::array items = inOutModel->array_items();
     auto settingIt = findSetting(activeSettingName, &items);
@@ -172,64 +157,40 @@ void hideAdditionalSettingOption(
     (*inOutValues)[activeSettingName] = newAdditionalSettingValue;
 }
 
-void showAdditionalComboBox(Json* inOutModel, std::map<std::string, std::string>* inOutValues)
+void showAdditionalComboBox(Json *inOutModel, std::map<std::string, std::string> *inOutValues)
 {
-    showAdditionalSetting(
-        inOutModel,
-        inOutValues,
-        kActiveComboBoxId,
-        kAdditionalComboBoxSetting,
-        kAdditionalComboBoxValue);
+    showAdditionalSetting(inOutModel, inOutValues, kActiveComboBoxId, kAdditionalComboBoxSetting,
+                          kAdditionalComboBoxValue);
 }
 
-void hideAdditionalComboBox(Json* inOutModel, std::map<std::string, std::string>* inOutValues)
+void hideAdditionalComboBox(Json *inOutModel, std::map<std::string, std::string> *inOutValues)
 {
-    hideAdditionalSetting(
-        inOutModel,
-        inOutValues,
-        kAdditionalComboBoxId);
+    hideAdditionalSetting(inOutModel, inOutValues, kAdditionalComboBoxId);
 }
 
-void showAdditionalCheckBox(Json* inOutModel, std::map<std::string, std::string>* inOutValues)
+void showAdditionalCheckBox(Json *inOutModel, std::map<std::string, std::string> *inOutValues)
 {
-    showAdditionalSetting(
-        inOutModel,
-        inOutValues,
-        kActiveCheckBoxId,
-        kAdditionalCheckBoxSetting,
-        kAdditionalCheckBoxValue);
+    showAdditionalSetting(inOutModel, inOutValues, kActiveCheckBoxId, kAdditionalCheckBoxSetting,
+                          kAdditionalCheckBoxValue);
 }
 
-void hideAdditionalCheckBox(Json* inOutModel, std::map<std::string, std::string>* inOutValues)
+void hideAdditionalCheckBox(Json *inOutModel, std::map<std::string, std::string> *inOutValues)
 {
-    hideAdditionalSetting(
-        inOutModel,
-        inOutValues,
-        kAdditionalCheckBoxId);
+    hideAdditionalSetting(inOutModel, inOutValues, kAdditionalCheckBoxId);
 }
 
-void showAdditionalRadioButton(Json* inOutModel, std::map<std::string, std::string>* inOutValues)
+void showAdditionalRadioButton(Json *inOutModel, std::map<std::string, std::string> *inOutValues)
 {
-    showAdditionalSettingOption(
-        inOutModel,
-        inOutValues,
-        kActiveRadioButtonGroupId,
-        kAdditionalRadioButton);
+    showAdditionalSettingOption(inOutModel, inOutValues, kActiveRadioButtonGroupId, kAdditionalRadioButton);
 }
 
-void hideAdditionalRadioButton(Json* inOutModel, std::map<std::string, std::string>* inOutValues)
+void hideAdditionalRadioButton(Json *inOutModel, std::map<std::string, std::string> *inOutValues)
 {
-    hideAdditionalSettingOption(
-        inOutModel,
-        inOutValues,
-        kActiveRadioButtonGroupId,
-        kHideAdditionalRadioButtonValue,
-        kDefaultActiveRadioButtonGroupValue);
+    hideAdditionalSettingOption(inOutModel, inOutValues, kActiveRadioButtonGroupId, kHideAdditionalRadioButtonValue,
+                                kDefaultActiveRadioButtonGroupValue);
 }
 
-void updateMinMaxSpinBoxes(
-    nx::kit::Json* inOutModel,
-    std::map<std::string, std::string>* inOutValues)
+void updateMinMaxSpinBoxes(nx::kit::Json *inOutModel, std::map<std::string, std::string> *inOutValues)
 {
     Json::array items = inOutModel->array_items();
     auto minIt = findSetting(kActiveMinValueId, &items);
@@ -247,14 +208,12 @@ void updateMinMaxSpinBoxes(
     const int minValue = std::stoi(minValueStr);
     const int maxValue = std::stoi(maxValueStr);
 
-    auto setMinMax =
-        [](Json::array::iterator spinBoxIt, int min, int max)
-        {
-            Json::object spinBox = spinBoxIt->object_items();
-            spinBox[kMinValue] = min;
-            spinBox[kMaxValue] = max;
-            *spinBoxIt = Json(spinBox);
-        };
+    auto setMinMax = [](Json::array::iterator spinBoxIt, int min, int max) {
+        Json::object spinBox = spinBoxIt->object_items();
+        spinBox[kMinValue] = min;
+        spinBox[kMaxValue] = max;
+        *spinBoxIt = Json(spinBox);
+    };
 
     setMinMax(minIt, (*minIt)[kMinValue].int_value(), maxValue);
     setMinMax(maxIt, minValue, (*maxIt)[kMaxValue].int_value());

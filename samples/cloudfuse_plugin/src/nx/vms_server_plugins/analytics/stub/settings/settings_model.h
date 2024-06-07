@@ -4,11 +4,16 @@
 
 #include <string>
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
-namespace settings {
+namespace nx
+{
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
+namespace settings
+{
 
 static const std::string kCaption = "caption";
 static const std::string kSections = "sections";
@@ -46,7 +51,7 @@ static const std::string kActiveMaxValueId = "activeMaxValue";
 static const std::string kShowUrlButtonId = "showUrlButton";
 static const std::string kEnginePluginSideSetting = "testPluginSideSpinBox";
 static const std::string kEnginePluginSideSettingValue = "42";
-static const std::string kAlternativeSettingsModel = /*suppress newline*/ 1 + (const char*) R"json(")json";
+static const std::string kAlternativeSettingsModel = /*suppress newline*/ 1 + (const char *)R"json(")json";
 static const std::string kRegularSettingsModelPart1 = /*suppress newline*/ 1 + R"json()json";
 static const std::string kEnglishCitiesSettingsModelPart = /*suppress newline*/ 1 + R"json()json";
 static const std::string kGermanCitiesSettingsModelPart = /*suppress newline*/ 1 + R"json()json";
@@ -68,7 +73,8 @@ static const std::string kChangeEndpointModel = /*suppress newline*/ 1 + R"json(
     [
         {
             "type": "TextField",
-            "name": ")json" + kEndpointUrlTextFieldId + R"json(",
+            "name": ")json" + kEndpointUrlTextFieldId +
+                                                R"json(",
             "caption": "Endpoint URL",
             "description": "Set a different endpoint (different region or service)",
             "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com",
@@ -92,7 +98,8 @@ static const std::string kChangePassphraseModel = /*suppress newline*/ 1 + R"jso
     [
         {
             "type": "PasswordField",
-            "name": ")json" + kPassphrasePasswordFieldId + R"json(",
+            "name": ")json" + kPassphrasePasswordFieldId +
+                                                  R"json(",
             "caption": "Config Passphrase (base64)",
             "description": "Choose passphrase to encrypt S3 credentials in config file",
             "defaultValue": "",
@@ -116,7 +123,8 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
             [
                 {
                     "type": "TextField",
-                    "name": ")json" + kKeyIdTextFieldId + R"json(",
+                    "name": ")json" + kKeyIdTextFieldId +
+                                                R"json(",
                     "caption": "Access Key ID",
                     "description": "Cloud bucket access key ID",
                     "defaultValue": "",
@@ -126,7 +134,8 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                 },
                 {
                     "type": "PasswordField",
-                    "name": ")json" + kSecretKeyPasswordFieldId + R"json(",
+                    "name": ")json" + kSecretKeyPasswordFieldId +
+                                                R"json(",
                     "caption": "Secret Key",
                     "description": "Cloud bucket secret key",
                     "defaultValue": "",
@@ -138,22 +147,27 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
         },
         {
             "type": "GroupBox",
-            "caption": ")json" + kAdvancedSettingsGroupBoxCaption + R"json(",
+            "caption": ")json" + kAdvancedSettingsGroupBoxCaption +
+                                                R"json(",
             "items":
             [
                 {
                     "type": "Button",
-                    "name": ")json" + kChangeEndpointButtonId + R"json(",
+                    "name": ")json" + kChangeEndpointButtonId +
+                                                R"json(",
                     "caption": "Change S3 Endpoint...",
                     "isActive": true,
-                    "parametersModel": )json" + kChangeEndpointModel + R"json(
+                    "parametersModel": )json" + kChangeEndpointModel +
+                                                R"json(
                 },
                 {
                     "type": "Button",
-                    "name": ")json" + kChangeConfigPassphraseButtonId + R"json(",
+                    "name": ")json" + kChangeConfigPassphraseButtonId +
+                                                R"json(",
                     "caption": "Change Config Passphrase...",
                     "isActive": true,
-                    "parametersModel": )json" + kChangePassphraseModel + R"json(
+                    "parametersModel": )json" + kChangePassphraseModel +
+                                                R"json(
                 }
             ]
         },
