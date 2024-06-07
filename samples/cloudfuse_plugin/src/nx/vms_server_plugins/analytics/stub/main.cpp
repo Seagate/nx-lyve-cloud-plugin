@@ -4,8 +4,7 @@
 
 #include "settings/plugin.h"
 
-extern "C" NX_PLUGIN_API nx::sdk::IPlugin *createNxPlugin()
-{
+extern "C" NX_PLUGIN_API nx::sdk::IPlugin *createNxPlugin() {
     using namespace nx::vms_server_plugins::analytics::stub;
     return new settings::Plugin();
 }
