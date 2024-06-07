@@ -121,7 +121,7 @@ bool Engine::processActiveSettings(
     std::vector<std::string> activeSettingNames = settingIdsToUpdate;
     if (activeSettingNames.empty())
     {
-        for (const auto item : activeSettingsItems.array_items())
+        for (const auto &item : activeSettingsItems.array_items())
         {
             if (item["type"].string_value() == "Button")
                 continue;
@@ -158,6 +158,7 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     std::string secretKey = values[kSecretKeyPasswordFieldId];
     std::string endpointUrl = "https://s3.us-east-1.lyvecloud.seagate.com";
     std::string endpointRegion = "us-east-1";
+    std::string bucketName = ""; // Using empty string to cause cloudfuse to select first available bucket
     std::string mountDir = cfManager.getMountDir();
     std::string fileCacheDir = cfManager.getFileCacheDir();
     std::string passphrase = "";
@@ -237,9 +238,9 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     }
 
     #if defined(__linux__)
-    processReturn dryGenConfig = cfManager.genS3Config(endpointRegion, endpointUrl, "stxe1-srg-lens-lab1", passphrase);
+    processReturn dryGenConfig = cfManager.genS3Config(endpointRegion, endpointUrl, bucketName, passphrase);
     #elif defined(_WIN32)
-    processReturn dryGenConfig = cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, "stxe1-srg-lens-lab1", passphrase);
+    processReturn dryGenConfig = cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, bucketName, passphrase);
     #endif
 
     if (dryGenConfig.errCode != 0) {
