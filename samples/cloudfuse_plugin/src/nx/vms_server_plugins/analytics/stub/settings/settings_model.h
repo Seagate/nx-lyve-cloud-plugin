@@ -72,7 +72,7 @@ static const std::string kChangeEndpointModel = /*suppress newline*/ 1 + R"json(
             "caption": "Endpoint URL",
             "description": "Set a different endpoint (different region or service)",
             "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com",
-            "validationErrorMessage": "Endpoint must begin with 'http[s]://'",
+            "validationErrorMessage": "Endpoint must be a URL (begin with 'http[s]://').",
             "validationRegex": "^https?://.+$",
             "validationRegexFlags": "i"
         },
@@ -93,9 +93,11 @@ static const std::string kChangePassphraseModel = /*suppress newline*/ 1 + R"jso
         {
             "type": "PasswordField",
             "name": ")json" + kPassphrasePasswordFieldId + R"json(",
-            "caption": "Config Passphrase",
+            "caption": "Config Passphrase (base64)",
             "description": "Choose passphrase to encrypt S3 credentials in config file",
-            "defaultValue": ""
+            "defaultValue": "",
+            "validationErrorMessage": "The base64-encoded config passphrase should be 24, 32, or 44 characters in length (16, 24, or 32 bytes).",
+            "validationRegex": "^[A-Za-z0-9+/]*={0,3}$"
         }
     ]
 }
@@ -118,9 +120,8 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                     "caption": "Access Key ID",
                     "description": "Cloud bucket access key ID",
                     "defaultValue": "",
-                    "validationErrorMessage": "Access key ID must be 20 alphanumeric characters",
-                    "validationRegex": "^[A-Z2-7]{16,2048}$",
-                    "validationRegexFlags": "i",
+                    "validationErrorMessage": "Access key ID must be >=16 alphanumeric characters (uppercase or 2-7).",
+                    "validationRegex": "^[A-Z2-7]{16,128}$",
                     "isActive": true
                 },
                 {
@@ -129,9 +130,8 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                     "caption": "Secret Key",
                     "description": "Cloud bucket secret key",
                     "defaultValue": "",
-                    "validationErrorMessage": "Secret key must be 40 alphanumeric-plus-slash characters",
-                    "validationRegex": "^[A-Z0-9\\+\\\/]{40}$",
-                    "validationRegexFlags": "i",
+                    "validationErrorMessage": "Secret key must be 32 or 40 alphanumeric-plus-slash characters",
+                    "validationRegex": "^[A-Za-z0-9/+=]{32,40}$",
                     "isActive": true
                 }
             ]
