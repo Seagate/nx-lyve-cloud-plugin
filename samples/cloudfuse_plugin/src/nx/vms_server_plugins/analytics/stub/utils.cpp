@@ -77,7 +77,7 @@ std::string join(
     const std::string& itemPostfix)
 {
     std::string result;
-    for (int i = 0; i < strings.size(); ++i)
+    for (size_t i = 0; i < strings.size(); ++i)
     {
         result += itemPrefix + strings[i] + itemPostfix;
         if (i != strings.size() - 1)

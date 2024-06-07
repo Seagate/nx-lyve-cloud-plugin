@@ -121,7 +121,7 @@ bool Engine::processActiveSettings(
     std::vector<std::string> activeSettingNames = settingIdsToUpdate;
     if (activeSettingNames.empty())
     {
-        for (const auto item : activeSettingsItems.array_items())
+        for (const auto &item : activeSettingsItems.array_items())
         {
             if (item["type"].string_value() == "Button")
                 continue;

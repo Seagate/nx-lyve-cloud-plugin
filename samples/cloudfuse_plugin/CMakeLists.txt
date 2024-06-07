@@ -65,6 +65,7 @@ target_include_directories(nx_sdk PUBLIC ${SDK_SRC_DIR})
 target_link_libraries(nx_sdk PRIVATE nx_kit)
 
 target_compile_definitions(nx_sdk PRIVATE NX_PLUGIN_API=${API_EXPORT_MACRO}) #< for nxLibContext()
+target_compile_features(nx_sdk PRIVATE cxx_std_17)
 
 #--------------------------------------------------------------------------------------------------
 # Define cloudfuse_plugin lib, dynamic, depends on nx_kit and nx_sdk.
@@ -80,9 +81,15 @@ target_compile_definitions(cloudfuse_plugin
     PRIVATE NX_PLUGIN_API=${API_EXPORT_MACRO}
 )
 
-target_compile_features(cloudfuse_plugin PUBLIC cxx_std_17)
-set_target_properties(cloudfuse_plugin PROPERTIES CXX_EXTENSIONS OFF)
-set_target_properties(cloudfuse_plugin PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+target_compile_features(cloudfuse_plugin PRIVATE cxx_std_17)
+set_target_properties(cloudfuse_plugin PROPERTIES 
+    CXX_EXTENSIONS OFF
+    NTERPROCEDURAL_OPTIMIZATION TRUE
+)
+target_compile_options(cloudfuse_plugin PRIVATE
+    -Wall -Wformat -Wformat=2 -Wconversion -Wimplicit-fallthrough
+    -Werror=format-security
+)
 
 if(NOT WIN32)
     target_link_libraries(cloudfuse_plugin PRIVATE pthread)
