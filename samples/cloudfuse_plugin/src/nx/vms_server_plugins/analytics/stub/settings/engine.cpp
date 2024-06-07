@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
+#include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <string.h>
 
