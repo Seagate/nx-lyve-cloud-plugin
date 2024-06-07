@@ -46,6 +46,7 @@ jobs:
     - name: Build using CMake
       run: >
         ./build_samples.sh
+        --no-tests
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         --no-tests
