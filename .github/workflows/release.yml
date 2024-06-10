@@ -1,0 +1,71 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        #os: [windows-latest, ubuntu-latest]
+        include:
+          - os: ubuntu-22.04
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: ubuntu-20.04
+            c_compiler: gcc
+            cpp_compiler: g++
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run build script
+      run: >
+        ./build_samples.sh
+        --no-tests
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+
+    - name: Package Artifacts Linux
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      run: |
+        mkdir release
+        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so release/cloudfuse_plugin.so
+        cp ./setup_fuse_allow_other.sh release/
+        zip -r plugin-${{ matrix.os }}.zip release
+
+    - name: Package Artifacts Windows
+      if: ${{ Contains(matrix.os, 'windows') }}
+      run: |
+        mkdir release
+        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.dll release/cloudfuse_plugin.dll
+        cp ./setup_fuse_allow_other.sh release/
+        zip -r plugin-${{ matrix.os }}.zip release
+
+    - name: Archive production artifacts Ubuntu
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.os }}
+        path: ./plugin-${{ matrix.os }}.zip
+        if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          nx-lyve-plugin-ubuntu-22-04.zip
+          nx-lyve-plugin-ubuntu-20-04.zip
