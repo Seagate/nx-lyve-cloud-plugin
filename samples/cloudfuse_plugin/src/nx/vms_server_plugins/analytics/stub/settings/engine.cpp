@@ -26,32 +26,33 @@
 
 namespace fs = std::filesystem;
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
-namespace settings {
+namespace nx
+{
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
+namespace settings
+{
 
 using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
 
-Engine::Engine(Plugin* plugin):
-    nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()),
-    m_plugin(plugin),
-    cfManager()
+Engine::Engine(Plugin *plugin)
+    : nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()), m_plugin(plugin), cfManager()
 {
     NX_PRINT << "cloudfuse Engine::Engine" << std::endl;
-    for (const auto& entry: kActiveSettingsRules)
+    for (const auto &entry : kActiveSettingsRules)
     {
         const ActiveSettingsBuilder::ActiveSettingKey key = entry.first;
-        m_activeSettingsBuilder.addRule(
-            key.activeSettingName,
-            key.activeSettingValue,
-            /*activeSettingHandler*/ entry.second);
+        m_activeSettingsBuilder.addRule(key.activeSettingName, key.activeSettingValue,
+                                        /*activeSettingHandler*/ entry.second);
     }
 
-    for (const auto& entry: kDefaultActiveSettingsRules)
+    for (const auto &entry : kDefaultActiveSettingsRules)
     {
         m_activeSettingsBuilder.addDefaultRule(
             /*activeSettingName*/ entry.first,
@@ -63,7 +64,7 @@ Engine::~Engine()
 {
 }
 
-void Engine::doObtainDeviceAgent(Result<IDeviceAgent*>* outResult, const IDeviceInfo* deviceInfo)
+void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDeviceInfo *deviceInfo)
 {
     NX_PRINT << "cloudfuse Engine::doObtainDeviceAgent" << std::endl;
     *outResult = new DeviceAgent(this, deviceInfo);
@@ -86,32 +87,28 @@ static std::string buildCapabilities()
 std::string Engine::manifestString() const
 {
     NX_PRINT << "cloudfuse Engine::manifestString" << std::endl;
-    std::string result = /*suppress newline*/ 1 + (const char*) R"json(
+    std::string result = /*suppress newline*/ 1 + (const char *)R"json(
 {
-    "capabilities": ")json" + buildCapabilities() + R"json(",
+    "capabilities": ")json" +
+                         buildCapabilities() + R"json(",
     "deviceAgentSettingsModel":
-)json"
-        + kEngineSettingsModel
-        + R"json(
+)json" + kEngineSettingsModel +
+                         R"json(
 }
 )json";
 
     return result;
 }
 
-bool Engine::processActiveSettings(
-    Json::object* model,
-    std::map<std::string, std::string>* values,
-    const std::vector<std::string>& settingIdsToUpdate) const
+bool Engine::processActiveSettings(Json::object *model, std::map<std::string, std::string> *values,
+                                   const std::vector<std::string> &settingIdsToUpdate) const
 {
     NX_PRINT << "cloudfuse Engine::processActiveSettings" << std::endl;
     Json::array items = (*model)[kItems].array_items();
 
-    auto activeSettingsGroupBoxIt = std::find_if(items.begin(), items.end(),
-        [](Json& item)
-        {
-            return item[kCaption].string_value() == kAdvancedSettingsGroupBoxCaption;
-        });
+    auto activeSettingsGroupBoxIt = std::find_if(items.begin(), items.end(), [](Json &item) {
+        return item[kCaption].string_value() == kAdvancedSettingsGroupBoxCaption;
+    });
 
     if (activeSettingsGroupBoxIt == items.cend())
         return false;
@@ -131,7 +128,7 @@ bool Engine::processActiveSettings(
         }
     }
 
-    for (const auto& settingId: activeSettingNames)
+    for (const auto &settingId : activeSettingNames)
         m_activeSettingsBuilder.updateSettings(settingId, &activeSettingsItems, values);
 
     Json::array updatedActiveSettingsItems = activeSettingsItems.array_items();
@@ -143,14 +140,15 @@ bool Engine::processActiveSettings(
     return true;
 }
 
-Result<const ISettingsResponse*> Engine::settingsReceived()
+Result<const ISettingsResponse *> Engine::settingsReceived()
 {
     NX_PRINT << "cloudfuse Engine::settingsReceived" << std::endl;
     std::string parseError;
     Json::object model = Json::parse(kEngineSettingsModel, parseError).object_items();
 
     std::map<std::string, std::string> values = currentSettings();
-    for (std::map<std::string, std::string>::iterator it = values.begin(); it != values.end(); it++) {
+    for (std::map<std::string, std::string>::iterator it = values.begin(); it != values.end(); it++)
+    {
         NX_PRINT << it->first << ":" << it->second << std::endl;
         NX_OUTPUT << it->first << ":" << it->second << std::endl;
     }
@@ -163,9 +161,11 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     std::string fileCacheDir = cfManager.getFileCacheDir();
     std::string passphrase = "";
     // Generate passphrase if user did not provide one
-    if (passphrase == "") {
+    if (passphrase == "")
+    {
         unsigned char key[32]; // AES-256 key
-        if (RAND_bytes(key, sizeof(key))) {
+        if (RAND_bytes(key, sizeof(key)))
+        {
             // Need to encode passphrase to base64 to pass to cloudfuse
             BIO *bmem, *b64;
             BUF_MEM *bptr;
@@ -177,9 +177,11 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
             BIO_write(b64, key, 32);
             BIO_flush(b64);
             BIO_get_mem_ptr(b64, &bptr);
-            
+
             passphrase = std::string(bptr->data, bptr->length);
-        } else {
+        }
+        else
+        {
             return error(ErrorCode::internalError, "OpenSSL Error: Unable to generate secure passphrase");
         }
     }
@@ -187,92 +189,117 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     std::error_code errCode;
 
     // Create mount directory if it does not exist
-    if (fs::exists(mountDir)) {
+    if (fs::exists(mountDir))
+    {
         // Unmmount before mounting
         cfManager.unmount();
-    
-        #if defined(__linux__)
+
+#if defined(__linux__)
         // On Linux we need to check the folder has the correct permissions
         fs::file_status s = fs::status(mountDir);
-        if ((s.permissions() & fs::perms::all) != fs::perms::all) {
+        if ((s.permissions() & fs::perms::all) != fs::perms::all)
+        {
             fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
-            if (errCode) {
-                return error(ErrorCode::internalError, "Unable to set mount directory permission with error: " + errCode.message());
+            if (errCode)
+            {
+                return error(ErrorCode::internalError,
+                             "Unable to set mount directory permission with error: " + errCode.message());
             }
         }
-        #endif
-    } else {
-        #if defined(__linux__)
+#endif
+    }
+    else
+    {
+#if defined(__linux__)
         // On Linux we need to create the folder if it does not yet exist
-        if (!fs::create_directory(mountDir, errCode)) {
+        if (!fs::create_directory(mountDir, errCode))
+        {
             return error(ErrorCode::internalError, "Unable to create mount directory with error: " + errCode.message());
         }
         fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
-        if (errCode) {
-            return error(ErrorCode::internalError, "Unable to set mount directory permissions with error: " + errCode.message());
+        if (errCode)
+        {
+            return error(ErrorCode::internalError,
+                         "Unable to set mount directory permissions with error: " + errCode.message());
         }
-        #endif
+#endif
     }
 
     // Create file cache if it does not exist
-    if (fs::exists(fileCacheDir)) {
+    if (fs::exists(fileCacheDir))
+    {
         fs::file_status s = fs::status(fileCacheDir);
-        if ((s.permissions() & fs::perms::all) != fs::perms::all) {
+        if ((s.permissions() & fs::perms::all) != fs::perms::all)
+        {
             fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
-            if (errCode) {
-                return error(ErrorCode::internalError, "Unable to set mount directory permission with error: " + errCode.message());
+            if (errCode)
+            {
+                return error(ErrorCode::internalError,
+                             "Unable to set mount directory permission with error: " + errCode.message());
             }
         }
-    } else {
-        if (!fs::create_directory(fileCacheDir, errCode)) {
-            return error(ErrorCode::internalError, "Unable to create file cache directory with error: " + errCode.message());
+    }
+    else
+    {
+        if (!fs::create_directory(fileCacheDir, errCode))
+        {
+            return error(ErrorCode::internalError,
+                         "Unable to create file cache directory with error: " + errCode.message());
         }
         fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
-        if (errCode) {
-            return error(ErrorCode::internalError, "Unable to set file cache directory permissions with error: " + errCode.message());
+        if (errCode)
+        {
+            return error(ErrorCode::internalError,
+                         "Unable to set file cache directory permissions with error: " + errCode.message());
         }
     }
 
-    if (!cfManager.isInstalled()) {
+    if (!cfManager.isInstalled())
+    {
         return error(ErrorCode::internalError, "Cloudfuse is not installed");
     }
 
-    #if defined(__linux__)
+#if defined(__linux__)
     processReturn dryGenConfig = cfManager.genS3Config(endpointRegion, endpointUrl, bucketName, passphrase);
-    #elif defined(_WIN32)
-    processReturn dryGenConfig = cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, bucketName, passphrase);
-    #endif
+#elif defined(_WIN32)
+    processReturn dryGenConfig =
+        cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, bucketName, passphrase);
+#endif
 
-    if (dryGenConfig.errCode != 0) {
+    if (dryGenConfig.errCode != 0)
+    {
         return error(ErrorCode::internalError, "Unable to generate config file with error: " + dryGenConfig.output);
     }
 
-    #if defined(__linux__)
+#if defined(__linux__)
     processReturn dryRunRet = cfManager.dryRun(keyId, secretKey, passphrase);
-    #elif defined(_WIN32)
+#elif defined(_WIN32)
     processReturn dryRunRet = cfManager.dryRun(passphrase);
-    #endif
+#endif
 
-    if (dryRunRet.errCode != 0) {
+    if (dryRunRet.errCode != 0)
+    {
         return error(ErrorCode::internalError, "Unable to dryrun with error: " + dryRunRet.output);
     }
 
-    #if defined(__linux__)
+#if defined(__linux__)
     processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
-    #elif defined(_WIN32)
+#elif defined(_WIN32)
     processReturn mountRet = cfManager.mount(passphrase);
-    #endif
+#endif
 
-    if (mountRet.errCode != 0) {
+    if (mountRet.errCode != 0)
+    {
         return error(ErrorCode::internalError, "Unable to launch mount with error: " + mountRet.output);
     }
 
-    // On Windows, mount does not show up immediately, so need to wait
-    #ifdef _WIN32
+// On Windows, mount does not show up immediately, so need to wait
+#ifdef _WIN32
     Sleep(2000);
-    #endif
+#endif
 
-    if (!cfManager.isMounted()) {
+    if (!cfManager.isMounted())
+    {
         return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
     }
 
@@ -286,7 +313,7 @@ Result<const ISettingsResponse*> Engine::settingsReceived()
     return settingsResponse;
 }
 
-void Engine::getPluginSideSettings(Result<const ISettingsResponse*>* outResult) const
+void Engine::getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const
 {
     NX_PRINT << "cloudfuse Engine::getPluginSideSettings" << std::endl;
     auto settingsResponse = new SettingsResponse();
@@ -295,24 +322,20 @@ void Engine::getPluginSideSettings(Result<const ISettingsResponse*>* outResult) 
     *outResult = settingsResponse;
 }
 
-void Engine::doGetSettingsOnActiveSettingChange(
-    Result<const IActiveSettingChangedResponse*>* outResult,
-    const IActiveSettingChangedAction* activeSettingChangedAction)
+void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChangedResponse *> *outResult,
+                                                const IActiveSettingChangedAction *activeSettingChangedAction)
 {
     NX_PRINT << "cloudfuse Engine::doGetSettingsOnActiveSettingChange" << std::endl;
     std::string parseError;
-    Json::object model = Json::parse(
-        activeSettingChangedAction->settingsModel(), parseError).object_items();
+    Json::object model = Json::parse(activeSettingChangedAction->settingsModel(), parseError).object_items();
 
     const std::string settingId(activeSettingChangedAction->activeSettingName());
 
-    std::map<std::string, std::string> values = toStdMap(shareToPtr(
-        activeSettingChangedAction->settingsValues()));
+    std::map<std::string, std::string> values = toStdMap(shareToPtr(activeSettingChangedAction->settingsValues()));
 
     if (!processActiveSettings(&model, &values, {settingId}))
     {
-        *outResult =
-            error(ErrorCode::internalError, "Unable to process the active settings section");
+        *outResult = error(ErrorCode::internalError, "Unable to process the active settings section");
 
         return;
     }

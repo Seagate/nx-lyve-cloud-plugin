@@ -8,15 +8,19 @@
 #include <nx/sdk/i_string_map.h>
 #include <nx/sdk/ptr.h>
 
-namespace nx {
-namespace vms_server_plugins {
-namespace analytics {
-namespace stub {
-namespace settings {
+namespace nx
+{
+namespace vms_server_plugins
+{
+namespace analytics
+{
+namespace stub
+{
+namespace settings
+{
 
-nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(
-	const std::string& settingId,
-	nx::sdk::Ptr<const nx::sdk::IStringMap> params);
+nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(const std::string &settingId,
+                                                             nx::sdk::Ptr<const nx::sdk::IStringMap> params);
 
 } // namespace settings
 } // namespace stub
