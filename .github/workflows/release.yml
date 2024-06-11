@@ -65,10 +65,12 @@ jobs:
     - name: Debug Listing
       run: |
         ls -lhrt
+        ls ./build-ubuntu-20.04/ -lhrt
+        ls ./build-ubuntu-22.04/ -lhrt
 
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          build-ubuntu-22.04/nx-lyve-plugin-ubuntu-22-04.zip
-          build-ubuntu-22.04/nx-lyve-plugin-ubuntu-20-04.zip
+          build-ubuntu-20.04/*
+          build-ubuntu-22.04/*
