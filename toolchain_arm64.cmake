@@ -1,3 +1,4 @@
+## Copyright © 2024 Seagate Technology LLC and/or its Affiliates
 ## Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
 set(CMAKE_C_COMPILER "/usr/bin/aarch64-linux-gnu-gcc")
