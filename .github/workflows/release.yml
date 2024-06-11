@@ -10,7 +10,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        #os: [windows-latest, ubuntu-latest]
         include:
           - os: ubuntu-22.04
             c_compiler: gcc
@@ -42,7 +41,6 @@ jobs:
       run: |
         mkdir release
         mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.dll release/cloudfuse_plugin.dll
-        cp ./setup_fuse_allow_other.sh release/
         zip -r nx-lyve-plugin-${{ matrix.os }}.zip release
 
     - name: Archive production artifacts Ubuntu
@@ -61,12 +59,6 @@ jobs:
 
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v4
-
-    - name: Debug Listing
-      run: |
-        ls -lhrt
-        ls ./build-ubuntu-20.04/ -lhrt
-        ls ./build-ubuntu-22.04/ -lhrt
 
     - name: Release
       uses: softprops/action-gh-release@v2
