@@ -48,7 +48,7 @@ jobs:
     - name: Archive production artifacts Ubuntu
       uses: actions/upload-artifact@v4
       with:
-        name: nx-lyve-plugin-${{ matrix.os }}.zip
+        name: build-${{ matrix.os }}
         path: ./nx-lyve-plugin-${{ matrix.os }}.zip
         if-no-files-found: error
 
@@ -64,8 +64,7 @@ jobs:
 
     - name: Release
       uses: softprops/action-gh-release@v2
-      if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          /home/runner/work/nx-lyve-cloud-plugin/nx-lyve-cloud-plugin/nx-lyve-plugin-ubuntu-22-04.zip
-          /home/runner/work/nx-lyve-cloud-plugin/nx-lyve-cloud-plugin/nx-lyve-plugin-ubuntu-20-04.zip
+          build-ubuntu-22.04/nx-lyve-plugin-ubuntu-22-04.zip
+          build-ubuntu-22.04/nx-lyve-plugin-ubuntu-20-04.zip
