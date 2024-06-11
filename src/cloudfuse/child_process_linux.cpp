@@ -1,6 +1,7 @@
 #if defined(__linux__)
 #include "child_process.h"
 #include <fstream>
+#include <unistd.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 
