@@ -62,6 +62,10 @@ jobs:
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v4
 
+    - name: Debug Listing
+      run: |
+        ls -lhrt
+
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
