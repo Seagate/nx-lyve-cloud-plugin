@@ -1,0 +1,19 @@
+name: Linting with Clang-format
+
+on:
+  push:
+    branches: [ "main", "add-lint-github-action" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  code-format:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Run clang-format
+      run: |
+        find ./samples/cloudfuse_plugin/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
+        find ./samples/unit_tests/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
