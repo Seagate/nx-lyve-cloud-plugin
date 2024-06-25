@@ -42,11 +42,32 @@ const std::string kAdditionalComboBoxSetting = R"json(
 
 const std::string kAdditionalCheckBoxSetting = R"json(
     {
-        "type": "CheckBox",
-        "name": ")json" + kAdditionalCheckBoxId +
-                                               R"json(",
-        "caption": "Additional CheckBox",
-        "defaultValue": false
+        "type": "GroupBox",
+        "caption": "Advanced Settings",
+        "items":
+        [
+            {
+                "type": "TextField",
+                "name": ")json" + kEndpointUrlTextFieldId +
+                                                    R"json(",
+                "caption": "Endpoint URL",
+                "description": "Set a different endpoint (different region or service)",
+                "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com",
+                "validationErrorMessage": "Endpoint must be a URL (begin with 'http[s]://').",
+                "validationRegex": "^https?://.+$",
+                "validationRegexFlags": "i"
+            },
+            {
+                "type": "TextField",
+                "name": ")json" + kBucketNameTextFieldId +
+                                                    R"json(",
+                "caption": "Bucket Name",
+                "description": "Specify a bucket name (leave empty to let the system automatically detect your bucket)",
+                "defaultValue": "",
+                "validationErrorMessage": "Bucket name can only contain lowercase letters, numbers, dashes, and dots.",
+                "validationRegex": "^[-.a-z0-9]*$"
+            }
+        ]
     }
 )json";
 
