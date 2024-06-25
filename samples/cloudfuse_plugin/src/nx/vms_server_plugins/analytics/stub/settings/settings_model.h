@@ -119,15 +119,11 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                     "validationRegexFlags": "i"
                 },
                 {
-                    "type": "Banner",
-                    "text": "e.g. https://s3.us-east-1.lyvecloud.seagate.com"
-                },
-                {
                     "type": "TextField",
                     "name": ")json" + kBucketNameTextFieldId +
                                                         R"json(",
                     "caption": "Bucket Name",
-                    "description": "Specify a bucket name (the first listed bucket is used by default)",
+                    "description": "Specify a bucket name (leave empty to let the system automatically detect your bucket)",
                     "defaultValue": "",
                     "validationErrorMessage": "Bucket name can only contain lowercase letters, numbers, dashes, and dots.",
                     "validationRegex": "^[-.a-z0-9]*$"
