@@ -10,6 +10,9 @@
 #undef UNICODE
 #endif
 
+#include <filesystem>
+namespace fs = std::filesystem;
+
 #include <codecvt>
 #include <fstream>
 #include <locale>
@@ -63,10 +66,24 @@ CloudfuseMngr::CloudfuseMngr()
     {
         appdataEnv = appdataString;
     }
+    // char *appdata;
+    // size_t len;
+    // errno_t err = _dupenv_s(&appdata, &len, "APPDATA");
+    // if (appdata == nullptr) {
+    //     appdataEnv = "";
+    // } else {
+    //     appdataEnv = std::string(appdata, len);
+    // }
+
+    fs::path appda(appdataEnv);
+    fs::path fileCacheDirPath = appda / fs::path("Cloudfuse\\cloudfuse_cache");
+    fs::path configFilePath = appda / fs::path("Cloudfuse\\nx_plugin_config.aes");
+    fs::path templateFilePath = appda / fs::path("Cloudfuse\\nx_plugin_config.yaml");
+
     mountDir = "Z:";
-    fileCacheDir = appdataEnv + "\\.cloudfuse\\cloudfuse_cache";
-    configFile = appdataEnv + "\\.cloudfuse\\nx_plugin_config.aes";
-    templateFile = appdataEnv + "\\.cloudfuse\\nx_plugin_config.yaml";
+    fileCacheDir = fileCacheDirPath.generic_string();
+    configFile = configFilePath.generic_string();
+    templateFile = templateFilePath.generic_string();
 
     std::ifstream in(templateFile.c_str());
     if (!in.good())

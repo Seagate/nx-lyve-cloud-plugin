@@ -69,7 +69,7 @@ goto :exit
         mkdir "%SAMPLE_BUILD_DIR%" || @exit /b
         cd "%SAMPLE_BUILD_DIR%" || @exit /b
 
-        cmake "%SOURCE_DIR%" -Ax64 %1 %2 %3 %4 %5 %6 %7 %8 %9 || @exit /b
+        cmake "%SOURCE_DIR%" -G "Visual Studio 17 2022" -Ax64 %1 %2 %3 %4 %5 %6 %7 %8 %9 || @exit /b
         cmake --build . %BUILD_OPTIONS% || @exit /b
     @echo off
 
