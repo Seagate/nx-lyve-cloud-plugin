@@ -35,6 +35,7 @@ static const std::string kEnglishOption = "English";
 static const std::string kGermanOption = "German";
 static const std::string kActiveSettingsSectionCaption = "Active settings section";
 static const std::string kAdvancedSettingsGroupBoxCaption = "Advanced Settings";
+static const std::string kAdvancedSettingsGroupBoxId = "Hidden settings";
 static const std::string kActiveComboBoxId = "activeComboBox";
 static const std::string kAdditionalComboBoxId = "additionalComboBox";
 static const std::string kShowAdditionalComboBoxValue = "Show additional ComboBox";

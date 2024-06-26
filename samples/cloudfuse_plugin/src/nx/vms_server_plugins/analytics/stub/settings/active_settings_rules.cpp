@@ -43,6 +43,8 @@ const std::string kAdditionalComboBoxSetting = R"json(
 const std::string kAdditionalCheckBoxSetting = R"json(
     {
         "type": "GroupBox",
+        "name": ")json" + kAdvancedSettingsGroupBoxId +
+                                                    R"json(",
         "caption": "Advanced Settings",
         "items":
         [
@@ -198,7 +200,7 @@ void showAdditionalCheckBox(Json *inOutModel, std::map<std::string, std::string>
 
 void hideAdditionalCheckBox(Json *inOutModel, std::map<std::string, std::string> *inOutValues)
 {
-    hideAdditionalSetting(inOutModel, inOutValues, kAdditionalCheckBoxId);
+    hideAdditionalSetting(inOutModel, inOutValues, kAdvancedSettingsGroupBoxId);
 }
 
 void showAdditionalRadioButton(Json *inOutModel, std::map<std::string, std::string> *inOutValues)
