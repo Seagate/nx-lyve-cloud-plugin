@@ -157,8 +157,8 @@ processReturn CloudfuseMngr::genS3Config(std::string region, std::string endpoin
                           const_cast<char *>(passphraseArg.c_str()),
                           NULL};
 
-    std::string bucketNameEnv = "AWS_BUCKET_NAME=" + bucketName;
-    std::string endpointEnv = "AWS_ENDPOINT=" + endpoint;
+    std::string bucketNameEnv = "BUCKET_NAME=" + bucketName;
+    std::string endpointEnv = "ENDPOINT=" + endpoint;
     std::string regionEnv = "AWS_REGION=" + region;
     char *const envp[] = {const_cast<char *>(bucketNameEnv.c_str()), const_cast<char *>(endpointEnv.c_str()),
                           const_cast<char *>(regionEnv.c_str()), NULL};
