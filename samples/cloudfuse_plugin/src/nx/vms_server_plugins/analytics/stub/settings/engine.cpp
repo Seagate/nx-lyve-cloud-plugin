@@ -17,6 +17,8 @@
 #include "settings_model.h"
 #include "stub_analytics_plugin_settings_ini.h"
 
+#include "cloudfuse_helper.h"
+
 #define NX_PRINT_PREFIX (this->logUtils.printPrefix)
 #include <nx/kit/debug.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
@@ -283,7 +285,44 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 
     if (dryRunRet.errCode != 0)
     {
-        return error(ErrorCode::internalError, "Unable to dryrun with error: " + dryRunRet.output);
+        if (dryRunRet.output.find("Bucket Error") != std::string::npos)
+        {
+            Engine::pushPluginDiagnosticEvent(sdk::IPluginDiagnosticEvent::Level::error, "Plugin Bucket Error",
+                                              "Error with provided cloud bucket: " +
+                                                  parseCloudfuseError(dryRunRet.output));
+            return error(ErrorCode::otherError,
+                         "Unable to authenticate with bucket: " + parseCloudfuseError(dryRunRet.output));
+        }
+        if (dryRunRet.output.find("Credential or Endpoint Error") != std::string::npos)
+        {
+            Engine::pushPluginDiagnosticEvent(
+                sdk::IPluginDiagnosticEvent::Level::error, "Plugin Credential or Endpoint Error",
+                "Error with cloud credentials or incorrect endpoint: " + parseCloudfuseError(dryRunRet.output));
+            return error(ErrorCode::otherError, "Error with cloud credentials or incorrect endpoint: " +
+                                                    parseCloudfuseError(dryRunRet.output));
+        }
+        if (dryRunRet.output.find("Endpoint Error") != std::string::npos)
+        {
+            Engine::pushPluginDiagnosticEvent(sdk::IPluginDiagnosticEvent::Level::error, "Plugin Endpoint Error",
+                                              "Error with provided endpoint: " + parseCloudfuseError(dryRunRet.output));
+            return error(ErrorCode::otherError,
+                         "Error with provided endpoint: " + parseCloudfuseError(dryRunRet.output));
+        }
+        if (dryRunRet.output.find("Secret Error") != std::string::npos)
+        {
+            Engine::pushPluginDiagnosticEvent(sdk::IPluginDiagnosticEvent::Level::error, "Plugin Secret Error",
+                                              "Secret key provided is incorrect: " +
+                                                  parseCloudfuseError(dryRunRet.output));
+            return error(ErrorCode::otherError,
+                         "Secret key provided is incorrect: " + parseCloudfuseError(dryRunRet.output));
+        }
+
+        // Otherwise this is an error we did not prepare for
+        Engine::pushPluginDiagnosticEvent(sdk::IPluginDiagnosticEvent::Level::error, "Plugin Error",
+                                          "Unable to validate credentials with error: " +
+                                              parseCloudfuseError(dryRunRet.output));
+        return error(ErrorCode::otherError,
+                     "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output));
     }
 
 #if defined(__linux__)
