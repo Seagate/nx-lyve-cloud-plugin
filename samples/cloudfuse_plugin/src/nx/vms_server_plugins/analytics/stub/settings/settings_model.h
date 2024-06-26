@@ -110,7 +110,7 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                 {
                     "type": "TextField",
                     "name": ")json" + kEndpointUrlTextFieldId +
-                                                        R"json(",
+                                                R"json(",
                     "caption": "Endpoint URL",
                     "description": "Set a different endpoint (different region or service)",
                     "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com",
@@ -121,7 +121,7 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                 {
                     "type": "TextField",
                     "name": ")json" + kBucketNameTextFieldId +
-                                                        R"json(",
+                                                R"json(",
                     "caption": "Bucket Name",
                     "description": "Specify a bucket name (leave empty to let the system automatically detect your bucket)",
                     "defaultValue": "",
