@@ -110,7 +110,8 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
             [
                 {
                     "type": "CheckBox",
-                    "name": ")json" + kActiveCheckBoxId + R"json(",
+                    "name": ")json" + kActiveCheckBoxId +
+                                                R"json(",
                     "caption": "Show Advanced Settings",
                     "defaultValue": false,
                     "isActive": true

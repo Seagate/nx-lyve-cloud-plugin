@@ -44,14 +44,14 @@ const std::string kAdditionalCheckBoxSetting = R"json(
     {
         "type": "GroupBox",
         "name": ")json" + kAdvancedSettingsGroupBoxId +
-                                                    R"json(",
+                                               R"json(",
         "caption": "Advanced Settings",
         "items":
         [
             {
                 "type": "TextField",
                 "name": ")json" + kEndpointUrlTextFieldId +
-                                                    R"json(",
+                                               R"json(",
                 "caption": "Endpoint URL",
                 "description": "Set a different endpoint (different region or service)",
                 "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com",
@@ -62,7 +62,7 @@ const std::string kAdditionalCheckBoxSetting = R"json(
             {
                 "type": "TextField",
                 "name": ")json" + kBucketNameTextFieldId +
-                                                    R"json(",
+                                               R"json(",
                 "caption": "Bucket Name",
                 "description": "Specify a bucket name (leave empty to let the system automatically detect your bucket)",
                 "defaultValue": "",
