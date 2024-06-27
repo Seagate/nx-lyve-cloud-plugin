@@ -61,6 +61,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
 
     - name: Build using CMake on Windows
+      shell: powershell
       if: ${{ matrix.os == 'windows-latest' }}
       run: >
         ./build_samples.bat
