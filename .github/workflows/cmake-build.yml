@@ -4,7 +4,7 @@ name: CMake on multiple platforms
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "fix-windows" ]
   pull_request:
     branches: [ "main" ]
 
@@ -45,13 +45,26 @@ jobs:
           - os: ubuntu-20.04
             c_compiler: clang
             cpp_compiler: clang++
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
   
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build using CMake
+    - name: Build using CMake on Linux
+      if: ${{ ! matrix.os == 'windows-latest' }}
       run: >
         ./build_samples.sh
+        --no-tests
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+
+    - name: Build using CMake on Windows
+      if: ${{ ! matrix.os == 'windows-latest' }}
+      run: >
+        ./build_samples.bat
+        --debug
         --no-tests
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
