@@ -5,10 +5,10 @@
 
 #include <algorithm>
 #include <filesystem>
-// #include <openssl/bio.h>
-// #include <openssl/buffer.h>
-// #include <openssl/evp.h>
-// #include <openssl/rand.h>
+#include <openssl/bio.h>
+#include <openssl/buffer.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 #include <string.h>
 
 #include "actions.h"
@@ -164,32 +164,29 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     std::string bucketName = ""; // Using empty string to cause cloudfuse to select first available bucket
     std::string mountDir = cfManager.getMountDir();
     std::string fileCacheDir = cfManager.getFileCacheDir();
-    std::string passphrase = "12312312312312312312312312312312";
-    // Generate passphrase if user did not provide one
-    // if (passphrase == "")
-    // {
-    //     unsigned char key[32]; // AES-256 key
-    //     if (RAND_bytes(key, sizeof(key)))
-    //     {
-    //         // Need to encode passphrase to base64 to pass to cloudfuse
-    //         BIO *bmem, *b64;
-    //         BUF_MEM *bptr;
+    std::string passphrase = "";
+    // Generate passphrase for config file
+    unsigned char key[32]; // AES-256 key
+    if (RAND_bytes(key, sizeof(key)))
+    {
+        // Need to encode passphrase to base64 to pass to cloudfuse
+        BIO *bmem, *b64;
+        BUF_MEM *bptr;
 
-    //         b64 = BIO_new(BIO_f_base64());
-    //         bmem = BIO_new(BIO_s_mem());
-    //         b64 = BIO_push(b64, bmem);
-    //         BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-    //         BIO_write(b64, key, 32);
-    //         BIO_flush(b64);
-    //         BIO_get_mem_ptr(b64, &bptr);
+        b64 = BIO_new(BIO_f_base64());
+        bmem = BIO_new(BIO_s_mem());
+        b64 = BIO_push(b64, bmem);
+        BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+        BIO_write(b64, key, 32);
+        BIO_flush(b64);
+        BIO_get_mem_ptr(b64, &bptr);
 
-    //         passphrase = std::string(bptr->data, bptr->length);
-    //     }
-    //     else
-    //     {
-    //         return error(ErrorCode::internalError, "OpenSSL Error: Unable to generate secure passphrase");
-    //     }
-    // }
+        passphrase = std::string(bptr->data, bptr->length);
+    }
+    else
+    {
+        return error(ErrorCode::internalError, "OpenSSL Error: Unable to generate secure passphrase");
+    }
 
     std::error_code errCode;
 

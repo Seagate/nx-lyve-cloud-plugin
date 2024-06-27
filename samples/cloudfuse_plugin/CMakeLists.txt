@@ -70,13 +70,13 @@ target_compile_features(nx_sdk PRIVATE cxx_std_17)
 
 #--------------------------------------------------------------------------------------------------
 # Define cloudfuse_plugin lib, dynamic, depends on nx_kit and nx_sdk.
-# find_package(OpenSSL REQUIRED)
+find_package(OpenSSL REQUIRED)
 set(CLOUDFUSE_PLUGIN_SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
 file(GLOB_RECURSE CLOUDFUSE_PLUGIN_SRC CONFIGURE_DEPENDS ${CLOUDFUSE_PLUGIN_SRC_DIR}/*)
 
 add_library(cloudfuse_plugin SHARED ${CLOUDFUSE_PLUGIN_SRC})
 target_include_directories(cloudfuse_plugin PRIVATE ${CLOUDFUSE_PLUGIN_SRC_DIR})
-target_link_libraries(cloudfuse_plugin PRIVATE nx_kit nx_sdk)
+target_link_libraries(cloudfuse_plugin PRIVATE nx_kit nx_sdk OpenSSL::SSL)
 
 target_compile_definitions(cloudfuse_plugin
     PRIVATE NX_PLUGIN_API=${API_EXPORT_MACRO}

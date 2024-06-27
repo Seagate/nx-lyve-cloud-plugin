@@ -35,3 +35,5 @@
 *.app
 
 /build/
+Cloudfuse_sample/
+**/vcpkg_installed/
