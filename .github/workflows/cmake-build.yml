@@ -64,7 +64,7 @@ jobs:
       if: ${{ matrix.os == 'windows-latest' }}
       run: >
         ./build_samples.bat
-        --debug
         --no-tests
+        --debug
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
