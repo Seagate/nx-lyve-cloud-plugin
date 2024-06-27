@@ -63,53 +63,8 @@ static const std::string kKeyIdTextFieldId = "keyId";
 static const std::string kSecretKeyPasswordFieldId = "secretKey";
 static const std::string kCheckCredentialsButtonId = "checkCredentialsButton";
 // advanced
-static const std::string kChangeEndpointButtonId = "changeEndpointButton";
-static const std::string kChangeConfigPassphraseButtonId = "changePassphraseButton";
-// endpoint URL pop-up dialog
 static const std::string kEndpointUrlTextFieldId = "endpointUrl";
-static const std::string kChangeEndpointModel = /*suppress newline*/ 1 + R"json(
-{
-    "type": "Settings",
-    "items":
-    [
-        {
-            "type": "TextField",
-            "name": ")json" + kEndpointUrlTextFieldId +
-                                                R"json(",
-            "caption": "Endpoint URL",
-            "description": "Set a different endpoint (different region or service)",
-            "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com",
-            "validationErrorMessage": "Endpoint must be a URL (begin with 'http[s]://').",
-            "validationRegex": "^https?://.+$",
-            "validationRegexFlags": "i"
-        },
-        {
-            "type": "Banner",
-            "text": "e.g. https://s3.us-east-1.lyvecloud.seagate.com"
-        }
-    ]
-}
-)json";
-// config passphrase pop-up dialog
-static const std::string kPassphrasePasswordFieldId = "configPassphrase";
-static const std::string kChangePassphraseModel = /*suppress newline*/ 1 + R"json("
-{
-    "type": "Settings",
-    "items":
-    [
-        {
-            "type": "PasswordField",
-            "name": ")json" + kPassphrasePasswordFieldId +
-                                                  R"json(",
-            "caption": "Config Passphrase (base64)",
-            "description": "Choose passphrase to encrypt S3 credentials in config file",
-            "defaultValue": "",
-            "validationErrorMessage": "The base64-encoded config passphrase should be 24, 32, or 44 characters in length (16, 24, or 32 bytes).",
-            "validationRegex": "^[A-Za-z0-9+/]*={0,3}$"
-        }
-    ]
-}
-)json";
+static const std::string kBucketNameTextFieldId = "bucketName";
 
 // ------------------------------------------------------------------------------------------------
 static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json("
@@ -153,22 +108,25 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
             "items":
             [
                 {
-                    "type": "Button",
-                    "name": ")json" + kChangeEndpointButtonId +
+                    "type": "TextField",
+                    "name": ")json" + kEndpointUrlTextFieldId +
                                                 R"json(",
-                    "caption": "Change S3 Endpoint...",
-                    "isActive": true,
-                    "parametersModel": )json" + kChangeEndpointModel +
-                                                R"json(
+                    "caption": "Endpoint URL",
+                    "description": "Set a different endpoint (different region or service)",
+                    "defaultValue": "https://s3.us-east-1.lyvecloud.seagate.com",
+                    "validationErrorMessage": "Endpoint must be a URL (begin with 'http[s]://').",
+                    "validationRegex": "^https?://.+$",
+                    "validationRegexFlags": "i"
                 },
                 {
-                    "type": "Button",
-                    "name": ")json" + kChangeConfigPassphraseButtonId +
+                    "type": "TextField",
+                    "name": ")json" + kBucketNameTextFieldId +
                                                 R"json(",
-                    "caption": "Change Config Passphrase...",
-                    "isActive": true,
-                    "parametersModel": )json" + kChangePassphraseModel +
-                                                R"json(
+                    "caption": "Bucket Name",
+                    "description": "Specify a bucket name (leave empty to let the system automatically detect your bucket)",
+                    "defaultValue": "",
+                    "validationErrorMessage": "Bucket name can only contain lowercase letters, numbers, dashes, and dots.",
+                    "validationRegex": "^[-.a-z0-9]*$"
                 }
             ]
         },

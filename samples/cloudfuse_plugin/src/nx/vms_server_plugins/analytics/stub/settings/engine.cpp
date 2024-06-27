@@ -159,9 +159,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
     std::string keyId = values[kKeyIdTextFieldId];
     std::string secretKey = values[kSecretKeyPasswordFieldId];
-    std::string endpointUrl = "https://s3.us-east-1.lyvecloud.seagate.com";
+    std::string endpointUrl = values[kEndpointUrlTextFieldId];
     std::string endpointRegion = "us-east-1";
-    std::string bucketName = ""; // Using empty string to cause cloudfuse to select first available bucket
+    std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse to select
+                                                             // first available bucket
     std::string mountDir = cfManager.getMountDir();
     std::string fileCacheDir = cfManager.getFileCacheDir();
     std::string passphrase = "";
