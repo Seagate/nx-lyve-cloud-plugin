@@ -12,6 +12,9 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
 
+    env:
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
@@ -46,6 +49,7 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
           - os: windows-latest
+            vcpkgCommitId: '4065f37d0a6628ef17cf6ee15385f9091f1075bc'
   
     steps:
     - uses: actions/checkout@v4
@@ -57,6 +61,14 @@ jobs:
         --no-tests
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      if: ${{ matrix.os == 'windows-latest' }}
+      id: runvcpkg
+      with:
+        # The vcpkg.json file, which will be part of cache key computation.
+        vcpkgJsonGlob: '**/samples/cloudfuse_plugin/vcpkg.json'
 
     - name: Build using CMake on Windows
       shell: powershell
