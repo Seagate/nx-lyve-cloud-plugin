@@ -2,6 +2,7 @@ name: Build and Release
 
 on:
   push:
+    branches: [ "fix-windows" ]
     tags:
       - 'v*'
 
@@ -17,16 +18,34 @@ jobs:
           - os: ubuntu-20.04
             c_compiler: gcc
             cpp_compiler: g++
+          - os: windows-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Run build script
+    - name: Run build script for Linux
+      if: ${{ !(matrix.os == 'windows-latest') }}
       run: >
         ./build_samples.sh
         --no-tests
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      if: ${{ matrix.os == 'windows-latest' }}
+      id: runvcpkg
+      with:
+        # The vcpkg.json file, which will be part of cache key computation.
+        vcpkgJsonGlob: '**/samples/cloudfuse_plugin/vcpkg.json'
+    
+    - name: Run build script for Windows
+      shell: powershell
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: >
+        ./build_samples.bat
+        --no-tests
+        --debug
 
     - name: Package Artifacts Linux
       if: ${{ Contains(matrix.os, 'ubuntu') }}
@@ -66,3 +85,4 @@ jobs:
         files: |
           build-ubuntu-20.04/*
           build-ubuntu-22.04/*
+          build-windows/*

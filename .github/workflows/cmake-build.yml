@@ -49,7 +49,6 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
           - os: windows-latest
-            vcpkgCommitId: '4065f37d0a6628ef17cf6ee15385f9091f1075bc'
   
     steps:
     - uses: actions/checkout@v4
