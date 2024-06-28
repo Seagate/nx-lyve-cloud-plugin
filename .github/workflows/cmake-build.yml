@@ -46,8 +46,6 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
           - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
   
     steps:
     - uses: actions/checkout@v4
@@ -67,5 +65,3 @@ jobs:
         ./build_samples.bat
         --no-tests
         --debug
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
