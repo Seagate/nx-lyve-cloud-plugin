@@ -43,7 +43,7 @@ jobs:
       shell: powershell
       if: ${{ matrix.os == 'windows-latest' }}
       run: >
-        ./build_samples.bat
+        .\build_samples.bat
         --no-tests
         --debug
 
