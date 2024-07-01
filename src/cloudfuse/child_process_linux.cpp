@@ -5,7 +5,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-const std::string config_template = R"(
+std::string config_template = R"(
 allow-other: true
 logging:
   level: log_err
@@ -63,15 +63,6 @@ CloudfuseMngr::CloudfuseMngr()
         out << config_template;
         out.close();
     }
-}
-
-CloudfuseMngr::CloudfuseMngr(const std::string mountDir, const std::string fileCacheDir, const std::string configFile,
-                             const std::string templateFile)
-{
-    this->mountDir = mountDir;
-    this->configFile = configFile;
-    this->fileCacheDir = fileCacheDir;
-    this->templateFile = templateFile;
 }
 
 processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[])

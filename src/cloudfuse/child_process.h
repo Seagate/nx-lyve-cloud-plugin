@@ -11,15 +11,12 @@ class CloudfuseMngr
   public:
     CloudfuseMngr();
 #ifdef _WIN32
-    CloudfuseMngr(const std::string mountDir, const std::string configFile, const std::string fileCachePath);
     processReturn dryRun(const std::string passphrase);
     processReturn mount(const std::string passphrase);
     processReturn genS3Config(const std::string accessKeyId, const std::string secretAccessKey,
                               const std::string region, const std::string endpoint, const std::string bucketName,
                               const std::string passphrase);
 #elif defined(__linux__) || defined(__APPLE__)
-    CloudfuseMngr(const std::string mountDir, const std::string fileCacheDir, const std::string configFile,
-                  const std::string templateFile);
     processReturn dryRun(const std::string accessKeyId, const std::string secretAccessKey,
                          const std::string passphrase);
     processReturn mount(const std::string accessKeyId, const std::string secretAccessKey, const std::string passphrase);

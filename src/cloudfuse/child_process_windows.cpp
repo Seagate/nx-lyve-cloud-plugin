@@ -17,7 +17,7 @@ namespace fs = std::filesystem;
 #include <fstream>
 #include <locale>
 
-const std::string config_template = R"(
+std::string config_template = R"(
 allow-other: true
 logging:
   level: log_err
@@ -56,41 +56,24 @@ s3storage:
 CloudfuseMngr::CloudfuseMngr()
 {
     std::string appdataEnv;
-    char *appdata;
+    char *buf = nullptr;
     size_t len;
-    errno_t err = _dupenv_s(&appdata, &len, "APPDATA");
-    if (appdata == nullptr) {
-        appdataEnv = "";
+    if (_dupenv_s(&buf, &len, "APPDATA") == 0 && buf != nullptr) {
+        appdataEnv = std::string(buf);
+        free(buf);
     } else {
-        appdataEnv = std::string(appdata, len);
+        appdataEnv = "";
     }
-    free(appdata);
 
-    const fs::path appda(appdataEnv);
-    const fs::path fileCacheDirPath = appda / fs::path("Cloudfuse\\cloudfuse_cache");
-    const fs::path configFilePath = appda / fs::path("Cloudfuse\\nx_plugin_config.aes");
-    const fs::path templateFilePath = appda / fs::path("Cloudfuse\\nx_plugin_config.yaml");
+    const fs::path appdata(appdataEnv);
+    const fs::path fileCacheDirPath = appdata / fs::path("Cloudfuse\\cloudfuse_cache");
+    const fs::path configFilePath = appdata / fs::path("Cloudfuse\\nx_plugin_config.aes");
+    const fs::path templateFilePath = appdata / fs::path("Cloudfuse\\nx_plugin_config.yaml");
 
     mountDir = "Z:";
     fileCacheDir = fileCacheDirPath.generic_string();
     configFile = configFilePath.generic_string();
     templateFile = templateFilePath.generic_string();
-
-    std::ifstream in(templateFile.c_str());
-    if (!in.good())
-    {
-        std::ofstream out(templateFile.c_str());
-        out << config_template;
-        out.close();
-    }
-}
-
-CloudfuseMngr::CloudfuseMngr(std::string mountDir, std::string configFile, std::string fileCacheDir)
-{
-    this->mountDir = mountDir;
-    this->configFile = configFile;
-    this->fileCacheDir = fileCacheDir;
-    templateFile = "./nx_plugin_config.yaml";
 
     std::ifstream in(templateFile.c_str());
     if (!in.good())
