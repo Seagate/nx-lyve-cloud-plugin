@@ -157,14 +157,14 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         NX_PRINT << it->first << ":" << it->second << std::endl;
         NX_OUTPUT << it->first << ":" << it->second << std::endl;
     }
-    std::string keyId = values[kKeyIdTextFieldId];
-    std::string secretKey = values[kSecretKeyPasswordFieldId];
-    std::string endpointUrl = values[kEndpointUrlTextFieldId];
-    std::string endpointRegion = "us-east-1";
-    std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse to select
-                                                             // first available bucket
-    std::string mountDir = cfManager.getMountDir();
-    std::string fileCacheDir = cfManager.getFileCacheDir();
+    const std::string keyId = values[kKeyIdTextFieldId];
+    const std::string secretKey = values[kSecretKeyPasswordFieldId];
+    const std::string endpointUrl = values[kEndpointUrlTextFieldId];
+    const std::string endpointRegion = "us-east-1";
+    const std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse to
+                                                                   // select first available bucket
+    const std::string mountDir = cfManager.getMountDir();
+    const std::string fileCacheDir = cfManager.getFileCacheDir();
     std::string passphrase = "";
     // Generate passphrase for config file
     unsigned char key[32]; // AES-256 key
@@ -263,9 +263,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
 
 #if defined(__linux__)
-    processReturn dryGenConfig = cfManager.genS3Config(endpointRegion, endpointUrl, bucketName, passphrase);
+    const processReturn dryGenConfig = cfManager.genS3Config(endpointRegion, endpointUrl, bucketName, passphrase);
 #elif defined(_WIN32)
-    processReturn dryGenConfig =
+    const processReturn dryGenConfig =
         cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, bucketName, passphrase);
 #endif
 
@@ -275,9 +275,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
 
 #if defined(__linux__)
-    processReturn dryRunRet = cfManager.dryRun(keyId, secretKey, passphrase);
+    const processReturn dryRunRet = cfManager.dryRun(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
-    processReturn dryRunRet = cfManager.dryRun(passphrase);
+    const processReturn dryRunRet = cfManager.dryRun(passphrase);
 #endif
 
     if (dryRunRet.errCode != 0)
@@ -323,9 +323,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
 
 #if defined(__linux__)
-    processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
+    const processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
-    processReturn mountRet = cfManager.mount(passphrase);
+    const processReturn mountRet = cfManager.mount(passphrase);
 #endif
 
     if (mountRet.errCode != 0)

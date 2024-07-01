@@ -5,7 +5,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-std::string config_template = R"(
+const std::string config_template = R"(
 allow-other: true
 logging:
   level: log_err
@@ -65,8 +65,8 @@ CloudfuseMngr::CloudfuseMngr()
     }
 }
 
-CloudfuseMngr::CloudfuseMngr(std::string mountDir, std::string fileCacheDir, std::string configFile,
-                             std::string templateFile)
+CloudfuseMngr::CloudfuseMngr(const std::string mountDir, const std::string fileCacheDir, const std::string configFile,
+                             const std::string templateFile)
 {
     this->mountDir = mountDir;
     this->configFile = configFile;
@@ -81,14 +81,16 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
     int pipefd[2];
     if (pipe(pipefd) == -1)
     {
-        throw std::runtime_error("Failed to create pipe.");
+        ret.errCode = 1;
+        return ret;
     }
 
     pid_t pid = fork();
     if (pid == -1)
     {
         // Fork failed
-        throw std::runtime_error("Failed to fork process.");
+        ret.errCode = 1;
+        return ret;
     }
     else if (pid != 0)
     {
@@ -142,13 +144,13 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
     }
 }
 
-processReturn CloudfuseMngr::genS3Config(std::string region, std::string endpoint, std::string bucketName,
-                                         std::string passphrase)
+processReturn CloudfuseMngr::genS3Config(const std::string region, const std::string endpoint,
+                                         const std::string bucketName, const std::string passphrase)
 {
-    std::string configArg = "--config-file=" + templateFile;
-    std::string outputArg = "--output-file=" + configFile;
-    std::string fileCachePathArg = "--temp-path=" + fileCacheDir;
-    std::string passphraseArg = "--passphrase=" + passphrase;
+    const std::string configArg = "--config-file=" + templateFile;
+    const std::string outputArg = "--output-file=" + configFile;
+    const std::string fileCachePathArg = "--temp-path=" + fileCacheDir;
+    const std::string passphraseArg = "--passphrase=" + passphrase;
     char *const argv[] = {const_cast<char *>("/bin/cloudfuse"),
                           const_cast<char *>("gen-config"),
                           const_cast<char *>(configArg.c_str()),
@@ -157,19 +159,20 @@ processReturn CloudfuseMngr::genS3Config(std::string region, std::string endpoin
                           const_cast<char *>(passphraseArg.c_str()),
                           NULL};
 
-    std::string bucketNameEnv = "BUCKET_NAME=" + bucketName;
-    std::string endpointEnv = "ENDPOINT=" + endpoint;
-    std::string regionEnv = "AWS_REGION=" + region;
+    const std::string bucketNameEnv = "BUCKET_NAME=" + bucketName;
+    const std::string endpointEnv = "ENDPOINT=" + endpoint;
+    const std::string regionEnv = "AWS_REGION=" + region;
     char *const envp[] = {const_cast<char *>(bucketNameEnv.c_str()), const_cast<char *>(endpointEnv.c_str()),
                           const_cast<char *>(regionEnv.c_str()), NULL};
 
     return spawnProcess(argv, envp);
 }
 
-processReturn CloudfuseMngr::dryRun(std::string accessKeyId, std::string secretAccessKey, std::string passphrase)
+processReturn CloudfuseMngr::dryRun(const std::string accessKeyId, const std::string secretAccessKey,
+                                    const std::string passphrase)
 {
-    std::string configArg = "--config-file=" + configFile;
-    std::string passphraseArg = "--passphrase=" + passphrase;
+    const std::string configArg = "--config-file=" + configFile;
+    const std::string passphraseArg = "--passphrase=" + passphrase;
     char *const argv[] = {const_cast<char *>("/bin/cloudfuse"),
                           const_cast<char *>("mount"),
                           const_cast<char *>(mountDir.c_str()),
@@ -178,24 +181,25 @@ processReturn CloudfuseMngr::dryRun(std::string accessKeyId, std::string secretA
                           const_cast<char *>("--dry-run"),
                           NULL};
 
-    std::string awsAccessKeyIdEnv = "AWS_ACCESS_KEY_ID=" + accessKeyId;
-    std::string awsSecretAccessKeyEnv = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
+    const std::string awsAccessKeyIdEnv = "AWS_ACCESS_KEY_ID=" + accessKeyId;
+    const std::string awsSecretAccessKeyEnv = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
     char *const envp[] = {const_cast<char *>(awsAccessKeyIdEnv.c_str()),
                           const_cast<char *>(awsSecretAccessKeyEnv.c_str()), NULL};
 
     return spawnProcess(argv, envp);
 }
 
-processReturn CloudfuseMngr::mount(std::string accessKeyId, std::string secretAccessKey, std::string passphrase)
+processReturn CloudfuseMngr::mount(const std::string accessKeyId, const std::string secretAccessKey,
+                                   const std::string passphrase)
 {
-    std::string configArg = "--config-file=" + configFile;
-    std::string passphraseArg = "--passphrase=" + passphrase;
+    const std::string configArg = "--config-file=" + configFile;
+    const std::string passphraseArg = "--passphrase=" + passphrase;
     char *const argv[] = {const_cast<char *>("/bin/cloudfuse"),      const_cast<char *>("mount"),
                           const_cast<char *>(mountDir.c_str()),      const_cast<char *>(configArg.c_str()),
                           const_cast<char *>(passphraseArg.c_str()), NULL};
 
-    std::string awsAccessKeyIdEnv = "AWS_ACCESS_KEY_ID=" + accessKeyId;
-    std::string awsSecretAccessKeyEnv = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
+    const std::string awsAccessKeyIdEnv = "AWS_ACCESS_KEY_ID=" + accessKeyId;
+    const std::string awsSecretAccessKeyEnv = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
     char *const envp[] = {const_cast<char *>(awsAccessKeyIdEnv.c_str()),
                           const_cast<char *>(awsSecretAccessKeyEnv.c_str()), NULL};
 
@@ -221,7 +225,6 @@ bool CloudfuseMngr::isInstalled()
 bool CloudfuseMngr::isMounted()
 {
     // Logic based on os.ismount implementation in Python.
-
     struct stat buf1, buf2;
 
     if (lstat(mountDir.c_str(), &buf1) != 0)
@@ -236,7 +239,7 @@ bool CloudfuseMngr::isMounted()
         return false;
     }
 
-    std::string parent = mountDir + "/..";
+    const std::string parent = mountDir + "/..";
     if (lstat(parent.c_str(), &buf2) != 0)
     {
         return false;
