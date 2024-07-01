@@ -60,14 +60,14 @@ jobs:
       if: ${{ Contains(matrix.os, 'windows') }}
       run: |
         mkdir release
-        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.dll release/cloudfuse_plugin.dll
+        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\*.dll release\cloudfuse_plugin.dll
         Compress-Archive release nx-lyve-plugin-${{ matrix.os }}.zip
 
     - name: Archive production artifacts Ubuntu
       uses: actions/upload-artifact@v4
       with:
         name: build-${{ matrix.os }}
-        path: ./nx-lyve-plugin-${{ matrix.os }}.zip
+        path: .\nx-lyve-plugin-${{ matrix.os }}.zip
         if-no-files-found: error
 
   release:

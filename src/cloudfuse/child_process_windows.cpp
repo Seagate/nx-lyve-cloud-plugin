@@ -56,24 +56,15 @@ s3storage:
 CloudfuseMngr::CloudfuseMngr()
 {
     std::string appdataEnv;
-    const char *appdata = std::getenv("APPDATA");
-    std::string appdataString = std::string(appdata);
-    if (appdata == nullptr)
-    {
+    char *appdata;
+    size_t len;
+    errno_t err = _dupenv_s(&appdata, &len, "APPDATA");
+    if (appdata == nullptr) {
         appdataEnv = "";
+    } else {
+        appdataEnv = std::string(appdata, len);
     }
-    else
-    {
-        appdataEnv = appdataString;
-    }
-    // char *appdata;
-    // size_t len;
-    // errno_t err = _dupenv_s(&appdata, &len, "APPDATA");
-    // if (appdata == nullptr) {
-    //     appdataEnv = "";
-    // } else {
-    //     appdataEnv = std::string(appdata, len);
-    // }
+    free(appdata);
 
     fs::path appda(appdataEnv);
     fs::path fileCacheDirPath = appda / fs::path("Cloudfuse\\cloudfuse_cache");
