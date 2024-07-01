@@ -94,8 +94,9 @@ if(NOT MSVC)
         -Werror=format-security
     )
 else()
+    add_compile_definitions(_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
     target_compile_options(cloudfuse_plugin PRIVATE
-        -Wall
+        -W4 -GS -sdl
     )
 endif()
 
