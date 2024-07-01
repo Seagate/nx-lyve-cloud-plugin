@@ -26,7 +26,7 @@ add_library(disabled_ini_config_ut SHARED ${disabled_ini_config_ut_files})
 target_include_directories(disabled_ini_config_ut PRIVATE ../src)
 
 if(APPLE)
-    find_library(Foundation_LIBRARY Foundation REQIRED)
+    find_library(Foundation_LIBRARY Foundation REQUIRED)
     target_link_libraries(disabled_ini_config_ut ${Foundation_LIBRARY})
 endif()
 

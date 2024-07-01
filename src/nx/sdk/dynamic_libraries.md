@@ -1,6 +1,6 @@
 # Using dynamic libraries in Plugins
 
-// Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
+// Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: <www.mozilla.org/MPL/2.0/>
 
 This document describes issues which may arise when a Plugin dynamic library depends on any other
 dynamic libraries, either taken from the OS (Windows or Linux), or coming with the Plugin in its
@@ -18,6 +18,7 @@ from that libraries are not present in the imported/exported symbol table in the
 library.
 
 ---------------------------------------------------------------------------------------------------
+
 ## Depending on libraries bundled with the VMS
 
 A properly written Plugin is expected to remain compatible with any future version of the VMS,
@@ -30,6 +31,7 @@ code, or is a third-party library which the VMS depends on.
 SOLUTION: The Plugin should never depend on any dynamic library bundled with the VMS installation.
 
 ---------------------------------------------------------------------------------------------------
+
 ## Depending on system libraries
 
 Using any dynamic library from the OS by a Plugin is unsafe. The reason for that is the limitation
@@ -57,26 +59,28 @@ SOLUTION: The Plugin should be linked to system libraries statically, except for
 backwards-compatible, and will not be patched for the need of a certain project.
 
 ---------------------------------------------------------------------------------------------------
+
 ## Depending on libstdc++ on Linux
 
 `libstdc++` - the GCC C++ standard library implementation - should be linked dynamically. There is
-a known issue in GCC's `libstdc++` - when linked statically, if some part of the product (in our 
+a known issue in GCC's `libstdc++` - when linked statically, if some part of the product (in our
 case it will be the VMS Server) links to this library dynamically, the input/output streams like
 `std::cerr` will be initialized incorrectly, which may lead to output disruption and/or crashes.
 
-This library must not be bundled with the plugin, because the one coming with the Server will be 
+This library must not be bundled with the plugin, because the one coming with the Server will be
 used anyway, due to the symbol resolution mechanism.
 
 Note that the plugin must use the version of `libstdc++` compatible with the one of the Server with
-which the plugin is supposed to work. So, it is theoretically possible that at some point in the 
+which the plugin is supposed to work. So, it is theoretically possible that at some point in the
 future the Server will be upgraded to the one using some newer incompatible `libstdc++`, and so the
 plugin will malfunction, including being unable to load or crashing.
 
-SOLUTION: For the plugin, use Clang together with its native `libc++` instead of `libstdc++`, and 
+SOLUTION: For the plugin, use Clang together with its native `libc++` instead of `libstdc++`, and
 link to `libc++` statically to make sure that the plugin will function properly even if the Server
 will start using `libc++` at some point in the future.
 
 ---------------------------------------------------------------------------------------------------
+
 ## Bundling public libraries with the Plugin
 
 NOTE: Here we discuss bundling the Plugin with publicly available dynamic libraries; bundling the
@@ -95,6 +99,6 @@ bundles this library with the Plugin. It will not work as expected - when the Pl
 code will be tuned by the Linux library loader to use functions from the `libssl.so.1.0.0` used by
 the Server (and already loaded into the process), and the modified library will not be loaded.
 This takes place regardless of whether the modified SSL library is called `libssl.so.1.0.0` or
-differently - only the symbols (funciton names) matter.
+differently - only the symbols (function names) matter.
 
 SOLUTION: The Plugin should be linked to public libraries statically.
