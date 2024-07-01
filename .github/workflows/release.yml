@@ -60,7 +60,7 @@ jobs:
       if: ${{ Contains(matrix.os, 'windows') }}
       run: |
         mkdir release
-        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\*.dll release\cloudfuse_plugin.dll
+        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Debug\*.dll release\cloudfuse_plugin.dll
         Compress-Archive release nx-lyve-plugin-${{ matrix.os }}.zip
 
     - name: Archive production artifacts Ubuntu
