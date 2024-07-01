@@ -85,8 +85,7 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                     "description": "Cloud bucket access key ID",
                     "defaultValue": "",
                     "validationErrorMessage": "Access key ID must be >=16 alphanumeric characters (uppercase or 2-7).",
-                    "validationRegex": "^[A-Z2-7]{16,128}$",
-                    "isActive": true
+                    "validationRegex": "^[A-Z2-7]{16,128}$"
                 },
                 {
                     "type": "PasswordField",
@@ -96,8 +95,7 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                     "description": "Cloud bucket secret key",
                     "defaultValue": "",
                     "validationErrorMessage": "Secret key must be 32 or 40 alphanumeric-plus-slash characters",
-                    "validationRegex": "^[A-Za-z0-9/+=]{32,40}$",
-                    "isActive": true
+                    "validationRegex": "^[A-Za-z0-9/+=]{32,40}$"
                 }
             ]
         },
