@@ -2,7 +2,7 @@ name: Linting with Clang-format
 
 on:
   push:
-    branches: [ "main", "add-lint-github-action" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 

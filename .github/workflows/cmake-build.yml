@@ -4,7 +4,7 @@ name: CMake on multiple platforms
 
 on:
   push:
-    branches: [ "main", "fix-windows" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -54,7 +54,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Build using CMake on Linux
-      if: ${{ ! matrix.os == 'windows-latest' }}
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
         ./build_samples.sh
         --no-tests
@@ -63,7 +63,7 @@ jobs:
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
-      if: ${{ matrix.os == 'windows-latest' }}
+      if: ${{ Contains(matrix.os, 'windows') }}
       id: runvcpkg
       with:
         # The vcpkg.json file, which will be part of cache key computation.
@@ -71,7 +71,7 @@ jobs:
 
     - name: Build using CMake on Windows
       shell: powershell
-      if: ${{ matrix.os == 'windows-latest' }}
+      if: ${{ Contains(matrix.os, 'windows') }}
       run: >
         ./build_samples.bat
         --no-tests
