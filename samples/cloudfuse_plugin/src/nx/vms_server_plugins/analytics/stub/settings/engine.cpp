@@ -333,12 +333,15 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         return error(ErrorCode::internalError, "Unable to launch mount with error: " + mountRet.output);
     }
 
-// On Windows, mount does not show up immediately, so need to wait
-#ifdef _WIN32
-    Sleep(5000);
-#endif
+    // Mount might not show up immediately, so wait for mount to appear
+    int retryCount = 0;
+    while (!cfManager.isMounted() && retryCount < 10)
+    {
+        Sleep(1000);
+        retryCount++;
+    }
 
-    if (!cfManager.isMounted())
+    if (retryCount == 10)
     {
         return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
     }
