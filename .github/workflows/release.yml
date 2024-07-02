@@ -33,7 +33,7 @@ jobs:
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
-      if: ${{ matrix.os == 'windows-latest' }}
+      if: ${{ Contains(matrix.os, 'windows') }}
       id: runvcpkg
       with:
         # The vcpkg.json file, which will be part of cache key computation.
@@ -41,7 +41,7 @@ jobs:
     
     - name: Run build script for Windows
       shell: powershell
-      if: ${{ matrix.os == 'windows-latest' }}
+      if: ${{ Contains(matrix.os, 'windows') }}
       run: >
         .\build_samples.bat
         --no-tests
@@ -50,24 +50,30 @@ jobs:
     - name: Package Artifacts Linux
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: |
-        mkdir release
-        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so release/cloudfuse_plugin.so
-        cp ./setup_fuse_allow_other.sh release/
-        zip -r nx-lyve-plugin-${{ matrix.os }}.zip release
+        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so cloudfuse_plugin.so
 
     - name: Package Artifacts Windows
       shell: powershell
       if: ${{ Contains(matrix.os, 'windows') }}
       run: |
-        mkdir release
-        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Debug\cloudfuse_plugin.dll release\cloudfuse_plugin.dll
-        Compress-Archive release nx-lyve-plugin-${{ matrix.os }}.zip
+        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Debug\cloudfuse_plugin.dll cloudfuse_plugin.dll
 
-    - name: Archive production artifacts Ubuntu
+    - name: Archive production artifacts from Ubuntu
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
       uses: actions/upload-artifact@v4
       with:
         name: build-${{ matrix.os }}
-        path: nx-lyve-plugin-${{ matrix.os }}.zip
+        path: |
+          cloudfuse_plugin.so
+          setup_fuse_allow_other.sh
+        if-no-files-found: error
+    
+    - name: Archive production artifacts from Windows
+      if: ${{ Contains(matrix.os, 'windows') }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.os }}
+        path: cloudfuse_plugin.dll
         if-no-files-found: error
 
   release:
