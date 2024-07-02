@@ -58,10 +58,13 @@ CloudfuseMngr::CloudfuseMngr()
     std::string appdataEnv;
     char *buf = nullptr;
     size_t len;
-    if (_dupenv_s(&buf, &len, "APPDATA") == 0 && buf != nullptr) {
+    if (_dupenv_s(&buf, &len, "APPDATA") == 0 && buf != nullptr)
+    {
         appdataEnv = std::string(buf);
         free(buf);
-    } else {
+    }
+    else
+    {
         appdataEnv = "";
     }
 
@@ -206,18 +209,19 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t *argv, std::wstring envp)
     return ret;
 }
 
-processReturn CloudfuseMngr::genS3Config(const std::string accessKeyId, const std::string secretAccessKey, const std::string region,
-                                         const std::string endpoint, const std::string bucketName, const std::string passphrase)
+processReturn CloudfuseMngr::genS3Config(const std::string accessKeyId, const std::string secretAccessKey,
+                                         const std::string region, const std::string endpoint,
+                                         const std::string bucketName, const std::string passphrase)
 {
     const std::string argv = "cloudfuse gen-config --config-file=" + templateFile + " --output-file=" + configFile +
-                       " --temp-path=" + fileCacheDir + " --passphrase=" + passphrase;
+                             " --temp-path=" + fileCacheDir + " --passphrase=" + passphrase;
     const std::string aws_access_key_id_env = "AWS_ACCESS_KEY_ID=" + accessKeyId;
     const std::string aws_secret_access_key_env = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
     const std::string aws_region_env = "AWS_REGION=" + region;
     const std::string endpoint_env = "ENDPOINT=" + endpoint;
     const std::string bucket_name_env = "BUCKET_NAME=" + bucketName;
     const std::string envp = aws_access_key_id_env + '\0' + aws_secret_access_key_env + '\0' + aws_region_env + '\0' +
-                       endpoint_env + '\0' + bucket_name_env + '\0';
+                             endpoint_env + '\0' + bucket_name_env + '\0';
 
     const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
     const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
@@ -239,7 +243,8 @@ processReturn CloudfuseMngr::dryRun(const std::string passphrase)
 
 processReturn CloudfuseMngr::mount(const std::string passphrase)
 {
-    const std::string argv = "cloudfuse mount " + mountDir + " --config-file=" + configFile + " --passphrase=" + passphrase;
+    const std::string argv =
+        "cloudfuse mount " + mountDir + " --config-file=" + configFile + " --passphrase=" + passphrase;
     const std::string envp = "";
 
     const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);

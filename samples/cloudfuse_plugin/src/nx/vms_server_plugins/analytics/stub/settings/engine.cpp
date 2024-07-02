@@ -4,12 +4,14 @@
 #include "engine.h"
 
 #include <algorithm>
+#include <chrono>
 #include <filesystem>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <string.h>
+#include <thread>
 
 #include "actions.h"
 #include "active_settings_rules.h"
@@ -337,7 +339,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     int retryCount = 0;
     while (!cfManager.isMounted() && retryCount < 10)
     {
-        Sleep(1000);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
         retryCount++;
     }
 
