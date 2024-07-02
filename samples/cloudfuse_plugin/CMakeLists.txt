@@ -3,6 +3,10 @@
 
 cmake_minimum_required(VERSION 3.16...3.29)
 
+if(WIN32)
+    set(VCPKG_TARGET_TRIPLET x64-windows-static)
+endif()
+
 project(
     cloudfuse_plugin
     VERSION 0.1.0
