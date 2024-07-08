@@ -23,7 +23,6 @@ You should have a modern version of GCC or Clang and cmake installed on your sys
 ```bash
 git clone https://github.com/Seagate/nx-lyve-cloud-plugin
 cd nx-lyve-cloud-plugin
-git checkout -b main origin/main
 ```
 
 #### 2. Run the build script
@@ -84,13 +83,13 @@ Additionally, you need to install cloudfuse on your system. Follow install instr
 [here](https://github.com/Seagate/cloudfuse).
 
 After installing cloudfuse, and copying the plugin file, restart the VMS and the plugin will appear in the System
-Administration tab. Then you can enter your S3 credentials and a mount will appear on the system connected to the cloud.
-This can be selected as a backup mount and video files will be backed up to the cloud.
+Administration settings windows. Then you can enter your S3 credentials and a mount will appear on the system connected
+to the cloud. This can be selected as a backup mount and video files will be backed up to the cloud.
 
 ## License
 
 Most of the project is licensed under the [Mozilla Public License](https://www.mozilla.org/en-US/MPL/2.0/) and the rest
-is under MIT; check the specific on each file to determine which is which.
+is under MIT; check the specific license in each file to determine which is which.
 
 ### Third-Party Notices
 
