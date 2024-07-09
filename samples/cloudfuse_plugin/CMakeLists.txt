@@ -3,6 +3,10 @@
 
 cmake_minimum_required(VERSION 3.16...3.29)
 
+if(WIN32)
+    set(VCPKG_TARGET_TRIPLET x64-windows-static)
+endif()
+
 project(
     cloudfuse_plugin
     VERSION 0.1.0
@@ -87,10 +91,18 @@ set_target_properties(cloudfuse_plugin PROPERTIES
     CXX_EXTENSIONS OFF
     NTERPROCEDURAL_OPTIMIZATION TRUE
 )
-target_compile_options(cloudfuse_plugin PRIVATE
-    -Wall -Wformat -Wformat=2 -Wconversion -Wimplicit-fallthrough
-    -Werror=format-security
-)
+
+if(NOT MSVC)
+    target_compile_options(cloudfuse_plugin PRIVATE
+        -Wall -Wformat -Wformat=2 -Wconversion -Wimplicit-fallthrough
+        -Werror=format-security
+    )
+else()
+    add_compile_definitions(_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
+    target_compile_options(cloudfuse_plugin PRIVATE
+        -W4 -GS -sdl
+    )
+endif()
 
 if(NOT WIN32)
     target_link_libraries(cloudfuse_plugin PRIVATE pthread)

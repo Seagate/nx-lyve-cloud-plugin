@@ -11,43 +11,71 @@ jobs:
     strategy:
       matrix:
         include:
+          - os: ubuntu-24.04
+            c_compiler: gcc
+            cpp_compiler: g++
           - os: ubuntu-22.04
             c_compiler: gcc
             cpp_compiler: g++
           - os: ubuntu-20.04
             c_compiler: gcc
             cpp_compiler: g++
+          - os: windows-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Run build script
+    - name: Run build script for Linux
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
         ./build_samples.sh
         --no-tests
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
 
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      if: ${{ Contains(matrix.os, 'windows') }}
+      id: runvcpkg
+      with:
+        # The vcpkg.json file, which will be part of cache key computation.
+        vcpkgJsonGlob: '**/samples/cloudfuse_plugin/vcpkg.json'
+    
+    - name: Run build script for Windows
+      shell: powershell
+      if: ${{ Contains(matrix.os, 'windows') }}
+      run: >
+        .\build_samples.bat
+        --no-tests
+        --debug
+
     - name: Package Artifacts Linux
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: |
-        mkdir release
-        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so release/cloudfuse_plugin.so
-        cp ./setup_fuse_allow_other.sh release/
-        zip -r nx-lyve-plugin-${{ matrix.os }}.zip release
+        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so cloudfuse_plugin.so
 
     - name: Package Artifacts Windows
+      shell: powershell
       if: ${{ Contains(matrix.os, 'windows') }}
       run: |
-        mkdir release
-        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.dll release/cloudfuse_plugin.dll
-        zip -r nx-lyve-plugin-${{ matrix.os }}.zip release
+        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Debug\cloudfuse_plugin.dll cloudfuse_plugin.dll
 
-    - name: Archive production artifacts Ubuntu
+    - name: Archive production artifacts from Ubuntu
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
       uses: actions/upload-artifact@v4
       with:
-        name: build-${{ matrix.os }}
-        path: ./nx-lyve-plugin-${{ matrix.os }}.zip
+        name: nx-lyve-cloud-plugin-${{ matrix.os }}
+        path: |
+          cloudfuse_plugin.so
+          setup_fuse_allow_other.sh
+        if-no-files-found: error
+    
+    - name: Archive production artifacts from Windows
+      if: ${{ Contains(matrix.os, 'windows') }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: nx-lyve-cloud-plugin-${{ matrix.os }}
+        path: cloudfuse_plugin.dll
         if-no-files-found: error
 
   release:
@@ -64,5 +92,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          build-ubuntu-20.04/*
-          build-ubuntu-22.04/*
+          nx-lyve-cloud-plugin-ubuntu-24.04/*
+          nx-lyve-cloud-plugin-ubuntu-22.04/*
+          nx-lyve-cloud-plugin-ubuntu-20.04/*
+          nx-lyve-cloud-plugin-windows/*

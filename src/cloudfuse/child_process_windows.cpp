@@ -10,6 +10,9 @@
 #undef UNICODE
 #endif
 
+#include <filesystem>
+namespace fs = std::filesystem;
+
 #include <codecvt>
 #include <fstream>
 #include <locale>
@@ -53,36 +56,27 @@ s3storage:
 CloudfuseMngr::CloudfuseMngr()
 {
     std::string appdataEnv;
-    const char *appdata = std::getenv("APPDATA");
-    std::string appdataString = std::string(appdata);
-    if (appdata == nullptr)
+    char *buf = nullptr;
+    size_t len;
+    if (_dupenv_s(&buf, &len, "APPDATA") == 0 && buf != nullptr)
     {
-        appdataEnv = "";
+        appdataEnv = std::string(buf);
+        free(buf);
     }
     else
     {
-        appdataEnv = appdataString;
+        appdataEnv = "";
     }
+
+    const fs::path appdata(appdataEnv);
+    const fs::path fileCacheDirPath = appdata / fs::path("Cloudfuse\\cloudfuse_cache");
+    const fs::path configFilePath = appdata / fs::path("Cloudfuse\\nx_plugin_config.aes");
+    const fs::path templateFilePath = appdata / fs::path("Cloudfuse\\nx_plugin_config.yaml");
+
     mountDir = "Z:";
-    fileCacheDir = appdataEnv + "\\.cloudfuse\\cloudfuse_cache";
-    configFile = appdataEnv + "\\.cloudfuse\\nx_plugin_config.aes";
-    templateFile = appdataEnv + "\\.cloudfuse\\nx_plugin_config.yaml";
-
-    std::ifstream in(templateFile.c_str());
-    if (!in.good())
-    {
-        std::ofstream out(templateFile.c_str());
-        out << config_template;
-        out.close();
-    }
-}
-
-CloudfuseMngr::CloudfuseMngr(std::string mountDir, std::string configFile, std::string fileCacheDir)
-{
-    this->mountDir = mountDir;
-    this->configFile = configFile;
-    this->fileCacheDir = fileCacheDir;
-    templateFile = "./nx_plugin_config.yam";
+    fileCacheDir = fileCacheDirPath.generic_string();
+    configFile = configFilePath.generic_string();
+    templateFile = templateFilePath.generic_string();
 
     std::ifstream in(templateFile.c_str());
     if (!in.good())
@@ -110,23 +104,27 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t *argv, std::wstring envp)
     // Create a pipe for the child process's STDOUT.
     if (!CreatePipe(&hReadStdOut, &hWriteStdOut, &sa, 0))
     {
-        exit(1);
+        ret.errCode = 1;
+        return ret;
     }
     // Ensure the read handle to the pipe for STDOUT is not inherited.
     if (!SetHandleInformation(hReadStdOut, HANDLE_FLAG_INHERIT, 0))
     {
-        exit(1);
+        ret.errCode = 1;
+        return ret;
     }
 
     // Create a pipe for the child process's STDERR.
     if (!CreatePipe(&hReadStdErr, &hWriteStdErr, &sa, 0))
     {
-        exit(1);
+        ret.errCode = 1;
+        return ret;
     }
     // Ensure the read handle to the pipe for STDERR is not inherited.
     if (!SetHandleInformation(hReadStdErr, HANDLE_FLAG_INHERIT, 0))
     {
-        exit(1);
+        ret.errCode = 1;
+        return ret;
     }
 
     ZeroMemory(&si, sizeof(si));
@@ -142,7 +140,8 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t *argv, std::wstring envp)
     if (lpvEnv == NULL)
     {
         printf("GetEnvironmentStrings failed (%d)\n", GetLastError());
-        exit(1);
+        ret.errCode = 1;
+        return ret;
     }
 
     // Append current environment to new environment variables
@@ -175,6 +174,7 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t *argv, std::wstring envp)
         CloseHandle(hWriteStdErr);
         CloseHandle(hReadStdErr);
         printf("CreateProcess failed (%d).\n", GetLastError());
+        ret.errCode = 1;
         return ret;
     }
 
@@ -209,74 +209,76 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t *argv, std::wstring envp)
     return ret;
 }
 
-processReturn CloudfuseMngr::genS3Config(std::string accessKeyId, std::string secretAccessKey, std::string region,
-                                         std::string endpoint, std::string bucketName, std::string passphrase)
+processReturn CloudfuseMngr::genS3Config(const std::string accessKeyId, const std::string secretAccessKey,
+                                         const std::string region, const std::string endpoint,
+                                         const std::string bucketName, const std::string passphrase)
 {
-    std::string argv = "cloudfuse gen-config --config-file=" + templateFile + " --output-file=" + configFile +
-                       " --temp-path=" + fileCacheDir + " --passphrase=" + passphrase;
-    std::string aws_access_key_id_env = "AWS_ACCESS_KEY_ID=" + accessKeyId;
-    std::string aws_secret_access_key_env = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
-    std::string aws_region_env = "AWS_REGION=" + region;
-    std::string endpoint_env = "ENDPOINT=" + endpoint;
-    std::string bucket_name_env = "BUCKET_NAME=" + bucketName;
-    std::string envp = aws_access_key_id_env + '\0' + aws_secret_access_key_env + '\0' + aws_region_env + '\0' +
-                       endpoint_env + '\0' + bucket_name_env + '\0';
+    const std::string argv = "cloudfuse gen-config --config-file=" + templateFile + " --output-file=" + configFile +
+                             " --temp-path=" + fileCacheDir + " --passphrase=" + passphrase;
+    const std::string aws_access_key_id_env = "AWS_ACCESS_KEY_ID=" + accessKeyId;
+    const std::string aws_secret_access_key_env = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
+    const std::string aws_region_env = "AWS_REGION=" + region;
+    const std::string endpoint_env = "ENDPOINT=" + endpoint;
+    const std::string bucket_name_env = "BUCKET_NAME=" + bucketName;
+    const std::string envp = aws_access_key_id_env + '\0' + aws_secret_access_key_env + '\0' + aws_region_env + '\0' +
+                             endpoint_env + '\0' + bucket_name_env + '\0';
 
-    std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
-    std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
+    const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
+    const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
     return spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 }
 
-processReturn CloudfuseMngr::dryRun(std::string passphrase)
+processReturn CloudfuseMngr::dryRun(const std::string passphrase)
 {
-    std::string argv =
+    const std::string argv =
         "cloudfuse mount " + mountDir + " --config-file=" + configFile + " --passphrase=" + passphrase + " --dry-run";
-    std::string envp = "";
+    const std::string envp = "";
 
-    std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
-    std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
+    const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
+    const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
     return spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 }
 
-processReturn CloudfuseMngr::mount(std::string passphrase)
+processReturn CloudfuseMngr::mount(const std::string passphrase)
 {
-    std::string argv = "cloudfuse mount " + mountDir + " --config-file=" + configFile + " --passphrase=" + passphrase;
-    std::string envp = "";
+    const std::string argv =
+        "cloudfuse mount " + mountDir + " --config-file=" + configFile + " --passphrase=" + passphrase;
+    const std::string envp = "";
 
-    std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
-    std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
+    const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
+    const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
     return spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 }
 
 processReturn CloudfuseMngr::unmount()
 {
-    std::string argv = "cloudfuse unmount " + mountDir;
-    std::string envp = "";
+    const std::string argv = "cloudfuse unmount " + mountDir;
+    const std::string envp = "";
 
-    std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
-    std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
+    const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
+    const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
     return spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 }
 
 bool CloudfuseMngr::isInstalled()
 {
-    std::string argv = "cloudfuse version";
-    std::string envp = "";
+    const std::string argv = "cloudfuse version";
+    const std::string envp = "";
 
-    std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
-    std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
+    const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
+    const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
     return spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp).errCode == 0;
 }
 
 bool CloudfuseMngr::isMounted()
 {
-    std::wstring mountDirW = std::wstring(mountDir.begin(), mountDir.end());
-    DWORD fileAttributes = GetFileAttributes(mountDirW.c_str());
+    const std::wstring mountDirW = std::wstring(mountDir.begin(), mountDir.end());
+    const DWORD fileAttributes = GetFileAttributes(mountDirW.c_str());
     if (fileAttributes == INVALID_FILE_ATTRIBUTES)
     {
         return false;

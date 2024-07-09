@@ -11,16 +11,17 @@ class CloudfuseMngr
   public:
     CloudfuseMngr();
 #ifdef _WIN32
-    CloudfuseMngr(std::string mountDir, std::string configFile, std::string fileCachePath);
-    processReturn dryRun(std::string passphrase);
-    processReturn mount(std::string passphrase);
-    processReturn genS3Config(std::string accessKeyId, std::string secretAccessKey, std::string region,
-                              std::string endpoint, std::string bucketName, std::string passphrase);
+    processReturn dryRun(const std::string passphrase);
+    processReturn mount(const std::string passphrase);
+    processReturn genS3Config(const std::string accessKeyId, const std::string secretAccessKey,
+                              const std::string region, const std::string endpoint, const std::string bucketName,
+                              const std::string passphrase);
 #elif defined(__linux__) || defined(__APPLE__)
-    CloudfuseMngr(std::string mountDir, std::string fileCacheDir, std::string configFile, std::string templateFile);
-    processReturn dryRun(std::string accessKeyId, std::string secretAccessKey, std::string passphrase);
-    processReturn mount(std::string accessKeyId, std::string secretAccessKey, std::string passphrase);
-    processReturn genS3Config(std::string region, std::string endpoint, std::string bucketName, std::string passphrase);
+    processReturn dryRun(const std::string accessKeyId, const std::string secretAccessKey,
+                         const std::string passphrase);
+    processReturn mount(const std::string accessKeyId, const std::string secretAccessKey, const std::string passphrase);
+    processReturn genS3Config(const std::string region, const std::string endpoint, const std::string bucketName,
+                              const std::string passphrase);
 #endif
     std::string getMountDir();
     std::string getFileCacheDir();
@@ -35,7 +36,7 @@ class CloudfuseMngr
     std::string templateFile;
 #ifdef _WIN32
     processReturn spawnProcess(wchar_t *argv, std::wstring envp);
-    processReturn encryptConfig(std::string passphrase);
+    processReturn encryptConfig(const std::string passphrase);
 #elif defined(__linux__) || defined(__APPLE__)
     processReturn spawnProcess(char *const argv[], char *const envp[]);
 #endif

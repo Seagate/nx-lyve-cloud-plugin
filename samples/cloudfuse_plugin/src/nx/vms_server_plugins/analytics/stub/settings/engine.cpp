@@ -4,12 +4,14 @@
 #include "engine.h"
 
 #include <algorithm>
+#include <chrono>
 #include <filesystem>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <string.h>
+#include <thread>
 
 #include "actions.h"
 #include "active_settings_rules.h"
@@ -157,39 +159,36 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         NX_PRINT << it->first << ":" << it->second << std::endl;
         NX_OUTPUT << it->first << ":" << it->second << std::endl;
     }
-    std::string keyId = values[kKeyIdTextFieldId];
-    std::string secretKey = values[kSecretKeyPasswordFieldId];
-    std::string endpointUrl = values[kEndpointUrlTextFieldId];
-    std::string endpointRegion = "us-east-1";
-    std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse to select
-                                                             // first available bucket
-    std::string mountDir = cfManager.getMountDir();
-    std::string fileCacheDir = cfManager.getFileCacheDir();
+    const std::string keyId = values[kKeyIdTextFieldId];
+    const std::string secretKey = values[kSecretKeyPasswordFieldId];
+    const std::string endpointUrl = values[kEndpointUrlTextFieldId];
+    const std::string endpointRegion = "us-east-1";
+    const std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse to
+                                                                   // select first available bucket
+    const std::string mountDir = cfManager.getMountDir();
+    const std::string fileCacheDir = cfManager.getFileCacheDir();
     std::string passphrase = "";
-    // Generate passphrase if user did not provide one
-    if (passphrase == "")
+    // Generate passphrase for config file
+    unsigned char key[32]; // AES-256 key
+    if (RAND_bytes(key, sizeof(key)))
     {
-        unsigned char key[32]; // AES-256 key
-        if (RAND_bytes(key, sizeof(key)))
-        {
-            // Need to encode passphrase to base64 to pass to cloudfuse
-            BIO *bmem, *b64;
-            BUF_MEM *bptr;
+        // Need to encode passphrase to base64 to pass to cloudfuse
+        BIO *bmem, *b64;
+        BUF_MEM *bptr;
 
-            b64 = BIO_new(BIO_f_base64());
-            bmem = BIO_new(BIO_s_mem());
-            b64 = BIO_push(b64, bmem);
-            BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-            BIO_write(b64, key, 32);
-            BIO_flush(b64);
-            BIO_get_mem_ptr(b64, &bptr);
+        b64 = BIO_new(BIO_f_base64());
+        bmem = BIO_new(BIO_s_mem());
+        b64 = BIO_push(b64, bmem);
+        BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+        BIO_write(b64, key, 32);
+        BIO_flush(b64);
+        BIO_get_mem_ptr(b64, &bptr);
 
-            passphrase = std::string(bptr->data, bptr->length);
-        }
-        else
-        {
-            return error(ErrorCode::internalError, "OpenSSL Error: Unable to generate secure passphrase");
-        }
+        passphrase = std::string(bptr->data, bptr->length);
+    }
+    else
+    {
+        return error(ErrorCode::internalError, "OpenSSL Error: Unable to generate secure passphrase");
     }
 
     std::error_code errCode;
@@ -247,10 +246,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
     else
     {
-        if (!fs::create_directory(fileCacheDir, errCode))
+        if (!fs::create_directories(fileCacheDir, errCode))
         {
             return error(ErrorCode::internalError,
-                         "Unable to create file cache directory with error: " + errCode.message());
+                         "Unable to create file cache directory " + fileCacheDir + " with error: " + errCode.message());
         }
         fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
         if (errCode)
@@ -266,9 +265,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
 
 #if defined(__linux__)
-    processReturn dryGenConfig = cfManager.genS3Config(endpointRegion, endpointUrl, bucketName, passphrase);
+    const processReturn dryGenConfig = cfManager.genS3Config(endpointRegion, endpointUrl, bucketName, passphrase);
 #elif defined(_WIN32)
-    processReturn dryGenConfig =
+    const processReturn dryGenConfig =
         cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, bucketName, passphrase);
 #endif
 
@@ -278,9 +277,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
 
 #if defined(__linux__)
-    processReturn dryRunRet = cfManager.dryRun(keyId, secretKey, passphrase);
+    const processReturn dryRunRet = cfManager.dryRun(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
-    processReturn dryRunRet = cfManager.dryRun(passphrase);
+    const processReturn dryRunRet = cfManager.dryRun(passphrase);
 #endif
 
     if (dryRunRet.errCode != 0)
@@ -326,9 +325,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
 
 #if defined(__linux__)
-    processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
+    const processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
-    processReturn mountRet = cfManager.mount(passphrase);
+    const processReturn mountRet = cfManager.mount(passphrase);
 #endif
 
     if (mountRet.errCode != 0)
@@ -336,12 +335,15 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         return error(ErrorCode::internalError, "Unable to launch mount with error: " + mountRet.output);
     }
 
-// On Windows, mount does not show up immediately, so need to wait
-#ifdef _WIN32
-    Sleep(2000);
-#endif
+    // Mount might not show up immediately, so wait for mount to appear
+    int retryCount = 0;
+    while (!cfManager.isMounted() && retryCount < 10)
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        retryCount++;
+    }
 
-    if (!cfManager.isMounted())
+    if (retryCount == 10)
     {
         return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
     }
