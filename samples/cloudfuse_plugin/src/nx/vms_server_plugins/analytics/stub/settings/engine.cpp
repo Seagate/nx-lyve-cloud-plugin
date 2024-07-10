@@ -196,7 +196,11 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 
     std::map<std::string, std::string> values = currentSettings();
 
-    if (settingsChanged())
+    // check if settings changed
+    bool mountRequired = settingsChanged();
+    // write new settings to previous
+    updatePrevSettings(values);
+    if (mountRequired)
     {
         NX_PRINT << "Values changed" << std::endl;
         const std::string keyId = values[kKeyIdTextFieldId];
@@ -394,8 +398,6 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     {
         NX_PRINT << "Settings have not changed." << std::endl;
     }
-    // write new settings to previous
-    updatePrevSettings(values);
 
     if (!processActiveSettings(&model, &values))
         return error(ErrorCode::internalError, "Unable to process the active settings section");
