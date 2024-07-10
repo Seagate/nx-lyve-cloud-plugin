@@ -195,17 +195,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     Json::object model = Json::parse(kEngineSettingsModel, parseError).object_items();
 
     std::map<std::string, std::string> values = currentSettings();
-    // print incoming settings for debugging
-    for (std::map<std::string, std::string>::iterator it = values.begin(); it != values.end(); it++)
-    {
-        NX_PRINT << it->first << ":" << it->second << std::endl;
-        NX_OUTPUT << it->first << ":" << it->second << std::endl;
-    }
 
     if (settingsChanged())
     {
         NX_PRINT << "Values changed" << std::endl;
-        NX_OUTPUT << "Values changed" << std::endl;
         const std::string keyId = values[kKeyIdTextFieldId];
         const std::string secretKey = values[kSecretKeyPasswordFieldId];
         const std::string endpointUrl = values[kEndpointUrlTextFieldId];
@@ -400,7 +393,6 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     else
     {
         NX_PRINT << "Settings have not changed." << std::endl;
-        NX_OUTPUT << "Settings have not changed." << std::endl;
     }
     // write new settings to previous
     updatePrevSettings(values);
