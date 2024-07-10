@@ -147,32 +147,41 @@ bool Engine::processActiveSettings(Json::object *model, std::map<std::string, st
     return true;
 }
 
-bool Engine::settingsChanged() {
+bool Engine::settingsChanged()
+{
     std::map<std::string, std::string> prevValues = prevSettings();
     std::map<std::string, std::string> newValues = currentSettings();
-    if (newValues == prevValues) {
+    if (newValues == prevValues)
+    {
         return false;
     }
     // we only really care about certain values
     // key ID
-    if (prevValues[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId]) {
+    if (prevValues[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])
+    {
         return true;
     }
     // secret key
-    if (prevValues[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId]) {
+    if (prevValues[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId])
+    {
         return true;
     }
     // endpoint
-    if (prevValues[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId]) {
+    if (prevValues[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
+    {
         // if they're different, but both amount to the same thing, then there is no effective change
-        bool prevIsDefault = prevValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || prevValues[kEndpointUrlTextFieldId] == "";
-        bool newIsDefault = newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
-        if (!prevIsDefault || !newIsDefault) {
+        bool prevIsDefault =
+            prevValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || prevValues[kEndpointUrlTextFieldId] == "";
+        bool newIsDefault =
+            newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
+        if (!prevIsDefault || !newIsDefault)
+        {
             return true;
         }
     }
     // bucket name
-    if (prevValues[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId]) {
+    if (prevValues[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
+    {
         return true;
     }
     // nothing we care about changed
@@ -193,15 +202,16 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         NX_OUTPUT << it->first << ":" << it->second << std::endl;
     }
 
-    if (settingsChanged()) {
+    if (settingsChanged())
+    {
         NX_PRINT << "Values changed" << std::endl;
         NX_OUTPUT << "Values changed" << std::endl;
         const std::string keyId = values[kKeyIdTextFieldId];
         const std::string secretKey = values[kSecretKeyPasswordFieldId];
         const std::string endpointUrl = values[kEndpointUrlTextFieldId];
         const std::string endpointRegion = "us-east-1";
-        const std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse to
-                                                                    // select first available bucket
+        const std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
+                                                                       // to select first available bucket
         const std::string mountDir = cfManager.getMountDir();
         const std::string fileCacheDir = cfManager.getFileCacheDir();
         std::string passphrase = "";
@@ -245,7 +255,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
                 if (errCode)
                 {
                     return error(ErrorCode::internalError,
-                                "Unable to set mount directory permission with error: " + errCode.message());
+                                 "Unable to set mount directory permission with error: " + errCode.message());
                 }
             }
 #endif
@@ -256,13 +266,14 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             // On Linux we need to create the folder if it does not yet exist
             if (!fs::create_directory(mountDir, errCode))
             {
-                return error(ErrorCode::internalError, "Unable to create mount directory with error: " + errCode.message());
+                return error(ErrorCode::internalError,
+                             "Unable to create mount directory with error: " + errCode.message());
             }
             fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode)
             {
                 return error(ErrorCode::internalError,
-                            "Unable to set mount directory permissions with error: " + errCode.message());
+                             "Unable to set mount directory permissions with error: " + errCode.message());
             }
 #endif
         }
@@ -277,7 +288,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
                 if (errCode)
                 {
                     return error(ErrorCode::internalError,
-                                "Unable to set mount directory permission with error: " + errCode.message());
+                                 "Unable to set mount directory permission with error: " + errCode.message());
                 }
             }
         }
@@ -285,14 +296,14 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         {
             if (!fs::create_directories(fileCacheDir, errCode))
             {
-                return error(ErrorCode::internalError,
-                            "Unable to create file cache directory " + fileCacheDir + " with error: " + errCode.message());
+                return error(ErrorCode::internalError, "Unable to create file cache directory " + fileCacheDir +
+                                                           " with error: " + errCode.message());
             }
             fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode)
             {
                 return error(ErrorCode::internalError,
-                            "Unable to set file cache directory permissions with error: " + errCode.message());
+                             "Unable to set file cache directory permissions with error: " + errCode.message());
             }
         }
 
@@ -324,10 +335,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             if (dryRunRet.output.find("Bucket Error") != std::string::npos)
             {
                 Engine::pushPluginDiagnosticEvent(sdk::IPluginDiagnosticEvent::Level::error, "Plugin Bucket Error",
-                                                "Error with provided cloud bucket: " +
-                                                    parseCloudfuseError(dryRunRet.output));
+                                                  "Error with provided cloud bucket: " +
+                                                      parseCloudfuseError(dryRunRet.output));
                 return error(ErrorCode::otherError,
-                            "Unable to authenticate with bucket: " + parseCloudfuseError(dryRunRet.output));
+                             "Unable to authenticate with bucket: " + parseCloudfuseError(dryRunRet.output));
             }
             if (dryRunRet.output.find("Credential or Endpoint Error") != std::string::npos)
             {
@@ -340,25 +351,26 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             if (dryRunRet.output.find("Endpoint Error") != std::string::npos)
             {
                 Engine::pushPluginDiagnosticEvent(sdk::IPluginDiagnosticEvent::Level::error, "Plugin Endpoint Error",
-                                                "Error with provided endpoint: " + parseCloudfuseError(dryRunRet.output));
+                                                  "Error with provided endpoint: " +
+                                                      parseCloudfuseError(dryRunRet.output));
                 return error(ErrorCode::otherError,
-                            "Error with provided endpoint: " + parseCloudfuseError(dryRunRet.output));
+                             "Error with provided endpoint: " + parseCloudfuseError(dryRunRet.output));
             }
             if (dryRunRet.output.find("Secret Error") != std::string::npos)
             {
                 Engine::pushPluginDiagnosticEvent(sdk::IPluginDiagnosticEvent::Level::error, "Plugin Secret Error",
-                                                "Secret key provided is incorrect: " +
-                                                    parseCloudfuseError(dryRunRet.output));
+                                                  "Secret key provided is incorrect: " +
+                                                      parseCloudfuseError(dryRunRet.output));
                 return error(ErrorCode::otherError,
-                            "Secret key provided is incorrect: " + parseCloudfuseError(dryRunRet.output));
+                             "Secret key provided is incorrect: " + parseCloudfuseError(dryRunRet.output));
             }
 
             // Otherwise this is an error we did not prepare for
             Engine::pushPluginDiagnosticEvent(sdk::IPluginDiagnosticEvent::Level::error, "Plugin Error",
-                                            "Unable to validate credentials with error: " +
-                                                parseCloudfuseError(dryRunRet.output));
+                                              "Unable to validate credentials with error: " +
+                                                  parseCloudfuseError(dryRunRet.output));
             return error(ErrorCode::otherError,
-                        "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output));
+                         "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output));
         }
 
 #if defined(__linux__)
@@ -384,7 +396,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         {
             return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
         }
-    } else {
+    }
+    else
+    {
         NX_PRINT << "Settings have not changed." << std::endl;
         NX_OUTPUT << "Settings have not changed." << std::endl;
     }
