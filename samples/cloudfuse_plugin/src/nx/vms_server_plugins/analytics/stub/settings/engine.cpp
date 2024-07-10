@@ -151,21 +151,15 @@ bool Engine::settingsChanged() {
     std::map<std::string, std::string> prevValues = prevSettings();
     std::map<std::string, std::string> newValues = currentSettings();
     if (newValues == prevValues) {
-        NX_PRINT << "settingsChanged: false (settings are identical)" << std::endl;
-        NX_OUTPUT << "settingsChanged: false (settings are identical)" << std::endl;
         return false;
     }
     // we only really care about certain values
     // key ID
     if (prevValues[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId]) {
-        NX_PRINT << "settingsChanged: true (keyID \"" << prevValues[kKeyIdTextFieldId] << "\" changed to \"" << newValues[kKeyIdTextFieldId] << "\"" << std::endl;
-        NX_OUTPUT << "settingsChanged: true (keyID \"" << prevValues[kKeyIdTextFieldId] << "\" changed to \"" << newValues[kKeyIdTextFieldId] << "\"" << std::endl;
         return true;
     }
     // secret key
     if (prevValues[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId]) {
-        NX_PRINT << "settingsChanged: true (secret key \"" << prevValues[kSecretKeyPasswordFieldId] << "\" changed to \"" << newValues[kSecretKeyPasswordFieldId] << "\"" << std::endl;
-        NX_OUTPUT << "settingsChanged: true (secret key \"" << prevValues[kSecretKeyPasswordFieldId] << "\" changed to \"" << newValues[kSecretKeyPasswordFieldId] << "\"" << std::endl;
         return true;
     }
     // endpoint
@@ -174,15 +168,11 @@ bool Engine::settingsChanged() {
         bool prevIsDefault = prevValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || prevValues[kEndpointUrlTextFieldId] == "";
         bool newIsDefault = newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
         if (!prevIsDefault || !newIsDefault) {
-            NX_PRINT << "settingsChanged: true (endpoint \"" << prevValues[kEndpointUrlTextFieldId] << "\" changed to \"" << newValues[kEndpointUrlTextFieldId] << "\"" << std::endl;
-            NX_OUTPUT << "settingsChanged: true (endpoint \"" << prevValues[kEndpointUrlTextFieldId] << "\" changed to \"" << newValues[kEndpointUrlTextFieldId] << "\"" << std::endl;
             return true;
         }
     }
     // bucket name
     if (prevValues[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId]) {
-        NX_PRINT << "settingsChanged: true (bucket name \"" << prevValues[kBucketNameTextFieldId] << "\" changed to \"" << newValues[kBucketNameTextFieldId] << "\"" << std::endl;
-        NX_OUTPUT << "settingsChanged: true (bucket name \"" << prevValues[kBucketNameTextFieldId] << "\" changed to \"" << newValues[kBucketNameTextFieldId] << "\"" << std::endl;
         return true;
     }
     // nothing we care about changed
@@ -394,6 +384,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         {
             return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
         }
+    } else {
+        NX_PRINT << "Settings have not changed." << std::endl;
+        NX_OUTPUT << "Settings have not changed." << std::endl;
     }
     // write new settings to previous
     updatePrevSettings(values);
