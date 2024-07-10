@@ -36,6 +36,7 @@ class Engine : public nx::sdk::analytics::Engine
     virtual std::string manifestString() const override;
 
     virtual nx::sdk::Result<const nx::sdk::ISettingsResponse *> settingsReceived() override;
+    bool settingsChanged();
 
   protected:
     virtual void doObtainDeviceAgent(nx::sdk::Result<nx::sdk::analytics::IDeviceAgent *> *outResult,

@@ -70,6 +70,8 @@ protected:
      * @return Current settings.
      */
     std::map<std::string, std::string> currentSettings() const;
+    std::map<std::string, std::string> prevSettings() const;
+    void updatePrevSettings(std::map<std::string, std::string>);
 
     /**
      * Action handler. Called when some Action defined by this Engine is triggered by the Server.
@@ -130,6 +132,7 @@ protected:
 private:
     mutable std::mutex m_mutex;
     std::map<std::string, std::string> m_settings;
+    std::map<std::string, std::string> prev_settings;
     Ptr<IEngine::IHandler> m_handler;
     std::string m_pluginInstanceId;
 };
