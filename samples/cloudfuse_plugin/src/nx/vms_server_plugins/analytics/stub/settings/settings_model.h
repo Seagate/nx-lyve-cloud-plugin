@@ -115,7 +115,7 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                     "defaultValue": ")json" + kDefaultEndpoint +
                                                 R"json(",
                     "validationErrorMessage": "Endpoint must be a URL (begin with 'http[s]://').",
-                    "validationRegex": "^https?://.+$",
+                    "validationRegex": "(^$)|(^https?://.+$)",
                     "validationRegexFlags": "i"
                 },
                 {
