@@ -3,14 +3,6 @@
 
 #include "active_settings_builder.h"
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -55,7 +47,3 @@ bool ActiveSettingsBuilder::ActiveSettingKey::operator<(const ActiveSettingKey &
 }
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

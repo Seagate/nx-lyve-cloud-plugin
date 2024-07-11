@@ -10,14 +10,6 @@
 
 #include <cloudfuse/child_process.h>
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -59,7 +51,3 @@ class Engine : public nx::sdk::analytics::Engine
 };
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

@@ -10,15 +10,6 @@
 #include <nx/sdk/i_string_map.h>
 #include <nx/sdk/ptr.h>
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
-
 bool toBool(std::string str);
 
 bool startsWith(const std::string &str, const std::string &prefix);
@@ -126,8 +117,3 @@ template <typename T> class SimpleOptional
     T m_value{};
     bool m_isInitialized = false;
 };
-
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

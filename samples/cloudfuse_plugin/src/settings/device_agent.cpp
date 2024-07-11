@@ -10,21 +10,13 @@
 #include <nx/kit/utils.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
 #include <nx/sdk/helpers/error.h>
-#include <nx/vms_server_plugins/analytics/stub/utils.h>
+#include <utils.h>
 
 #include "actions.h"
 #include "active_settings_rules.h"
 #include "settings_model.h"
 #include "stub_analytics_plugin_settings_ini.h"
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -65,7 +57,7 @@ std::string DeviceAgent::manifestString() const
 
 Result<const ISettingsResponse *> DeviceAgent::settingsReceived()
 {
-    const auto settingsResponse = new sdk::SettingsResponse();
+    const auto settingsResponse = new SettingsResponse();
 
     const std::string settingsModelType = settingValue(kSettingsModelSettings);
 
@@ -222,7 +214,3 @@ void DeviceAgent::getPluginSideSettings(Result<const ISettingsResponse *> *outRe
 }
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

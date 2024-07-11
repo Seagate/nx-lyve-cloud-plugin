@@ -9,14 +9,6 @@
 #include <nx/sdk/i_string_map.h>
 #include <nx/sdk/ptr.h>
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -24,7 +16,3 @@ nx::sdk::Ptr<nx::sdk::ActionResponse> generateActionResponse(const std::string &
                                                              nx::sdk::Ptr<const nx::sdk::IStringMap> params);
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

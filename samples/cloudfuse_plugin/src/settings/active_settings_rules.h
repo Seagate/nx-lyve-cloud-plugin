@@ -8,14 +8,6 @@
 #include <nx/sdk/i_string.h>
 #include <nx/sdk/i_string_map.h>
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -41,7 +33,3 @@ void hideAdditionalRadioButton(nx::kit::Json *inOutModel, std::map<std::string, 
 void updateMinMaxSpinBoxes(nx::kit::Json *inOutModel, std::map<std::string, std::string> *inOutValues);
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx
