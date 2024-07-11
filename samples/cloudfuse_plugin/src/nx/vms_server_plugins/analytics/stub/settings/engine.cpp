@@ -69,6 +69,13 @@ Engine::Engine(Plugin *plugin)
 
 Engine::~Engine()
 {
+    NX_PRINT << "cloudfuse Engine::~Engine unmount cloudfuse" << std::endl;
+    const processReturn unmountRet = cfManager.unmount();
+    if (unmountRet.errCode != 0)
+    {
+        NX_PRINT << "cloudfuse Engine::~Engine failed to unmount cloudfuse with error: " + unmountRet.output
+                 << std::endl;
+    }
 }
 
 void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDeviceInfo *deviceInfo)
