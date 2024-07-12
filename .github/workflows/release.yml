@@ -39,7 +39,7 @@ jobs:
       id: runvcpkg
       with:
         # The vcpkg.json file, which will be part of cache key computation.
-        vcpkgJsonGlob: '**/samples/cloudfuse_plugin/vcpkg.json'
+        vcpkgJsonGlob: '**/src/vcpkg.json'
     
     - name: Run build script for Windows
       shell: powershell
