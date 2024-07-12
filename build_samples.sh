@@ -63,32 +63,47 @@ esac
     # rm -rf "$BUILD_DIR/"
 )
 
-for SOURCE_DIR in "$BASE_DIR/samples"/*
-do
-    SAMPLE=$(basename "$SOURCE_DIR")
-    (set -x #< Log each command.
-        mkdir -p "$BUILD_DIR/$SAMPLE"
-        cd "$BUILD_DIR/$SAMPLE"
+# Build source plugin
+SOURCE_DIR="$BASE_DIR/src"
+SAMPLE="cloudfuse_plugin"
+(set -x #< Log each command.
+    mkdir -p "$BUILD_DIR/$SAMPLE"
+    cd "$BUILD_DIR/$SAMPLE"
 
-        cmake "$SOURCE_DIR" `# allow empty array #` ${GEN_OPTIONS[@]+"${GEN_OPTIONS[@]}"} "$@"
-        cmake --build . `# allow empty array #` ${BUILD_OPTIONS[@]+"${BUILD_OPTIONS[@]}"}
-    )
+    cmake "$SOURCE_DIR" `# allow empty array #` ${GEN_OPTIONS[@]+"${GEN_OPTIONS[@]}"} "$@"
+    cmake --build . `# allow empty array #` ${BUILD_OPTIONS[@]+"${BUILD_OPTIONS[@]}"}
+)
 
-    if [[ $SAMPLE == "unit_tests" ]]
-    then
-        ARTIFACT=$(find "$BUILD_DIR" -name "analytics_plugin_ut.exe" -o -name "analytics_plugin_ut")
-    else
-        ARTIFACT=$(find "$BUILD_DIR" -name "$SAMPLE.dll" -o -name "lib$SAMPLE.so")
-    fi
-    if [ ! -f "$ARTIFACT" ]
-    then
-        echo "ERROR: Failed to build $SAMPLE."
-        exit 64
-    fi
-    echo ""
-    echo "Built: $ARTIFACT"
-    echo ""
-done
+ARTIFACT=$(find "$BUILD_DIR" -name "$SAMPLE.dll" -o -name "lib$SAMPLE.so")
+if [ ! -f "$ARTIFACT" ]
+then
+    echo "ERROR: Failed to build $SAMPLE."
+    exit 64
+fi
+echo ""
+echo "Built: $ARTIFACT"
+echo ""
+
+# Build unit tests
+SOURCE_DIR="$BASE_DIR/src/unit_tests"
+SAMPLE="unit_tests"
+(set -x #< Log each command.
+    mkdir -p "$BUILD_DIR/$SAMPLE"
+    cd "$BUILD_DIR/$SAMPLE"
+
+    cmake "$SOURCE_DIR" `# allow empty array #` ${GEN_OPTIONS[@]+"${GEN_OPTIONS[@]}"} "$@"
+    cmake --build . `# allow empty array #` ${BUILD_OPTIONS[@]+"${BUILD_OPTIONS[@]}"}
+)
+
+ARTIFACT=$(find "$BUILD_DIR" -name "analytics_plugin_ut.exe" -o -name "analytics_plugin_ut")
+if [ ! -f "$ARTIFACT" ]
+then
+    echo "ERROR: Failed to build $SAMPLE."
+    exit 64
+fi
+echo ""
+echo "Built: $ARTIFACT"
+echo ""
 
 # Run unit tests if needed.
 if [[ $NO_TESTS == 1 ]]
