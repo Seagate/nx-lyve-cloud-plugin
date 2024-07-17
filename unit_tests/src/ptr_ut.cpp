@@ -2,31 +2,40 @@
 
 #include <nx/kit/test.h>
 
-#include <nx/sdk/interface.h>
 #include <nx/sdk/helpers/ref_countable.h>
+#include <nx/sdk/interface.h>
 #include <nx/sdk/ptr.h>
 
-namespace nx {
-namespace sdk {
-namespace ptr_ut {
-
-class IBase: public Interface<IBase, IRefCountable>
+namespace nx
 {
-public:
-    static auto interfaceId() { return makeId("nx::sdk::test::IBase"); }
+namespace sdk
+{
+namespace ptr_ut
+{
+
+class IBase : public Interface<IBase, IRefCountable>
+{
+  public:
+    static auto interfaceId()
+    {
+        return makeId("nx::sdk::test::IBase");
+    }
 };
 
-class IData: public Interface<IData, IBase>
+class IData : public Interface<IData, IBase>
 {
-public:
-    static auto interfaceId() { return makeId("nx::sdk::test::IData"); }
+  public:
+    static auto interfaceId()
+    {
+        return makeId("nx::sdk::test::IData");
+    }
 
     virtual int number() const = 0;
 };
 
-class Base: public RefCountable<IBase>
+class Base : public RefCountable<IBase>
 {
-public:
+  public:
     static bool s_destructorCalled;
 
     Base() = default;
@@ -39,32 +48,37 @@ public:
 };
 bool Base::s_destructorCalled = false;
 
-class Data: public RefCountable<IData>
+class Data : public RefCountable<IData>
 {
-public:
+  public:
     static bool s_destructorCalled;
 
-public:
+  public:
     Data() = default;
-    Data(int number): m_number(number) {}
+    Data(int number) : m_number(number)
+    {
+    }
 
-    virtual int number() const override { return m_number; }
+    virtual int number() const override
+    {
+        return m_number;
+    }
 
-    virtual ~Data() override { s_destructorCalled = true; }
+    virtual ~Data() override
+    {
+        s_destructorCalled = true;
+    }
 
-private:
+  private:
     const int m_number = 42;
 };
 bool Data::s_destructorCalled = false;
 
-template<typename ExpectedRefCountable, typename ActualRefCountable>
-void assertEq(
-    const Ptr<ExpectedRefCountable>& expected,
-    const Ptr<ActualRefCountable>& actual,
-    int expectedRefCount)
+template <typename ExpectedRefCountable, typename ActualRefCountable>
+void assertEq(const Ptr<ExpectedRefCountable> &expected, const Ptr<ActualRefCountable> &actual, int expectedRefCount)
 {
     ASSERT_EQ(expected.get(), actual.get());
-    ASSERT_TRUE(expected == actual); //< operator==()
+    ASSERT_TRUE(expected == actual);  //< operator==()
     ASSERT_FALSE(expected != actual); //< operator!=()
 
     ASSERT_EQ(expectedRefCount, actual->refCountThreadUnsafe());
@@ -100,12 +114,12 @@ TEST(Ptr, basic)
         const Ptr<Data> data = makePtr<Data>(42);
 
         // Ptr layout should be the same as of a raw pointer.
-        ASSERT_EQ(sizeof(Data*), sizeof(data));
+        ASSERT_EQ(sizeof(Data *), sizeof(data));
 
         ASSERT_EQ(data->number(), 42);
         ASSERT_EQ(1, data->refCount());
         ASSERT_TRUE(static_cast<bool>(data)); //< operator bool()
-        ASSERT_TRUE(data.get() != nullptr); //< get()
+        ASSERT_TRUE(data.get() != nullptr);   //< get()
 
         // Standalone operator==() and operator!=() with nullptr_t.
         ASSERT_FALSE(nullptr == data);
@@ -124,7 +138,7 @@ TEST(Ptr, inheritance)
     {
         const Ptr<Data> data = makePtr<Data>(42);
 
-        const IBase* tmp = data.get();
+        const IBase *tmp = data.get();
 
         Ptr<const IBase> base(tmp);
         ASSERT_EQ(1, data->refCount());
@@ -139,7 +153,7 @@ TEST(Ptr, PtrCtor)
 {
     Data::s_destructorCalled = false;
     {
-        Data* p = new Data(42);
+        Data *p = new Data(42);
         const Ptr<Data> data(p);
         ASSERT_EQ(p, data.get());
         ASSERT_EQ(1, data->refCount());
@@ -152,14 +166,14 @@ TEST(Ptr, shareToPtr)
 {
     Data::s_destructorCalled = false;
     {
-        Data* p = new Data(42);
+        Data *p = new Data(42);
         {
             // Test shareToPtr(RefCountable*).
             const Ptr<Data> data = shareToPtr(p);
             ASSERT_EQ(p, data.get());
             ASSERT_EQ(2, data->refCount());
             ASSERT_FALSE(Data::s_destructorCalled);
-            
+
             // Test shareToPtr(const Ptr<RefCountable>&).
             {
                 const Ptr<Data> data2 = shareToPtr(data);
@@ -172,7 +186,7 @@ TEST(Ptr, shareToPtr)
         } //< data.~Ptr() called.
         ASSERT_EQ(1, p->refCount());
         ASSERT_FALSE(Data::s_destructorCalled);
-        
+
         delete p;
     }
     ASSERT_TRUE(Data::s_destructorCalled);
@@ -222,13 +236,13 @@ TEST(Ptr, releasePtrAndReset)
     auto data2 = makePtr<Data>(2);
 
     Data::s_destructorCalled = false;
-    data2.reset(data1.releasePtr()); //< reset(non-null) and releasePtr()
+    data2.reset(data1.releasePtr());       //< reset(non-null) and releasePtr()
     ASSERT_TRUE(Data::s_destructorCalled); //< Data(2) deleted
     Data::s_destructorCalled = false;
     ASSERT_EQ(nullptr, data1.get());
     ASSERT_EQ(data2->number(), 1);
 
-    data2.reset(); //< reset()
+    data2.reset();                         //< reset()
     ASSERT_TRUE(Data::s_destructorCalled); //< Data(1) deleted
     ASSERT_EQ(nullptr, data2.get());
 }

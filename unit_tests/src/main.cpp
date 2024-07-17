@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-#include <nx/kit/test.h>
 #include <nx/kit/debug.h>
+#include <nx/kit/test.h>
 
 int main()
 {

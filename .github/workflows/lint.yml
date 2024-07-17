@@ -15,6 +15,7 @@ jobs:
 
     - name: Run clang-format
       run: |
-        find ./samples/cloudfuse_plugin/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
-        find ./samples/unit_tests/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
-        find ./src/cloudfuse/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
+        find ./src/lib/cloudfuse/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
+        find ./src/plugin/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
+        find ./src/unit_tests/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
+        find ./unit_tests/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
