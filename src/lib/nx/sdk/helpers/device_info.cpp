@@ -2,55 +2,54 @@
 
 #include "device_info.h"
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-const char *DeviceInfo::id() const
+const char* DeviceInfo::id() const
 {
     return m_id.c_str();
 }
 
-const char *DeviceInfo::vendor() const
+const char* DeviceInfo::vendor() const
 {
     return m_vendor.c_str();
 }
 
-const char *DeviceInfo::model() const
+const char* DeviceInfo::model() const
 {
     return m_model.c_str();
 }
 
-const char *DeviceInfo::firmware() const
+const char* DeviceInfo::firmware() const
 {
     return m_firmware.c_str();
 }
 
-const char *DeviceInfo::name() const
+const char* DeviceInfo::name() const
 {
     return m_name.c_str();
 }
 
-const char *DeviceInfo::url() const
+const char* DeviceInfo::url() const
 {
     return m_url.c_str();
 }
 
-const char *DeviceInfo::login() const
+const char* DeviceInfo::login() const
 {
     return m_login.c_str();
 }
 
-const char *DeviceInfo::password() const
+const char* DeviceInfo::password() const
 {
     return m_password.c_str();
 }
 
-const char *DeviceInfo::sharedId() const
+const char* DeviceInfo::sharedId() const
 {
     return m_sharedId.c_str();
 }
 
-const char *DeviceInfo::logicalId() const
+const char* DeviceInfo::logicalId() const
 {
     return m_logicalId.c_str();
 }

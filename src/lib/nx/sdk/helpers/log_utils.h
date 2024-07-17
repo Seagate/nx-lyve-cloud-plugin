@@ -5,16 +5,9 @@
 #include <map>
 #include <string>
 
-namespace nx
-{
-namespace sdk
-{
-class IStringMap;
-}
-} // namespace nx
+namespace nx { namespace sdk { class IStringMap; } }
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 /**
  * Plugin utils providing convenience for using NX_PRINT/NX_OUTPUT with their settings
@@ -34,8 +27,8 @@ struct LogUtils
     const bool enableOutput;
     std::string printPrefix;
 
-    LogUtils(bool enableOutput, std::string printPrefix)
-        : enableOutput(enableOutput), printPrefix(std::move(printPrefix))
+    LogUtils(bool enableOutput, std::string printPrefix):
+        enableOutput(enableOutput), printPrefix(std::move(printPrefix))
     {
     }
 
@@ -47,8 +40,11 @@ struct LogUtils
      * @param outputIndent Number of spaces to be printed before each line printed with NX_OUTPUT.
      * @return Whether the map is valid.
      */
-    bool convertAndOutputStringMap(std::map<std::string, std::string> *outMap, const IStringMap *stringMap,
-                                   const std::string &caption, int outputIndent = 0) const;
+    bool convertAndOutputStringMap(
+        std::map<std::string, std::string>* outMap,
+        const IStringMap* stringMap,
+        const std::string& caption,
+        int outputIndent = 0) const;
 };
 
 } // namespace nx::sdk

@@ -6,8 +6,7 @@
 #include <cstring>
 #include <stdint.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 using UuidBase = std::array<uint8_t, 16>;
 
@@ -19,18 +18,19 @@ using UuidBase = std::array<uint8_t, 16>;
  *
  * Is binary-compatible (has the same binary layout) with the old SDK (struct NX_GUID).
  */
-class Uuid : public UuidBase
+class Uuid: public UuidBase
 {
-  public:
-    static constexpr int kSize = (int)std::tuple_size<UuidBase>();
-    static constexpr int size()
-    {
-        return kSize;
-    } //< For C++14, to avoid the definition.
+public:
+    static constexpr int kSize = (int) std::tuple_size<UuidBase>();
+    static constexpr int size() { return kSize; } //< For C++14, to avoid the definition.
 
-    constexpr Uuid(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4, uint8_t b5, uint8_t b6, uint8_t b7,
-                   uint8_t b8, uint8_t b9, uint8_t bA, uint8_t bB, uint8_t bC, uint8_t bD, uint8_t bE, uint8_t bF)
-        : UuidBase({b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, bA, bB, bC, bD, bE, bF})
+    constexpr Uuid(
+        uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3,
+        uint8_t b4, uint8_t b5, uint8_t b6, uint8_t b7,
+        uint8_t b8, uint8_t b9, uint8_t bA, uint8_t bB,
+        uint8_t bC, uint8_t bD, uint8_t bE, uint8_t bF)
+        :
+        UuidBase({b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, bA, bB, bC, bD, bE, bF})
     {
     }
 
@@ -39,14 +39,9 @@ class Uuid : public UuidBase
         memcpy(data(), byteArray, kSize);
     }
 
-    constexpr Uuid() : UuidBase{}
-    {
-    } //< All zeros.
+    constexpr Uuid(): UuidBase{} {} //< All zeros.
 
-    bool isNull() const
-    {
-        return *this == Uuid();
-    }
+    bool isNull() const { return *this == Uuid(); }
 };
 
 } // namespace nx::sdk

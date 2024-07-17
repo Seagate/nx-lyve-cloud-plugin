@@ -8,42 +8,34 @@
 #include "i_action_response.h"
 #include "i_settings_response.h"
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 /**
  * Data returned from the plugin when the user changes some setting in the dialog.
  */
-class IActiveSettingChangedResponse : public Interface<IActiveSettingChangedResponse>
+class IActiveSettingChangedResponse: public Interface<IActiveSettingChangedResponse>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::IActiveSettingChangedResponse");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::IActiveSettingChangedResponse"); }
 
     /** Called by actionResponse() */
-  protected:
-    virtual const IActionResponse *getActionResponse() const = 0;
+    protected: virtual const IActionResponse* getActionResponse() const = 0;
     /**
      * @return Data for interacting with the user, or null if such interaction is not needed.
      */
-  public:
-    Ptr<const IActionResponse> actionResponse() const
+    public: Ptr<const IActionResponse> actionResponse() const
     {
         return Ptr(getActionResponse());
     }
 
     /** Called by settingsResponse() */
-  protected:
-    virtual const ISettingsResponse *getSettingsResponse() const = 0;
+    protected: virtual const ISettingsResponse* getSettingsResponse() const = 0;
     /**
      * A combination of optional individual setting errors, optional new setting values in case
      * they were adjusted, and an optional new Settings Model. Can be null if none of the above
      * items are present.
      */
-  public:
-    Ptr<const ISettingsResponse> settingsResponse() const
+    public: Ptr<const ISettingsResponse> settingsResponse() const
     {
         return Ptr(getSettingsResponse());
     }

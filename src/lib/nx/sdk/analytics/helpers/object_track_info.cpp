@@ -4,10 +4,9 @@
 
 #include <nx/kit/debug.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-IList<ITimestampedObjectMetadata> *ObjectTrackInfo::getTrack() const
+IList<ITimestampedObjectMetadata>* ObjectTrackInfo::getTrack() const
 {
     if (!m_track)
         return nullptr;
@@ -15,7 +14,7 @@ IList<ITimestampedObjectMetadata> *ObjectTrackInfo::getTrack() const
     return shareToPtr(m_track).releasePtr();
 }
 
-IUncompressedVideoFrame *ObjectTrackInfo::getBestShotVideoFrame() const
+IUncompressedVideoFrame* ObjectTrackInfo::getBestShotVideoFrame() const
 {
     if (!m_bestShotVideoFrame)
         return nullptr;
@@ -23,7 +22,7 @@ IUncompressedVideoFrame *ObjectTrackInfo::getBestShotVideoFrame() const
     return shareToPtr(m_bestShotVideoFrame).releasePtr();
 }
 
-ITimestampedObjectMetadata *ObjectTrackInfo::getBestShotObjectMetadata() const
+ITimestampedObjectMetadata* ObjectTrackInfo::getBestShotObjectMetadata() const
 {
     if (!m_bestShotObjectMetadata)
         return nullptr;
@@ -31,7 +30,7 @@ ITimestampedObjectMetadata *ObjectTrackInfo::getBestShotObjectMetadata() const
     return shareToPtr(m_bestShotObjectMetadata).releasePtr();
 }
 
-const char *ObjectTrackInfo::bestShotImageData() const
+const char* ObjectTrackInfo::bestShotImageData() const
 {
     if (m_bestShotImageData.empty())
         return nullptr;
@@ -41,15 +40,15 @@ const char *ObjectTrackInfo::bestShotImageData() const
 
 int ObjectTrackInfo::bestShotImageDataSize() const
 {
-    return (int)m_bestShotImageData.size();
+    return (int) m_bestShotImageData.size();
 }
 
-const char *ObjectTrackInfo::bestShotImageDataFormat() const
+const char* ObjectTrackInfo::bestShotImageDataFormat() const
 {
     return m_bestShotImageDataFormat.c_str();
 }
 
-void ObjectTrackInfo::setTrack(IList<ITimestampedObjectMetadata> *track)
+void ObjectTrackInfo::setTrack(IList<ITimestampedObjectMetadata>* track)
 {
     if (!NX_KIT_ASSERT(track))
         return;
@@ -57,7 +56,7 @@ void ObjectTrackInfo::setTrack(IList<ITimestampedObjectMetadata> *track)
     m_track = nx::sdk::shareToPtr(track);
 }
 
-void ObjectTrackInfo::setBestShotVideoFrame(IUncompressedVideoFrame *bestShotVideoFrame)
+void ObjectTrackInfo::setBestShotVideoFrame(IUncompressedVideoFrame* bestShotVideoFrame)
 {
     if (!NX_KIT_ASSERT(bestShotVideoFrame))
         return;
@@ -65,7 +64,7 @@ void ObjectTrackInfo::setBestShotVideoFrame(IUncompressedVideoFrame *bestShotVid
     m_bestShotVideoFrame = nx::sdk::shareToPtr(bestShotVideoFrame);
 }
 
-void ObjectTrackInfo::setBestShotObjectMetadata(ITimestampedObjectMetadata *bestShotObjectMetadata)
+void ObjectTrackInfo::setBestShotObjectMetadata(ITimestampedObjectMetadata* bestShotObjectMetadata)
 {
     if (!NX_KIT_ASSERT(bestShotObjectMetadata))
         return;
@@ -83,7 +82,9 @@ void ObjectTrackInfo::setBestShotImageDataFormat(std::string bestShotImageDataFo
     m_bestShotImageDataFormat = std::move(bestShotImageDataFormat);
 }
 
-void ObjectTrackInfo::setBestShotImage(std::vector<char> bestShotImageData, std::string bestShotImageDataFormat)
+void ObjectTrackInfo::setBestShotImage(
+    std::vector<char> bestShotImageData,
+    std::string bestShotImageDataFormat)
 {
     setBestShotImageData(std::move(bestShotImageData));
     setBestShotImageDataFormat(std::move(bestShotImageDataFormat));

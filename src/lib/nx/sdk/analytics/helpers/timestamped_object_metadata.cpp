@@ -4,14 +4,14 @@
 
 #include <nx/kit/debug.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-TimestampedObjectMetadata::TimestampedObjectMetadata() : m_objectMetadata(nx::sdk::makePtr<ObjectMetadata>())
+TimestampedObjectMetadata::TimestampedObjectMetadata():
+    m_objectMetadata(nx::sdk::makePtr<ObjectMetadata>())
 {
 }
 
-const char *TimestampedObjectMetadata::typeId() const
+const char* TimestampedObjectMetadata::typeId() const
 {
     return m_objectMetadata->typeId();
 }
@@ -21,17 +21,17 @@ float TimestampedObjectMetadata::confidence() const
     return m_objectMetadata->confidence();
 }
 
-void TimestampedObjectMetadata::getTrackId(Uuid *outValue) const
+void TimestampedObjectMetadata::getTrackId(Uuid* outValue) const
 {
     *outValue = m_objectMetadata->trackId();
 }
 
-const char *TimestampedObjectMetadata::subtype() const
+const char* TimestampedObjectMetadata::subtype() const
 {
     return m_objectMetadata->subtype();
 }
 
-const IAttribute *TimestampedObjectMetadata::getAttribute(int index) const
+const IAttribute* TimestampedObjectMetadata::getAttribute(int index) const
 {
     if (index >= m_objectMetadata->attributeCount() || index < 0)
         return nullptr;
@@ -48,7 +48,7 @@ int TimestampedObjectMetadata::attributeCount() const
     return m_objectMetadata->attributeCount();
 }
 
-void TimestampedObjectMetadata::getBoundingBox(Rect *outValue) const
+void TimestampedObjectMetadata::getBoundingBox(Rect* outValue) const
 {
     *outValue = m_objectMetadata->boundingBox();
 }
@@ -68,12 +68,12 @@ void TimestampedObjectMetadata::setConfidence(float confidence)
     m_objectMetadata->setConfidence(confidence);
 }
 
-void TimestampedObjectMetadata::setTrackId(const Uuid &value)
+void TimestampedObjectMetadata::setTrackId(const Uuid& value)
 {
     m_objectMetadata->setTrackId(std::move(value));
 }
 
-void TimestampedObjectMetadata::setSubtype(const std::string &value)
+void TimestampedObjectMetadata::setSubtype(const std::string& value)
 {
     m_objectMetadata->setSubtype(std::move(value));
 }
@@ -83,12 +83,12 @@ void TimestampedObjectMetadata::addAttribute(nx::sdk::Ptr<Attribute> attribute)
     m_objectMetadata->addAttribute(std::move(attribute));
 }
 
-void TimestampedObjectMetadata::addAttributes(const std::vector<nx::sdk::Ptr<Attribute>> &value)
+void TimestampedObjectMetadata::addAttributes(const std::vector<nx::sdk::Ptr<Attribute>>& value)
 {
     m_objectMetadata->addAttributes(value);
 }
 
-void TimestampedObjectMetadata::setBoundingBox(const Rect &rect)
+void TimestampedObjectMetadata::setBoundingBox(const Rect& rect)
 {
     m_objectMetadata->setBoundingBox(std::move(rect));
 }

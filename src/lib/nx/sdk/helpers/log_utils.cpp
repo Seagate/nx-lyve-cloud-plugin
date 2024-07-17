@@ -8,16 +8,18 @@
 
 #include <nx/sdk/i_string_map.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 void LogUtils::setPrintPrefix(std::string newPrefix)
 {
     printPrefix = std::move(newPrefix);
 }
 
-bool LogUtils::convertAndOutputStringMap(std::map<std::string, std::string> *outMap, const IStringMap *stringMap,
-                                         const std::string &caption, int outputIndent) const
+bool LogUtils::convertAndOutputStringMap(
+    std::map<std::string, std::string>* outMap,
+    const IStringMap* stringMap,
+    const std::string& caption,
+    int outputIndent) const
 {
     if (!stringMap)
     {
@@ -42,8 +44,9 @@ bool LogUtils::convertAndOutputStringMap(std::map<std::string, std::string> *out
         NX_OUTPUT << indentStr << "{";
         for (int i = 0; i < count; ++i)
         {
-            NX_OUTPUT << indentStr << "    " << nx::kit::utils::toString(stringMap->key(i)) << ": "
-                      << nx::kit::utils::toString(stringMap->value(i)) << ((i < count - 1) ? "," : "");
+            NX_OUTPUT << indentStr << "    " << nx::kit::utils::toString(stringMap->key(i))
+                << ": " << nx::kit::utils::toString(stringMap->value(i))
+                << ((i < count - 1) ? "," : "");
         }
         NX_OUTPUT << indentStr << "}";
     }

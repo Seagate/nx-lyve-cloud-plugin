@@ -7,11 +7,11 @@
 
 #include <nx/sdk/analytics/i_uncompressed_video_frame.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 /** @param outValue Can be null if the value is not needed. */
-bool pixelFormatFromStdString(const std::string &s, IUncompressedVideoFrame::PixelFormat *outPixelFormat);
+bool pixelFormatFromStdString(
+    const std::string& s, IUncompressedVideoFrame::PixelFormat* outPixelFormat);
 
 /**
  * @return String representation, or, if the value is unknown, a string like `PixelFormat(#)`,
@@ -19,7 +19,7 @@ bool pixelFormatFromStdString(const std::string &s, IUncompressedVideoFrame::Pix
  */
 std::string pixelFormatToStdString(IUncompressedVideoFrame::PixelFormat pixelFormat);
 
-std::string allPixelFormatsToStdString(const std::string &separator);
+std::string allPixelFormatsToStdString(const std::string& separator);
 
 struct PixelFormatDescriptor
 {
@@ -29,11 +29,12 @@ struct PixelFormatDescriptor
     int planeCount;
     int lumaBitsPerPixel;
     int chromaHeightFactor; /**< Number of original image lines per 1 chroma plane pixel. */
-    int chromaWidthFactor;  /**< Number of original image columns per 1 chroma plane pixel. */
+    int chromaWidthFactor; /**< Number of original image columns per 1 chroma plane pixel. */
 };
 
 /** @return Null if not found, after failing an assertion. */
-const PixelFormatDescriptor *getPixelFormatDescriptor(IUncompressedVideoFrame::PixelFormat pixelFormat);
+const PixelFormatDescriptor* getPixelFormatDescriptor(
+    IUncompressedVideoFrame::PixelFormat pixelFormat);
 
 std::vector<IUncompressedVideoFrame::PixelFormat> getAllPixelFormats();
 

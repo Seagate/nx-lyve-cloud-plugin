@@ -8,8 +8,7 @@
 
 #include "i_ref_countable.h"
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 /**
  * Helper class to define interfaces: provides the appropriate queryInterface().
@@ -45,34 +44,37 @@ namespace nx::sdk
  * - If both the interface id and the interface class have a number appended, the numbers coincide.
  * - The class of the latest interface version always has the original name without a number.
  */
-template <class DerivedInterface, class BaseInterface = IRefCountable> class Interface : public BaseInterface
+template<class DerivedInterface, class BaseInterface = IRefCountable>
+class Interface: public BaseInterface
 {
-  public:
+public:
     using IRefCountable::queryInterface; //< Needed to enable overloaded template versions.
 
-  protected:
-    virtual IRefCountable *queryInterface(const IRefCountable::InterfaceId *id) override
+protected:
+    virtual IRefCountable* queryInterface(const IRefCountable::InterfaceId* id) override
     {
         return doQueryInterface(id);
     }
 
     /** Call from DerivedInterface::queryInterface() to support interface id from the old SDK. */
-    IRefCountable *queryInterfaceSupportingDeprecatedId(const IRefCountable::InterfaceId *id,
-                                                        const Uuid &deprecatedInterfaceId)
+    IRefCountable* queryInterfaceSupportingDeprecatedId(
+        const IRefCountable::InterfaceId* id,
+        const Uuid& deprecatedInterfaceId)
     {
-        static_assert(Uuid::size() == IRefCountable::InterfaceId::minSize(), "Broken compatibility with old SDK");
+        static_assert(Uuid::size() == IRefCountable::InterfaceId::minSize(),
+            "Broken compatibility with old SDK");
         if (memcmp(id, deprecatedInterfaceId.data(), Uuid::size()) == 0)
         {
             this->addRef();
             // The cast is needed to shift the pointer in case of multiple inheritance.
-            return static_cast<DerivedInterface *>(this);
+            return static_cast<DerivedInterface*>(this);
         }
         return doQueryInterface(id);
     }
 
-  private:
+private:
     static_assert(std::is_base_of<IRefCountable, BaseInterface>::value,
-                  "Template parameter BaseInterface should be derived from IRefCountable");
+        "Template parameter BaseInterface should be derived from IRefCountable");
 
     /**
      * A private constructor is needed to statically assure that only DerivedInterface (which is
@@ -81,20 +83,20 @@ template <class DerivedInterface, class BaseInterface = IRefCountable> class Int
     Interface()
     {
         // Assure that DerivedInterface has interfaceId().
-        (void)&DerivedInterface::interfaceId;
+        (void) &DerivedInterface::interfaceId;
     }
 
     friend DerivedInterface;
 
-    IRefCountable *doQueryInterface(const IRefCountable::InterfaceId *id)
+    IRefCountable* doQueryInterface(const IRefCountable::InterfaceId* id)
     {
-        for (const auto &ownId : IRefCountable::alternativeInterfaceIds(DerivedInterface::interfaceId()))
+        for (const auto& ownId: IRefCountable::alternativeInterfaceIds(DerivedInterface::interfaceId()))
         {
             if (*ownId == *id)
             {
                 this->addRef();
                 // The cast is needed to shift the pointer in case of multiple inheritance.
-                return static_cast<DerivedInterface *>(this);
+                return static_cast<DerivedInterface*>(this);
             }
         }
         return BaseInterface::queryInterface(id);

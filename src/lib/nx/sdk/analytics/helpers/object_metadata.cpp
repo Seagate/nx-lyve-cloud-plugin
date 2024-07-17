@@ -6,10 +6,9 @@
 
 #include <nx/kit/debug.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-const char *ObjectMetadata::typeId() const
+const char* ObjectMetadata::typeId() const
 {
     return m_typeId.c_str();
 }
@@ -19,19 +18,19 @@ float ObjectMetadata::confidence() const
     return m_confidence;
 }
 
-void ObjectMetadata::getTrackId(Uuid *outValue) const
+void ObjectMetadata::getTrackId(Uuid* outValue) const
 {
     *outValue = m_trackId;
 }
 
-const char *ObjectMetadata::subtype() const
+const char* ObjectMetadata::subtype() const
 {
     return m_subtype.data();
 }
 
-const IAttribute *ObjectMetadata::getAttribute(int index) const
+const IAttribute* ObjectMetadata::getAttribute(int index) const
 {
-    if (index >= (int)m_attributes.size() || index < 0)
+    if (index >= (int) m_attributes.size() || index < 0)
         return nullptr;
 
     return shareToPtr(m_attributes[index]).releasePtr();
@@ -39,10 +38,10 @@ const IAttribute *ObjectMetadata::getAttribute(int index) const
 
 int ObjectMetadata::attributeCount() const
 {
-    return (int)m_attributes.size();
+    return (int) m_attributes.size();
 }
 
-void ObjectMetadata::getBoundingBox(Rect *outValue) const
+void ObjectMetadata::getBoundingBox(Rect* outValue) const
 {
     *outValue = m_rect;
 }
@@ -57,12 +56,12 @@ void ObjectMetadata::setConfidence(float confidence)
     m_confidence = confidence;
 }
 
-void ObjectMetadata::setTrackId(const Uuid &value)
+void ObjectMetadata::setTrackId(const Uuid& value)
 {
     m_trackId = value;
 }
 
-void ObjectMetadata::setSubtype(const std::string &value)
+void ObjectMetadata::setSubtype(const std::string& value)
 {
     m_subtype = value;
 }
@@ -75,19 +74,19 @@ void ObjectMetadata::addAttribute(nx::sdk::Ptr<Attribute> attribute)
     m_attributes.push_back(std::move(attribute));
 }
 
-void ObjectMetadata::addAttributes(const std::vector<nx::sdk::Ptr<Attribute>> &value)
+void ObjectMetadata::addAttributes(const std::vector<nx::sdk::Ptr<Attribute>>& value)
 {
-    for (const auto &newAttribute : value)
+    for (const auto& newAttribute: value)
         addAttribute(newAttribute);
 }
 
-void ObjectMetadata::addAttributes(std::vector<nx::sdk::Ptr<Attribute>> &&value)
+void ObjectMetadata::addAttributes(std::vector<nx::sdk::Ptr<Attribute>>&& value)
 {
-    for (auto &newAttribute : value)
+    for (auto& newAttribute: value)
         addAttribute(std::move(newAttribute));
 }
 
-void ObjectMetadata::setBoundingBox(const Rect &rect)
+void ObjectMetadata::setBoundingBox(const Rect& rect)
 {
     m_rect = rect;
 }

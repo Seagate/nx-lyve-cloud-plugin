@@ -6,33 +6,35 @@
 #define NX_DEBUG_ENABLE_OUTPUT (this->logUtils.enableOutput)
 #include <nx/kit/debug.h>
 
-#include <nx/sdk/analytics/helpers/engine.h>
-#include <nx/sdk/helpers/error.h>
 #include <nx/sdk/helpers/log_utils.h>
-#include <nx/sdk/helpers/plugin_diagnostic_event.h>
+#include <nx/sdk/ptr.h>
 #include <nx/sdk/helpers/string.h>
 #include <nx/sdk/helpers/to_string.h>
-#include <nx/sdk/ptr.h>
+#include <nx/sdk/helpers/error.h>
+#include <nx/sdk/helpers/plugin_diagnostic_event.h>
+#include <nx/sdk/analytics/helpers/engine.h>
 
 #include <nx/sdk/analytics/i_event_metadata_packet.h>
 #include <nx/sdk/analytics/i_object_metadata_packet.h>
 #include <nx/sdk/analytics/i_object_track_best_shot_packet.h>
 #include <nx/sdk/analytics/i_plugin.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-static std::string makePrintPrefix(const std::string &pluginInstanceId, const IDeviceInfo *deviceInfo)
+static std::string makePrintPrefix(
+    const std::string& pluginInstanceId, const IDeviceInfo* deviceInfo)
 {
-    const std::string &pluginInstanceIdCaption = pluginInstanceId.empty() ? "" : ("_" + pluginInstanceId);
+    const std::string& pluginInstanceIdCaption =
+        pluginInstanceId.empty() ? "" : ("_" + pluginInstanceId);
 
     return "[" + libContext().name() + pluginInstanceIdCaption + "_device" +
-           (!deviceInfo ? "" : (std::string("_") + deviceInfo->id())) + "] ";
+        (!deviceInfo ? "" : (std::string("_") + deviceInfo->id())) + "] ";
 }
 
-ConsumingDeviceAgent::ConsumingDeviceAgent(const IDeviceInfo *deviceInfo, bool enableOutput,
-                                           const std::string &pluginInstanceId)
-    : logUtils(enableOutput, makePrintPrefix(pluginInstanceId, deviceInfo))
+ConsumingDeviceAgent::ConsumingDeviceAgent(
+    const IDeviceInfo* deviceInfo, bool enableOutput, const std::string& pluginInstanceId)
+    :
+    logUtils(enableOutput, makePrintPrefix(pluginInstanceId, deviceInfo))
 {
     NX_KIT_ASSERT(deviceInfo);
     NX_PRINT << "Created " << this;
@@ -43,17 +45,20 @@ ConsumingDeviceAgent::~ConsumingDeviceAgent()
     NX_PRINT << "Destroyed " << this;
 }
 
-bool ConsumingDeviceAgent::pushCompressedVideoFrame(const ICompressedVideoPacket * /*videoFrame*/)
+bool ConsumingDeviceAgent::pushCompressedVideoFrame(
+    const ICompressedVideoPacket* /*videoFrame*/)
 {
     return true;
 }
 
-bool ConsumingDeviceAgent::pushUncompressedVideoFrame(const IUncompressedVideoFrame * /*videoFrame*/)
+bool ConsumingDeviceAgent::pushUncompressedVideoFrame(
+    const IUncompressedVideoFrame* /*videoFrame*/)
 {
     return true;
 }
 
-bool ConsumingDeviceAgent::pullMetadataPackets(std::vector<IMetadataPacket *> * /*metadataPackets*/)
+bool ConsumingDeviceAgent::pullMetadataPackets(
+    std::vector<IMetadataPacket*>* /*metadataPackets*/)
 {
     return true;
 }
@@ -61,19 +66,23 @@ bool ConsumingDeviceAgent::pullMetadataPackets(std::vector<IMetadataPacket *> * 
 //-------------------------------------------------------------------------------------------------
 // Implementation of interface methods.
 
-void ConsumingDeviceAgent::setHandler(IDeviceAgent::IHandler *handler)
+void ConsumingDeviceAgent::setHandler(IDeviceAgent::IHandler* handler)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_handler = shareToPtr(handler);
 }
 
-void ConsumingDeviceAgent::doPushDataPacket(Result<void> *outResult, IDataPacket *dataPacket)
+void ConsumingDeviceAgent::doPushDataPacket(
+    Result<void>* outResult, IDataPacket* dataPacket)
 {
-    const auto logError = [this, outResult, func = __func__](ErrorCode errorCode, const std::string &message) {
-        NX_PRINT << func << "() " << ((NX_DEBUG_ENABLE_OUTPUT) ? "END " : "") << "-> " << errorCode << ": " << message;
-        *outResult = error(errorCode, message);
-        return;
-    };
+    const auto logError =
+        [this, outResult, func = __func__](ErrorCode errorCode, const std::string& message)
+        {
+            NX_PRINT << func << "() " << ((NX_DEBUG_ENABLE_OUTPUT) ? "END " : "") << "-> "
+                << errorCode << ": " << message;
+            *outResult = error(errorCode, message);
+            return;
+        };
 
     NX_OUTPUT << __func__ << "() BEGIN";
 
@@ -82,9 +91,8 @@ void ConsumingDeviceAgent::doPushDataPacket(Result<void> *outResult, IDataPacket
 
     if (dataPacket->timestampUs() < 0)
     {
-        return logError(ErrorCode::invalidParams, "dataPacket has invalid timestamp " +
-                                                      nx::kit::utils::toString(dataPacket->timestampUs()) +
-                                                      "; discarding the packet.");
+        return logError(ErrorCode::invalidParams, "dataPacket has invalid timestamp "
+            + nx::kit::utils::toString(dataPacket->timestampUs()) + "; discarding the packet.");
     }
 
     if (const auto compressedFrame = dataPacket->queryInterface<ICompressedVideoPacket>())
@@ -110,7 +118,7 @@ void ConsumingDeviceAgent::doPushDataPacket(Result<void> *outResult, IDataPacket
     if (!m_handler)
         return logError(ErrorCode::internalError, "setHandler() was not called.");
 
-    std::vector<IMetadataPacket *> metadataPackets;
+    std::vector<IMetadataPacket*> metadataPackets;
     if (!pullMetadataPackets(&metadataPackets))
         return logError(ErrorCode::otherError, "pullMetadataPackets() failed.");
 
@@ -119,16 +127,18 @@ void ConsumingDeviceAgent::doPushDataPacket(Result<void> *outResult, IDataPacket
     NX_OUTPUT << __func__ << "() END";
 }
 
-void ConsumingDeviceAgent::processMetadataPackets(const std::vector<IMetadataPacket *> &metadataPackets)
+void ConsumingDeviceAgent::processMetadataPackets(
+    const std::vector<IMetadataPacket*>& metadataPackets)
 {
     if (!metadataPackets.empty())
     {
-        NX_OUTPUT << __func__ << "(): Producing " << metadataPackets.size() << " metadata packet(s).";
+        NX_OUTPUT << __func__ << "(): Producing " << metadataPackets.size()
+            << " metadata packet(s).";
     }
 
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        for (int i = 0; i < (int)metadataPackets.size(); ++i)
+        for (int i = 0; i < (int) metadataPackets.size(); ++i)
             processMetadataPacket(Ptr(metadataPackets.at(i)).get(), i);
     }
 }
@@ -138,18 +148,19 @@ static std::string packetIndexName(int packetIndex)
     return packetIndex == -1 ? "" : (std::string(" #") + nx::kit::utils::toString(packetIndex));
 }
 
-void ConsumingDeviceAgent::processMetadataPacket(IMetadataPacket *metadataPacket, int packetIndex = -1)
+void ConsumingDeviceAgent::processMetadataPacket(
+    IMetadataPacket* metadataPacket, int packetIndex = -1)
 {
     if (!m_handler)
     {
         NX_PRINT << __func__ << "(): "
-                 << "INTERNAL ERROR: setHandler() was not called; ignoring the packet";
+            << "INTERNAL ERROR: setHandler() was not called; ignoring the packet";
         return;
     }
     if (!metadataPacket)
     {
         NX_OUTPUT << __func__ << "(): WARNING: Null metadata packet" << packetIndexName(packetIndex)
-                  << " found; discarded.";
+            << " found; discarded.";
         return;
     }
 
@@ -158,12 +169,13 @@ void ConsumingDeviceAgent::processMetadataPacket(IMetadataPacket *metadataPacket
     m_handler->handleMetadata(metadataPacket);
 }
 
-void ConsumingDeviceAgent::getManifest(Result<const IString *> *outResult) const
+void ConsumingDeviceAgent::getManifest(Result<const IString*>* outResult) const
 {
     *outResult = new String(manifestString());
 }
 
-void ConsumingDeviceAgent::doSetSettings(Result<const ISettingsResponse *> *outResult, const IStringMap *settings)
+void ConsumingDeviceAgent::doSetSettings(
+    Result<const ISettingsResponse*>* outResult, const IStringMap* settings)
 {
     if (!logUtils.convertAndOutputStringMap(&m_settings, settings, "Received settings"))
         *outResult = error(ErrorCode::invalidParams, "Settings are invalid");
@@ -171,7 +183,8 @@ void ConsumingDeviceAgent::doSetSettings(Result<const ISettingsResponse *> *outR
         *outResult = settingsReceived();
 }
 
-void ConsumingDeviceAgent::getPluginSideSettings(Result<const ISettingsResponse *> * /*outResult*/) const
+void ConsumingDeviceAgent::getPluginSideSettings(
+    Result<const ISettingsResponse*>* /*outResult*/) const
 {
 }
 
@@ -181,33 +194,37 @@ void ConsumingDeviceAgent::finalize()
 }
 
 void ConsumingDeviceAgent::doGetSettingsOnActiveSettingChange(
-    Result<const IActiveSettingChangedResponse *> * /*outResult*/,
-    const IActiveSettingChangedAction * /*activeSettingChangedAction*/)
+    Result<const IActiveSettingChangedResponse*>* /*outResult*/,
+    const IActiveSettingChangedAction* /*activeSettingChangedAction*/)
 {
 }
 
 //-------------------------------------------------------------------------------------------------
 // Tools for the derived class.
 
-void ConsumingDeviceAgent::pushMetadataPacket(IMetadataPacket *metadataPacket)
+void ConsumingDeviceAgent::pushMetadataPacket(
+    IMetadataPacket* metadataPacket)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     processMetadataPacket(metadataPacket);
     metadataPacket->releaseRef();
 }
 
-void ConsumingDeviceAgent::pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level level, std::string caption,
-                                                     std::string description) const
+void ConsumingDeviceAgent::pushPluginDiagnosticEvent(
+    IPluginDiagnosticEvent::Level level,
+    std::string caption,
+    std::string description) const
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (!m_handler)
     {
         NX_PRINT << __func__ << "(): "
-                 << "INTERNAL ERROR: setHandler() was not called; ignoring Plugin Diagnostic Event.";
+            << "INTERNAL ERROR: setHandler() was not called; ignoring Plugin Diagnostic Event.";
         return;
     }
 
-    const auto event = makePtr<PluginDiagnosticEvent>(level, caption, description);
+    const auto event = makePtr<PluginDiagnosticEvent>(
+        level, caption, description);
 
     NX_OUTPUT << "Producing Plugin Diagnostic Event:\n" + event->toString();
 
@@ -215,14 +232,14 @@ void ConsumingDeviceAgent::pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Lev
 }
 
 // TODO: Consider making a template with param type, checked according to the manifest.
-std::string ConsumingDeviceAgent::settingValue(const std::string &settingName) const
+std::string ConsumingDeviceAgent::settingValue(const std::string& settingName) const
 {
     const auto it = m_settings.find(settingName);
     if (it != m_settings.end())
         return it->second;
 
-    NX_PRINT << "ERROR: Requested setting " << nx::kit::utils::toString(settingName)
-             << " is missing; implying empty string.";
+    NX_PRINT << "ERROR: Requested setting "
+        << nx::kit::utils::toString(settingName) << " is missing; implying empty string.";
     return "";
 }
 
@@ -231,13 +248,15 @@ std::map<std::string, std::string> ConsumingDeviceAgent::currentSettings() const
     return m_settings;
 }
 
-void ConsumingDeviceAgent::pushManifest(const std::string &manifest)
+void ConsumingDeviceAgent::pushManifest(const std::string& manifest)
 {
     const auto manifestSdkString = nx::sdk::makePtr<nx::sdk::String>(manifest);
     m_handler->pushManifest(manifestSdkString.get());
 }
 
-void ConsumingDeviceAgent::logMetadataPacketIfNeeded(const IMetadataPacket *metadataPacket, int packetIndex) const
+void ConsumingDeviceAgent::logMetadataPacketIfNeeded(
+    const IMetadataPacket* metadataPacket,
+    int packetIndex) const
 {
     if (!NX_DEBUG_ENABLE_OUTPUT || !NX_KIT_ASSERT(metadataPacket))
         return;
@@ -257,12 +276,14 @@ void ConsumingDeviceAgent::logMetadataPacketIfNeeded(const IMetadataPacket *meta
     }
     else
     {
-        NX_OUTPUT << __func__ << "(): WARNING: Metadata packet" << packetIndexName(packetIndex) << " has unknown type.";
+        NX_OUTPUT << __func__ << "(): WARNING: Metadata packet" << packetIndexName(packetIndex)
+            << " has unknown type.";
         packetName = "Unknown";
     }
     packetName += " metadata packet" + packetIndexName(packetIndex);
 
-    if (const auto compoundMetadataPacket = metadataPacket->queryInterface<const ICompoundMetadataPacket>())
+    if (const auto compoundMetadataPacket =
+        metadataPacket->queryInterface<const ICompoundMetadataPacket>())
     {
         if (compoundMetadataPacket->count() == 0)
         {
@@ -271,11 +292,11 @@ void ConsumingDeviceAgent::logMetadataPacketIfNeeded(const IMetadataPacket *meta
         }
 
         const std::string itemsName = (compoundMetadataPacket->count() == 1)
-                                          ? (std::string("item of type ") + compoundMetadataPacket->at(0)->typeId())
-                                          : "item(s)";
+            ? (std::string("item of type ") + compoundMetadataPacket->at(0)->typeId())
+            : "item(s)";
 
-        NX_OUTPUT << __func__ << "(): " << packetName << " contains " << compoundMetadataPacket->count() << " "
-                  << itemsName << ".";
+        NX_OUTPUT << __func__ << "(): " << packetName << " contains "
+            << compoundMetadataPacket->count() << " " << itemsName << ".";
 
         if (metadataPacket->timestampUs() == 0)
             NX_OUTPUT << __func__ << "(): WARNING: " << packetName << " has timestamp 0.";

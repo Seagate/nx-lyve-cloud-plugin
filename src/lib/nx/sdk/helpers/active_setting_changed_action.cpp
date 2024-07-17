@@ -2,8 +2,7 @@
 
 #include "active_setting_changed_action.h"
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 void ActiveSettingChangedAction::setActiveSettingId(std::string value)
 {
@@ -25,22 +24,22 @@ void ActiveSettingChangedAction::setParams(Ptr<const StringMap> value)
     m_params = value;
 }
 
-const char *ActiveSettingChangedAction::activeSettingName() const
+const char* ActiveSettingChangedAction::activeSettingName() const
 {
     return m_activeSettingName.c_str();
 }
 
-const char *ActiveSettingChangedAction::settingsModel() const
+const char* ActiveSettingChangedAction::settingsModel() const
 {
     return m_settingsModel.c_str();
 }
 
-const IStringMap *ActiveSettingChangedAction::getSettingsValues() const
+const IStringMap* ActiveSettingChangedAction::getSettingsValues() const
 {
     return shareToPtr(m_settingsValues).releasePtr();
 }
 
-const IStringMap *ActiveSettingChangedAction::getParams() const
+const IStringMap* ActiveSettingChangedAction::getParams() const
 {
     return shareToPtr(m_params).releasePtr();
 }

@@ -2,19 +2,19 @@
 
 #include "string.h"
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-String::String(std::string s) : m_string(std::move(s))
+String::String(std::string s):
+    m_string(std::move(s))
 {
 }
 
-String::String(const char *s)
+String::String(const char* s)
 {
     setString(s);
 }
 
-const char *String::str() const
+const char* String::str() const
 {
     return m_string.c_str();
 }
@@ -24,7 +24,7 @@ void String::setString(std::string s)
     m_string = std::move(s);
 }
 
-void String::setString(const char *s)
+void String::setString(const char* s)
 {
     if (s)
         m_string = s;

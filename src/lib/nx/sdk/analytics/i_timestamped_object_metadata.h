@@ -4,16 +4,12 @@
 
 #include <nx/sdk/analytics/i_object_metadata.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-class ITimestampedObjectMetadata : public Interface<ITimestampedObjectMetadata, IObjectMetadata0>
+class ITimestampedObjectMetadata: public Interface<ITimestampedObjectMetadata, IObjectMetadata0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::ITimestampedObjectMetadata");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::ITimestampedObjectMetadata"); }
 
     /** @return A positive value. */
     virtual int64_t timestampUs() const = 0;

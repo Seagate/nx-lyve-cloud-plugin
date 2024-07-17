@@ -2,15 +2,14 @@
 
 #include <nx/sdk/analytics/helpers/engine_info.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-const char *EngineInfo::id() const
+const char* EngineInfo::id() const
 {
     return m_id.c_str();
 }
 
-const char *EngineInfo::name() const
+const char* EngineInfo::name() const
 {
     return m_name.c_str();
 }

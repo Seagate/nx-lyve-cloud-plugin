@@ -2,22 +2,21 @@
 
 #pragma once
 
+#include <string>
 #include <map>
 #include <mutex>
-#include <string>
 
-#include <nx/sdk/analytics/i_engine.h>
 #include <nx/sdk/i_string_map.h>
+#include <nx/sdk/analytics/i_engine.h>
 
 #include <nx/sdk/result.h>
 #include <nx/sdk/uuid.h>
 
-#include <nx/sdk/helpers/log_utils.h>
 #include <nx/sdk/helpers/ref_countable.h>
 #include <nx/sdk/ptr.h>
+#include <nx/sdk/helpers/log_utils.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 /**
  * Base class for a typical implementation of an Analytics Engine. Hides many technical details of
@@ -30,17 +29,17 @@ namespace nx::sdk::analytics
  *     #include <nx/kit/debug.h>
  * </code></pre>
  */
-class Engine : public RefCountable<IEngine>
+class Engine: public RefCountable<IEngine>
 {
-  protected:
+protected:
     LogUtils logUtils;
 
-  protected:
+protected:
     /**
      * @param enableOutput Enables NX_OUTPUT. Typically, use NX_DEBUG_ENABLE_OUTPUT as a value.
      * @param instanceId Must be non-empty only for Plugins from multi-IPlugin libraries.
      */
-    Engine(bool enableOutput, const std::string &pluginInstanceId = "");
+    Engine(bool enableOutput, const std::string& pluginInstanceId = "");
 
     virtual std::string manifestString() const = 0;
 
@@ -49,10 +48,7 @@ class Engine : public RefCountable<IEngine>
      * Should perform any required (re)initialization. Called even if the settings model is empty.
      * @return Error messages per setting (if any), as in IEngine::setSettings().
      */
-    virtual Result<const ISettingsResponse *> settingsReceived()
-    {
-        return nullptr;
-    }
+    virtual Result<const ISettingsResponse*> settingsReceived() { return nullptr; }
 
     /**
      * Provides access to the Engine global settings stored by the Server.
@@ -63,7 +59,7 @@ class Engine : public RefCountable<IEngine>
      * @return Setting value, or an empty string if such setting does not exist, having logged the
      *     error.
      */
-    std::string settingValue(const std::string &settingName) const;
+    std::string settingValue(const std::string& settingName) const;
 
     /**
      * Provides access to the Engine global settings stored by the Server.
@@ -87,48 +83,53 @@ class Engine : public RefCountable<IEngine>
      *     contains their values after they are filled by the user via the Client form. Otherwise,
      *     empty.
      */
-    virtual Result<IAction::Result> executeAction(const std::string &actionId, Uuid objectTrackId, Uuid deviceId,
-                                                  int64_t timestampUs, Ptr<IObjectTrackInfo> trackInfo,
-                                                  const std::map<std::string, std::string> &params);
+    virtual Result<IAction::Result> executeAction(
+        const std::string& actionId,
+        Uuid objectTrackId,
+        Uuid deviceId,
+        int64_t timestampUs,
+        Ptr<IObjectTrackInfo> trackInfo,
+        const std::map<std::string, std::string>& params);
 
     /**
      * Sends a PluginDiagnosticEvent to the Server. Can be called from any thread, but if called
      * before settingsReceived() was called, will be ignored in case setHandler() was not called
      * yet.
      */
-    void pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level level, std::string caption,
-                                   std::string description) const;
+    void pushPluginDiagnosticEvent(
+        IPluginDiagnosticEvent::Level level,
+        std::string caption,
+        std::string description) const;
 
-    IHandler *handler() const
-    {
-        return m_handler.get();
-    }
+    IHandler* handler() const { return m_handler.get(); }
 
     virtual void doGetSettingsOnActiveSettingChange(
-        Result<const IActiveSettingChangedResponse *> *outResult,
-        const IActiveSettingChangedAction *activeSettingChangedAction) override;
+        Result<const IActiveSettingChangedResponse*>* outResult,
+        const IActiveSettingChangedAction* activeSettingChangedAction) override;
 
-  public:
+public:
     virtual ~Engine() override;
 
-    //-------------------------------------------------------------------------------------------------
-    // Not intended to be used by a descendant.
+//-------------------------------------------------------------------------------------------------
+// Not intended to be used by a descendant.
 
-  public:
-    virtual void setEngineInfo(const IEngineInfo *engineInfo) override;
-    virtual void setHandler(IEngine::IHandler *handler) override;
-    virtual bool isCompatible(const IDeviceInfo *deviceInfo) const override;
+public:
+    virtual void setEngineInfo(const IEngineInfo* engineInfo) override;
+    virtual void setHandler(IEngine::IHandler* handler) override;
+    virtual bool isCompatible(const IDeviceInfo* deviceInfo) const override;
 
-  protected:
-    virtual void doSetSettings(Result<const ISettingsResponse *> *outResult, const IStringMap *settings) override;
+protected:
+    virtual void doSetSettings(
+        Result<const ISettingsResponse*>* outResult, const IStringMap* settings) override;
 
-    virtual void getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const override;
+    virtual void getPluginSideSettings(Result<const ISettingsResponse*>* outResult) const override;
 
-    virtual void getManifest(Result<const IString *> *outResult) const override;
+    virtual void getManifest(Result<const IString*>* outResult) const override;
 
-    virtual void doExecuteAction(Result<IAction::Result> *outResult, const IAction *action) override;
+    virtual void doExecuteAction(
+        Result<IAction::Result>* outResult, const IAction* action) override;
 
-  private:
+private:
     mutable std::mutex m_mutex;
     std::map<std::string, std::string> m_settings;
     std::map<std::string, std::string> prev_settings;

@@ -6,22 +6,18 @@
 
 #include <nx/sdk/interface.h>
 
-#include "i_metadata.h"
 #include "i_metadata_packet.h"
+#include "i_metadata.h"
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 /**
  * Packet containing metadata (e.g. events, object detections).
  */
-class ICompoundMetadataPacket : public Interface<ICompoundMetadataPacket, IMetadataPacket0>
+class ICompoundMetadataPacket: public Interface<ICompoundMetadataPacket, IMetadataPacket0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::ICompoundMetadataPacket");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::ICompoundMetadataPacket"); }
 
     /**
      * @return Validity duration of the metadata in the packet, or 0 if irrelevant.
@@ -32,16 +28,11 @@ class ICompoundMetadataPacket : public Interface<ICompoundMetadataPacket, IMetad
     virtual int count() const = 0;
 
     /** Called by at() */
-  protected:
-    virtual const IMetadata *getAt(int index) const = 0;
+    protected: virtual const IMetadata* getAt(int index) const = 0;
     /**
      * @return Element at the zero-based index, or null if the index is invalid.
      */
-  public:
-    Ptr<const IMetadata> at(int index) const
-    {
-        return Ptr(getAt(index));
-    }
+    public: Ptr<const IMetadata> at(int index) const { return Ptr(getAt(index)); }
 };
 using ICompoundMetadataPacket0 = ICompoundMetadataPacket;
 

@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include <chrono>
-#include <deque>
-#include <limits>
 #include <mutex>
+#include <deque>
+#include <chrono>
+#include <limits>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 /**
  * This class calculates media stream bitrate, average frame rate and GOP size.
@@ -16,8 +15,10 @@ namespace nx::sdk
 
 class MediaStreamStatistics
 {
-  public:
-    MediaStreamStatistics(std::chrono::microseconds windowSize = std::chrono::seconds(2), int maxDurationInFrames = 0);
+public:
+    MediaStreamStatistics(
+        std::chrono::microseconds windowSize = std::chrono::seconds(2),
+        int maxDurationInFrames = 0);
 
     void setWindowSize(std::chrono::microseconds windowSize);
     void setMaxDurationInFrames(int maxDurationInFrames);
@@ -29,15 +30,15 @@ class MediaStreamStatistics
     float getAverageGopSize() const;
     bool hasMediaData() const;
 
-  private:
-    std::chrono::microseconds m_windowSize{};
+private:
+    std::chrono::microseconds m_windowSize {};
     int m_maxDurationInFrames = 0;
 
     struct Data
     {
         Data() = default;
-        Data(std::chrono::microseconds timestamp, size_t size, bool isKeyFrame)
-            : timestamp(timestamp), size(size), isKeyFrame(isKeyFrame)
+        Data(std::chrono::microseconds timestamp, size_t size, bool isKeyFrame):
+            timestamp(timestamp), size(size), isKeyFrame(isKeyFrame)
         {
         }
 
@@ -45,10 +46,7 @@ class MediaStreamStatistics
         size_t size = 0;
         bool isKeyFrame = false;
 
-        bool operator<(std::chrono::microseconds value) const
-        {
-            return timestamp < value;
-        }
+        bool operator<(std::chrono::microseconds value) const { return timestamp < value; }
     };
 
     std::chrono::microseconds intervalUnsafe() const;
@@ -56,7 +54,7 @@ class MediaStreamStatistics
     mutable std::mutex m_mutex;
     std::deque<Data> m_data;
     int64_t m_totalSizeBytes = 0;
-    // nx::utils::ElapsedTimer m_lastDataTimer;
+    //nx::utils::ElapsedTimer m_lastDataTimer;
     std::chrono::steady_clock::time_point m_lastDataTimer;
 };
 

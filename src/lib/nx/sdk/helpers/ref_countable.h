@@ -4,11 +4,10 @@
 
 #include <atomic>
 
-#include <nx/sdk/helpers/lib_context.h>
 #include <nx/sdk/i_ref_countable.h>
+#include <nx/sdk/helpers/lib_context.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 /**
  * Not recommended to be used directly - use RefCountable, unless there is some special case.
@@ -23,11 +22,11 @@ namespace nx::sdk
  */
 class RefCountableHolder
 {
-  public:
-    RefCountableHolder(const RefCountableHolder &) = delete;
-    RefCountableHolder &operator=(const RefCountableHolder &) = delete;
-    RefCountableHolder(RefCountableHolder &&) = delete;
-    RefCountableHolder &operator=(RefCountableHolder &&) = delete;
+public:
+    RefCountableHolder(const RefCountableHolder&) = delete;
+    RefCountableHolder& operator=(const RefCountableHolder&) = delete;
+    RefCountableHolder(RefCountableHolder&&) = delete;
+    RefCountableHolder& operator=(RefCountableHolder&&) = delete;
     ~RefCountableHolder() = default;
 
     /**
@@ -36,16 +35,12 @@ class RefCountableHolder
      *
      * NOTE: After creation, the reference counter is 1.
      */
-    RefCountableHolder(const IRefCountable *refCountable) : m_refCountable(refCountable)
-    {
-    }
+    RefCountableHolder(const IRefCountable* refCountable): m_refCountable(refCountable) {}
 
     /**
      * Delegates reference counting to another object. Does not change the reference counter.
      */
-    RefCountableHolder(const RefCountableHolder *delegate) : m_refCountHolderDelegate(delegate)
-    {
-    }
+    RefCountableHolder(const RefCountableHolder* delegate): m_refCountHolderDelegate(delegate) {}
 
     int addRef() const
     {
@@ -73,10 +68,10 @@ class RefCountableHolder
         return m_refCount;
     }
 
-  private:
+private:
     mutable std::atomic<int> m_refCount{1};
-    const IRefCountable *const m_refCountable = nullptr;
-    const RefCountableHolder *const m_refCountHolderDelegate = nullptr;
+    const IRefCountable* const m_refCountable = nullptr;
+    const RefCountableHolder* const m_refCountHolderDelegate = nullptr;
 };
 
 /**
@@ -84,13 +79,14 @@ class RefCountableHolder
  *
  * Supports tracking the ref-countable objects via RefCountableRegistry.
  */
-template <class RefCountableInterface> class RefCountable : public RefCountableInterface
+template<class RefCountableInterface>
+class RefCountable: public RefCountableInterface
 {
-  public:
-    RefCountable(const RefCountable &) = delete;
-    RefCountable &operator=(const RefCountable &) = delete;
-    RefCountable(RefCountable &&) = delete;
-    RefCountable &operator=(RefCountable &&) = delete;
+public:
+    RefCountable(const RefCountable&) = delete;
+    RefCountable& operator=(const RefCountable&) = delete;
+    RefCountable(RefCountable&&) = delete;
+    RefCountable& operator=(RefCountable&&) = delete;
 
     virtual ~RefCountable()
     {
@@ -98,28 +94,19 @@ template <class RefCountableInterface> class RefCountable : public RefCountableI
             refCountableRegistry->notifyDestroyed(this, refCount());
     }
 
-    virtual int addRef() const override
-    {
-        return m_refCountableHolder.addRef();
-    }
-    virtual int releaseRef() const override
-    {
-        return m_refCountableHolder.releaseRef();
-    }
+    virtual int addRef() const override { return m_refCountableHolder.addRef(); }
+    virtual int releaseRef() const override { return m_refCountableHolder.releaseRef(); }
 
-    int refCount() const
-    {
-        return m_refCountableHolder.refCount();
-    }
+    int refCount() const { return m_refCountableHolder.refCount(); }
 
-  protected:
-    RefCountable() : m_refCountableHolder(static_cast<const IRefCountable *>(this))
+protected:
+    RefCountable(): m_refCountableHolder(static_cast<const IRefCountable*>(this))
     {
         if (const auto refCountableRegistry = libContext().refCountableRegistry())
             refCountableRegistry->notifyCreated(this, refCount());
     }
 
-  private:
+private:
     const RefCountableHolder m_refCountableHolder;
 };
 

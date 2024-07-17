@@ -2,22 +2,24 @@
 
 #pragma once
 
-#include <nx/sdk/i_settings_response.h>
 #include <nx/sdk/ptr.h>
+#include <nx/sdk/i_settings_response.h>
 
 #include <nx/sdk/helpers/ref_countable.h>
 #include <nx/sdk/helpers/string.h>
 #include <nx/sdk/helpers/string_map.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-class SettingsResponse : public RefCountable<ISettingsResponse>
+class SettingsResponse: public RefCountable<ISettingsResponse>
 {
-  public:
+public:
     SettingsResponse() = default;
 
-    SettingsResponse(Ptr<StringMap> values, Ptr<StringMap> errors = nullptr, Ptr<String> model = nullptr);
+    SettingsResponse(
+        Ptr<StringMap> values,
+        Ptr<StringMap> errors = nullptr,
+        Ptr<String> model = nullptr);
 
     void setValue(std::string key, std::string value);
     void setError(std::string key, std::string value);
@@ -28,12 +30,12 @@ class SettingsResponse : public RefCountable<ISettingsResponse>
     void setModel(Ptr<String> model);
     void setModel(std::string model);
 
-  protected:
-    virtual IStringMap *getValues() const override;
-    virtual IStringMap *getErrors() const override;
-    virtual IString *getModel() const override;
+protected:
+    virtual IStringMap* getValues() const override;
+    virtual IStringMap* getErrors() const override;
+    virtual IString* getModel() const override;
 
-  private:
+private:
     Ptr<StringMap> m_values;
     Ptr<StringMap> m_errors;
     Ptr<String> m_model;

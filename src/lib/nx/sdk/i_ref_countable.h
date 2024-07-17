@@ -3,14 +3,13 @@
 #pragma once
 
 #include <cstring>
+#include <vector>
 #include <string>
 #include <type_traits>
-#include <vector>
 
 #include <nx/sdk/ptr.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 /**
  * Base for all interfaces - abstract classes with only pure-virtual non-overloaded functions, so
@@ -49,7 +48,7 @@ namespace nx::sdk
  */
 class IRefCountable
 {
-  public:
+public:
     /**
      * Identifier of an interface, used for queryInterface(). A pointer to this struct is actually
      * a pointer to the string with an interface id - the struct is needed only to protect from
@@ -62,60 +61,51 @@ class IRefCountable
     struct InterfaceId
     {
         static constexpr int kMinSize = 16; //< For compatibility with the old SDK.
-        static constexpr int minSize()
-        {
-            return kMinSize;
-        } //< For C++14, to avoid the definition.
+        static constexpr int minSize() { return kMinSize; } //< For C++14, to avoid the definition.
 
         char value[kMinSize];
 
         InterfaceId() = delete; //< No instances - only InterfaceId* are used via reinterpret_cast.
 
-        bool operator==(const InterfaceId &other) const
-        {
-            return strcmp(value, other.value) == 0;
-        }
-        bool operator!=(const InterfaceId &other) const
-        {
-            return !(*this == other);
-        }
+        bool operator==(const InterfaceId& other) const { return strcmp(value, other.value) == 0; }
+        bool operator!=(const InterfaceId& other) const { return !(*this == other); }
     };
 
-  protected:
+protected:
     /** Intended to be used in interfaceId(). Can be called only with a string literal. */
-    template <int len> static const InterfaceId *makeId(const char (&charArray)[len])
+    template<int len>
+    static const InterfaceId* makeId(const char (&charArray)[len])
     {
-        static_assert(len + /*terminating \0*/ 1 >= InterfaceId::minSize(), "Interface id is too short");
+        static_assert(len + /*terminating \0*/ 1 >= InterfaceId::minSize(),
+            "Interface id is too short");
 
-        return reinterpret_cast<const InterfaceId *>(charArray);
+        return reinterpret_cast<const InterfaceId*>(charArray);
     }
 
     /** Intended to be used in interfaceId(). Can be called only with two string literals. */
-    template <int len, int alternativeLen>
-    static std::vector<const InterfaceId *> makeIdWithAlternative(const char (&charArray)[len],
-                                                                  const char (&alternativeCharArray)[alternativeLen])
+    template<int len, int alternativeLen>
+    static std::vector<const InterfaceId*> makeIdWithAlternative(
+        const char (&charArray)[len], const char (&alternativeCharArray)[alternativeLen])
     {
-        static_assert(len + /*terminating \0*/ 1 >= InterfaceId::minSize(), "Interface id is too short");
+        static_assert(len + /*terminating \0*/ 1 >= InterfaceId::minSize(),
+            "Interface id is too short");
         static_assert(alternativeLen + /*terminating \0*/ 1 >= InterfaceId::minSize(),
-                      "Alternative interface id is too short");
+            "Alternative interface id is too short");
 
         return {
-            reinterpret_cast<const InterfaceId *>(charArray),
-            reinterpret_cast<const InterfaceId *>(alternativeCharArray),
+            reinterpret_cast<const InterfaceId*>(charArray),
+            reinterpret_cast<const InterfaceId*>(alternativeCharArray),
         };
     }
 
-  public:
+public:
     /** Each derived interface is expected to implement such static method with its own data. */
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::IRefCountable");
-    }
+    static auto interfaceId() { return makeId("nx::sdk::IRefCountable"); }
 
     /** VMT #0. */
     virtual ~IRefCountable() = default;
 
-  protected:
+protected:
     /**
      * Makes a compound interface id for interface templates like IList<IItem>. Usage:
      * ```
@@ -126,28 +116,28 @@ class IRefCountable
      * ```
      * NOTE: Currently, this function does not support interfaces with alternative interface ids.
      */
-    template <class TemplateInstance, class TemplateArg, int len>
-    static const InterfaceId *makeIdForTemplate(const char (&baseIdCharArray)[len])
+    template<class TemplateInstance, class TemplateArg, int len>
+    static const InterfaceId* makeIdForTemplate(const char (&baseIdCharArray)[len])
     {
         static_assert(len + /*angle brackets*/ 2 + /*terminating \0*/ 1 >= InterfaceId::minSize(),
-                      "Base part of interface id is too short");
+            "Base part of interface id is too short");
         static_assert(std::is_base_of<IRefCountable, TemplateInstance>::value,
-                      "TemplateInstance must be inherited from IRefCountable");
+            "TemplateInstance must be inherited from IRefCountable");
         static_assert(std::is_base_of<IRefCountable, TemplateArg>::value,
-                      "TemplateArg must be inherited from IRefCountable");
+            "TemplateArg must be inherited from IRefCountable");
 
         static const std::string id =
             std::string(&baseIdCharArray[0]) + "<" + &TemplateArg::interfaceId()->value[0] + ">";
 
-        return reinterpret_cast<const InterfaceId *>(id.c_str());
+        return reinterpret_cast<const InterfaceId*>(id.c_str());
     }
 
-    static std::vector<const InterfaceId *> alternativeInterfaceIds(const InterfaceId *id)
+    static std::vector<const InterfaceId*> alternativeInterfaceIds(const InterfaceId* id)
     {
-        return std::vector<const InterfaceId *>(1, id);
+        return std::vector<const InterfaceId*>(1, id);
     }
 
-    static std::vector<const InterfaceId *> alternativeInterfaceIds(std::vector<const InterfaceId *> ids)
+    static std::vector<const InterfaceId*> alternativeInterfaceIds(std::vector<const InterfaceId*> ids)
     {
         return ids;
     }
@@ -159,7 +149,7 @@ class IRefCountable
      * @return Object that requires releaseRef() by the caller when it no longer needs it, or null
      *     if the requested interface is not implemented.
      */
-    virtual IRefCountable *queryInterface(const InterfaceId *id)
+    virtual IRefCountable* queryInterface(const InterfaceId* id)
     {
         if (*interfaceId() == *id)
         {
@@ -169,21 +159,23 @@ class IRefCountable
         return nullptr;
     }
 
-  public:
-    template <class Interface> Ptr<Interface> queryInterface()
+public:
+    template<class Interface>
+    Ptr<Interface> queryInterface()
     {
-        for (const auto &id : alternativeInterfaceIds(Interface::interfaceId()))
+        for (const auto& id: alternativeInterfaceIds(Interface::interfaceId()))
         {
-            if (IRefCountable *refCountable = queryInterface(id))
-                return Ptr(static_cast<Interface *>(refCountable));
+            if (IRefCountable* refCountable = queryInterface(id))
+                return Ptr(static_cast<Interface*>(refCountable));
         }
         return nullptr;
     }
 
-    template <class Interface> Ptr<const Interface> queryInterface() const
+    template<class Interface>
+    Ptr<const Interface> queryInterface() const
     {
         // The virtual queryInterface() does not have a const overload.
-        return const_cast<IRefCountable *>(this)->queryInterface<const Interface>();
+        return const_cast<IRefCountable*>(this)->queryInterface<const Interface>();
     }
 
     /**
@@ -204,11 +196,11 @@ class IRefCountable
      */
     int refCountThreadUnsafe() const
     {
-        const void *this_ = this; //< Suppress warning that `this` cannot be null.
+        const void* this_ = this; //< Suppress warning that `this` cannot be null.
         if (this_ == nullptr)
             return 0;
 
-        /*unused*/ (void)addRef();
+        /*unused*/ (void) addRef();
         return releaseRef();
     }
 };

@@ -4,8 +4,7 @@
 
 #include <nx/kit/debug.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 ObjectMetadataPacket::Flags ObjectMetadataPacket::flags() const
 {
@@ -24,12 +23,12 @@ int64_t ObjectMetadataPacket::durationUs() const
 
 int ObjectMetadataPacket::count() const
 {
-    return (int)m_objects.size();
+    return (int) m_objects.size();
 }
 
-const IObjectMetadata *ObjectMetadataPacket::getAt(int index) const
+const IObjectMetadata* ObjectMetadataPacket::getAt(int index) const
 {
-    if (index < 0 || index >= (int)m_objects.size())
+    if (index < 0 || index >= (int) m_objects.size())
         return nullptr;
 
     return shareToPtr(m_objects[index]).releasePtr();
@@ -50,7 +49,7 @@ void ObjectMetadataPacket::setDurationUs(int64_t durationUs)
     m_durationUs = durationUs;
 }
 
-void ObjectMetadataPacket::addItem(const IObjectMetadata *objectMetadata)
+void ObjectMetadataPacket::addItem(const IObjectMetadata* objectMetadata)
 {
     if (!NX_KIT_ASSERT(objectMetadata))
         return;

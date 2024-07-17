@@ -6,15 +6,20 @@
 
 #include <nx/kit/debug.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-ObjectTrackBestShotPacket::ObjectTrackBestShotPacket(Uuid trackId, int64_t timestampUs, Rect boundingBox)
-    : m_trackId(trackId), m_timestampUs(timestampUs), m_boundingBox(boundingBox)
+ObjectTrackBestShotPacket::ObjectTrackBestShotPacket(
+    Uuid trackId,
+    int64_t timestampUs,
+    Rect boundingBox)
+    :
+    m_trackId(trackId),
+    m_timestampUs(timestampUs),
+    m_boundingBox(boundingBox)
 {
 }
 
-void ObjectTrackBestShotPacket::getTrackId(Uuid *outValue) const
+void ObjectTrackBestShotPacket::getTrackId(Uuid* outValue) const
 {
     *outValue = m_trackId;
 }
@@ -29,32 +34,32 @@ int64_t ObjectTrackBestShotPacket::timestampUs() const
     return m_timestampUs;
 }
 
-void ObjectTrackBestShotPacket::getBoundingBox(Rect *outValue) const
+void ObjectTrackBestShotPacket::getBoundingBox(Rect* outValue) const
 {
     *outValue = m_boundingBox;
 }
 
-const char *ObjectTrackBestShotPacket::imageUrl() const
+const char* ObjectTrackBestShotPacket::imageUrl() const
 {
     return m_imageUrl.c_str();
 }
 
-const char *ObjectTrackBestShotPacket::imageData() const
+const char* ObjectTrackBestShotPacket::imageData() const
 {
     return m_imageData.data();
 }
 
 int ObjectTrackBestShotPacket::imageDataSize() const
 {
-    return (int)m_imageData.size();
+    return (int) m_imageData.size();
 }
 
-const char *ObjectTrackBestShotPacket::imageDataFormat() const
+const char* ObjectTrackBestShotPacket::imageDataFormat() const
 {
     return m_imageDataFormat.c_str();
 }
 
-void ObjectTrackBestShotPacket::setTrackId(const Uuid &trackId)
+void ObjectTrackBestShotPacket::setTrackId(const Uuid& trackId)
 {
     m_trackId = trackId;
 }
@@ -69,7 +74,7 @@ void ObjectTrackBestShotPacket::setTimestampUs(int64_t timestampUs)
     m_timestampUs = timestampUs;
 }
 
-void ObjectTrackBestShotPacket::setBoundingBox(const Rect &boundingBox)
+void ObjectTrackBestShotPacket::setBoundingBox(const Rect& boundingBox)
 {
     m_boundingBox = boundingBox;
 }
@@ -95,9 +100,9 @@ void ObjectTrackBestShotPacket::setImage(std::string imageDataFormat, std::vecto
     setImageData(std::move(imageData));
 }
 
-const IAttribute *ObjectTrackBestShotPacket::getAttribute(int index) const
+const IAttribute* ObjectTrackBestShotPacket::getAttribute(int index) const
 {
-    if (index >= (int)m_attributes.size() || index < 0)
+    if (index >= (int) m_attributes.size() || index < 0)
         return nullptr;
 
     return shareToPtr(m_attributes[index]).releasePtr();
@@ -105,7 +110,7 @@ const IAttribute *ObjectTrackBestShotPacket::getAttribute(int index) const
 
 int ObjectTrackBestShotPacket::attributeCount() const
 {
-    return (int)m_attributes.size();
+    return (int) m_attributes.size();
 }
 
 void ObjectTrackBestShotPacket::addAttribute(Ptr<Attribute> attribute)
@@ -116,9 +121,9 @@ void ObjectTrackBestShotPacket::addAttribute(Ptr<Attribute> attribute)
     m_attributes.push_back(std::move(attribute));
 }
 
-void ObjectTrackBestShotPacket::addAttributes(const std::vector<Ptr<Attribute>> &value)
+void ObjectTrackBestShotPacket::addAttributes(const std::vector<Ptr<Attribute>>& value)
 {
-    for (const auto &newAttribute : value)
+    for (const auto& newAttribute: value)
         addAttribute(newAttribute);
 }
 

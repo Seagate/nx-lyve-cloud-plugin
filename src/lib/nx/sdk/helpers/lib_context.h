@@ -11,8 +11,7 @@
 
 #include <nx/sdk/helpers/i_ref_countable_registry.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 /**
  * Interface to LibContext which is used by the Server to set up the context for each plugin
@@ -22,11 +21,11 @@ namespace nx::sdk
  */
 class ILibContext
 {
-  public:
+public:
     virtual ~ILibContext() = default;
 
-    virtual void setName(const char *name) = 0;
-    virtual void setRefCountableRegistry(IRefCountableRegistry *refCountableRegistry) = 0;
+    virtual void setName(const char* name) = 0;
+    virtual void setRefCountableRegistry(IRefCountableRegistry* refCountableRegistry) = 0;
 };
 
 /**
@@ -35,34 +34,28 @@ class ILibContext
  * like detecting memory leaks of ref-countable objects, or keeping a name to be used for the
  * logging prefix in the library.
  */
-class LibContext final : public ILibContext
+class LibContext final: public ILibContext
 {
-  public:
+public:
     /**
      * For the LibContext of a plugin, called by the Server immediately after loading the plugin
      * dynamic library. For the LibContext of the Server, called before any involving of the SDK.
      */
-    virtual void setName(const char *name) override;
+    virtual void setName(const char* name) override;
 
     /**
      * Called by the Server after setName().
      * @param refCountableRegistry Will be deleted in the LibContext destructor. Can be null if
      *     the leak detection is not enabled.
      */
-    virtual void setRefCountableRegistry(IRefCountableRegistry *refCountableRegistry) override;
+    virtual void setRefCountableRegistry(IRefCountableRegistry* refCountableRegistry) override;
 
-    const std::string &name() const
-    {
-        return m_name;
-    }
+    const std::string& name() const { return m_name; }
 
     /** @return Null if the registry has not been set. */
-    IRefCountableRegistry *refCountableRegistry() const
-    {
-        return m_refCountableRegistry.get();
-    }
+    IRefCountableRegistry* refCountableRegistry() const { return m_refCountableRegistry.get(); }
 
-  private:
+private:
     static constexpr const char *kDefaultName = "unnamed_lib_context";
     std::string m_name = kDefaultName;
     std::unique_ptr<IRefCountableRegistry> m_refCountableRegistry;
@@ -75,25 +68,25 @@ class LibContext final : public ILibContext
  * Holds the LibContext instance in a static variable. Should be called to access the context of
  * the current dynamic library.
  */
-LibContext &libContext();
+LibContext& libContext();
 
 /**
  * Holds SDK version string in a static variable. Should be called to access the version of the
  * SDK used by the current dynamic library.
  */
-const char *sdkVersion();
+const char* sdkVersion();
 
 /**
  * Holds unit test options in a static variable. Should be called to access the options previously
  * set via nxSetUnitTestOptions().
  */
-std::map<std::string, std::string> &unitTestOptions();
+std::map<std::string, std::string>& unitTestOptions();
 
 #if !defined(NX_SDK_API)
-#if !defined(NX_PLUGIN_API)
-#error "Either NX_SDK_API or NX_PLUGIN_API macro should be defined to export a function."
-#endif
-#define NX_SDK_API NX_PLUGIN_API
+    #if !defined(NX_PLUGIN_API)
+        #error "Either NX_SDK_API or NX_PLUGIN_API macro should be defined to export a function."
+    #endif
+    #define NX_SDK_API NX_PLUGIN_API
 #endif
 
 /**
@@ -103,9 +96,9 @@ std::map<std::string, std::string> &unitTestOptions();
  * actually called (possibly belonging to a different plugin) because of the dynamic library
  * runtime linking algorithm.
  */
-extern "C" NX_SDK_API ILibContext *nxLibContext();
-static constexpr const char *kNxLibContextFuncName = "nxLibContext";
-typedef ILibContext *(*NxLibContextFunc)();
+extern "C" NX_SDK_API ILibContext* nxLibContext();
+static constexpr const char* kNxLibContextFuncName = "nxLibContext";
+typedef ILibContext* (*NxLibContextFunc)();
 
 /**
  * Informs the Server about the version of the SDK which was used to build the particular Plugin or
@@ -116,14 +109,14 @@ typedef ILibContext *(*NxLibContextFunc)();
  * The Server should call this function via resolving by name in a loaded plugin dynamic library.
  * Plugin should use IUtilityProvider::serverSdkVersion() to access the Server instance of this
  * function.
- *
+  *
  * ATTENTION: If called directly from a C++ code, a random instance of this function will be
  * actually called (possibly belonging to a different plugin) because of the dynamic library
  * runtime linking algorithm.
  */
-extern "C" NX_SDK_API const char *nxSdkVersion();
-static constexpr const char *kNxSdkVersionFuncName = "nxSdkVersion";
-typedef const char *(*NxSdkVersionFunc)();
+extern "C" NX_SDK_API const char* nxSdkVersion();
+static constexpr const char* kNxSdkVersionFuncName = "nxSdkVersion";
+typedef const char* (*NxSdkVersionFunc)();
 
 /**
  * Defines options (key=value string map) passed to the Plugin when running it from a unit test.
@@ -136,8 +129,8 @@ typedef const char *(*NxSdkVersionFunc)();
  * actually called (possibly belonging to a different plugin) because of the dynamic library
  * runtime linking algorithm.
  */
-extern "C" NX_SDK_API void nxSetUnitTestOptions(const IStringMap *options);
-static constexpr const char *kNxSetUnitTestOptionsFuncName = "nxSetUnitTestOptions";
-typedef void (*NxSetUnitTestOptionsFunc)(const IStringMap *options);
+extern "C" NX_SDK_API void nxSetUnitTestOptions(const IStringMap* options);
+static constexpr const char* kNxSetUnitTestOptionsFuncName = "nxSetUnitTestOptions";
+typedef void (*NxSetUnitTestOptionsFunc)(const IStringMap* options);
 
 } // namespace nx::sdk

@@ -4,28 +4,27 @@
 
 #include <vector>
 
-#include <nx/sdk/analytics/i_object_track_best_shot_packet.h>
 #include <nx/sdk/helpers/attribute.h>
 #include <nx/sdk/helpers/ref_countable.h>
+#include <nx/sdk/analytics/i_object_track_best_shot_packet.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-class ObjectTrackBestShotPacket : public RefCountable<IObjectTrackBestShotPacket>
+class ObjectTrackBestShotPacket: public RefCountable<IObjectTrackBestShotPacket>
 {
-  public:
+public:
     ObjectTrackBestShotPacket(Uuid trackId = Uuid(), int64_t timestampUs = -1, Rect boundingBox = Rect());
 
     virtual Flags flags() const override;
     virtual int64_t timestampUs() const override;
 
-    virtual const char *imageUrl() const override;
-    virtual const char *imageData() const override;
+    virtual const char* imageUrl() const override;
+    virtual const char* imageData() const override;
     virtual int imageDataSize() const override;
-    virtual const char *imageDataFormat() const override;
+    virtual const char* imageDataFormat() const override;
 
     /** See IObjectTrackBestShotPacket0::trackId(). */
-    void setTrackId(const Uuid &trackId);
+    void setTrackId(const Uuid& trackId);
 
     /** See IObjectTrackBestShotPacket::flags(). */
     void setFlags(Flags flags);
@@ -34,7 +33,7 @@ class ObjectTrackBestShotPacket : public RefCountable<IObjectTrackBestShotPacket
     void setTimestampUs(int64_t timestampUs);
 
     /** See IObjectTrackBestShotPacket0::boundingBox(). */
-    void setBoundingBox(const Rect &boundingBox);
+    void setBoundingBox(const Rect& boundingBox);
 
     /** See IObjectTrackBestShotPacket1::imageUrl(). */
     void setImageUrl(std::string imageUrl);
@@ -51,20 +50,20 @@ class ObjectTrackBestShotPacket : public RefCountable<IObjectTrackBestShotPacket
      */
     void setImage(std::string imageDataFormat, std::vector<char> imageData);
 
-  protected:
-    virtual const IAttribute *getAttribute(int index) const override;
+protected:
+    virtual const IAttribute* getAttribute(int index) const override;
 
-  public:
+public:
     virtual int attributeCount() const override;
 
     void addAttribute(Ptr<Attribute> attribute);
-    void addAttributes(const std::vector<Ptr<Attribute>> &value);
+    void addAttributes(const std::vector<Ptr<Attribute>>& value);
 
-  protected:
-    virtual void getTrackId(Uuid *outValue) const override;
-    virtual void getBoundingBox(Rect *outValue) const override;
+protected:
+    virtual void getTrackId(Uuid* outValue) const override;
+    virtual void getBoundingBox(Rect* outValue) const override;
 
-  private:
+private:
     Uuid m_trackId;
     Flags m_flags = Flags::none;
     int64_t m_timestampUs = -1;

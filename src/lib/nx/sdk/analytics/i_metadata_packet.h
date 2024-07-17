@@ -6,19 +6,15 @@
 
 #include <nx/sdk/analytics/i_data_packet.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 /**
  * Packet containing metadata (e.g. events, object detections).
  */
-class IMetadataPacket : public Interface<IMetadataPacket, IDataPacket0>
+class IMetadataPacket: public Interface<IMetadataPacket, IDataPacket0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IMetadataPacket");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IMetadataPacket"); }
 };
 using IMetadataPacket0 = IMetadataPacket;
 

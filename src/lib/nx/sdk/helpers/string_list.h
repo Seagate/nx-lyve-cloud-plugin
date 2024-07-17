@@ -2,27 +2,26 @@
 
 #pragma once
 
-#include <string>
 #include <vector>
+#include <string>
 
-#include <nx/sdk/helpers/ref_countable.h>
 #include <nx/sdk/i_string_list.h>
+#include <nx/sdk/helpers/ref_countable.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-class StringList : public nx::sdk::RefCountable<IStringList>
+class StringList: public nx::sdk::RefCountable<IStringList>
 {
-  public:
+public:
     virtual int count() const override;
 
     /** @return Null if index is incorrect. */
-    virtual const char *at(int index) const override;
+    virtual const char* at(int index) const override;
 
     void addString(std::string str);
     void clear();
 
-  private:
+private:
     std::vector<std::string> m_strings;
 };
 

@@ -5,16 +5,15 @@
 #include <nx/sdk/interface.h>
 #include <nx/sdk/result.h>
 
+#include <nx/sdk/i_string_map.h>
+#include <nx/sdk/i_string.h>
 #include <nx/sdk/i_plugin_diagnostic_event.h>
 #include <nx/sdk/i_settings_response.h>
-#include <nx/sdk/i_string.h>
-#include <nx/sdk/i_string_map.h>
 
-#include <nx/sdk/analytics/i_metadata_packet.h>
 #include <nx/sdk/analytics/i_metadata_types.h>
+#include <nx/sdk/analytics/i_metadata_packet.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 class IEngine; //< Forward declaration for the parent object.
 
@@ -29,21 +28,15 @@ class IEngine; //< Forward declaration for the parent object.
  * with a guaranteed barrier between the calls), thus, no synchronization is required for the
  * implementation.
  */
-class IDeviceAgent : public Interface<IDeviceAgent>
+class IDeviceAgent: public Interface<IDeviceAgent>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IDeviceAgent");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IDeviceAgent"); }
 
-    class IHandler0 : public Interface<IHandler0>
+    class IHandler0: public Interface<IHandler0>
     {
-      public:
-        static auto interfaceId()
-        {
-            return makeId("nx::sdk::analytics::IDeviceAgent::IHandler");
-        }
+    public:
+        static auto interfaceId() { return makeId("nx::sdk::analytics::IDeviceAgent::IHandler"); }
 
         virtual ~IHandler0() = default;
 
@@ -55,30 +48,27 @@ class IDeviceAgent : public Interface<IDeviceAgent>
          * For example, if you have 10 objects detected on the same frame, it's better to send 1
          * packet with all the object metadata than 10 separate packets.
          */
-        virtual void handleMetadata(IMetadataPacket *metadataPacket) = 0;
+        virtual void handleMetadata(IMetadataPacket* metadataPacket) = 0;
 
-        virtual void handlePluginDiagnosticEvent(IPluginDiagnosticEvent *event) = 0;
+        virtual void handlePluginDiagnosticEvent(IPluginDiagnosticEvent* event) = 0;
     };
 
     /**
      * Callback methods which allow to pass data from the Plugin to the Server. The methods can be
      * called from any thread at any moment.
      */
-    class IHandler : public Interface<IHandler, IHandler0>
+    class IHandler: public Interface<IHandler, IHandler0>
     {
-      public:
-        static auto interfaceId()
-        {
-            return makeId("nx::sdk::analytics::IDeviceAgent::IHandler1");
-        }
+    public:
+        static auto interfaceId() { return makeId("nx::sdk::analytics::IDeviceAgent::IHandler1"); }
 
         /** Must be called when the Plugin needs to change the data in the DeviceAgent manifest. */
-        virtual void pushManifest(const IString *manifest) = 0;
+        virtual void pushManifest(const IString* manifest) = 0;
     };
 
     /** Called by setSettings() */
-  protected:
-    virtual void doSetSettings(Result<const ISettingsResponse *> *outResult, const IStringMap *settings) = 0;
+    protected: virtual void doSetSettings(
+        Result<const ISettingsResponse*>* outResult, const IStringMap* settings) = 0;
     /**
      * Receives the values of settings stored in the Server database for the combination of a
      * device instance and an Engine instance.
@@ -100,17 +90,16 @@ class IDeviceAgent : public Interface<IDeviceAgent>
      *     errors, optional new setting values in case they were changed during the applying, and
      *     an optional new Settings Model. Can be null if none of the above items are present.
      */
-  public:
-    Result<const ISettingsResponse *> setSettings(const IStringMap *settings)
+    public: Result<const ISettingsResponse*> setSettings(const IStringMap* settings)
     {
-        Result<const ISettingsResponse *> result;
+        Result<const ISettingsResponse*> result;
         doSetSettings(&result, settings);
         return result;
     }
 
     /** Called by pluginSideSettings() */
-  protected:
-    virtual void getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const = 0;
+    protected: virtual void getPluginSideSettings(
+        Result<const ISettingsResponse*>* outResult) const = 0;
     /**
      * In addition to the settings stored in a Server database, a DeviceAgent can have some
      * settings which are stored somewhere "under the hood" of the DeviceAgent, e.g. on a device
@@ -122,17 +111,15 @@ class IDeviceAgent : public Interface<IDeviceAgent>
      *     optional individual setting errors, optional setting values, and an optional new
      *     Settings Model. Can be null if none of the above items are present.
      */
-  public:
-    Result<const ISettingsResponse *> pluginSideSettings() const
+    public: Result<const ISettingsResponse*> pluginSideSettings() const
     {
-        Result<const ISettingsResponse *> result;
+        Result<const ISettingsResponse*> result;
         getPluginSideSettings(&result);
         return result;
     }
 
     /** Called by manifest() */
-  protected:
-    virtual void getManifest(Result<const IString *> *outResult) const = 0;
+    protected: virtual void getManifest(Result<const IString*>* outResult) const = 0;
     /**
      * Provides DeviceAgent Manifest in JSON format.
      *
@@ -140,10 +127,9 @@ class IDeviceAgent : public Interface<IDeviceAgent>
      *
      * @return JSON string in UTF-8.
      */
-  public:
-    Result<const IString *> manifest() const
+    public: Result<const IString*> manifest() const
     {
-        Result<const IString *> result;
+        Result<const IString*> result;
         getManifest(&result);
         return result;
     }
@@ -154,19 +140,18 @@ class IDeviceAgent : public Interface<IDeviceAgent>
      *     Generic device related events (errors, warning, info messages) might also be reported
      *     via this handler.
      */
-    virtual void setHandler(IHandler *handler) = 0;
+    virtual void setHandler(IHandler* handler) = 0;
 
     /** Called by setNeededMetadataTypes() */
-  protected:
-    virtual void doSetNeededMetadataTypes(Result<void> *outResult, const IMetadataTypes *neededMetadataTypes) = 0;
+    protected: virtual void doSetNeededMetadataTypes(
+        Result<void>* outResult, const IMetadataTypes* neededMetadataTypes) = 0;
     /**
      * Sets a list of metadata types that are needed by the Server. Empty list means that the
      * Server does not need any metadata from this DeviceAgent.
      *
      * @param neededMetadataTypes Lists of type ids of events and objects.
      */
-  public:
-    Result<void> setNeededMetadataTypes(const IMetadataTypes *neededMetadataTypes)
+    public: Result<void> setNeededMetadataTypes(const IMetadataTypes* neededMetadataTypes)
     {
         Result<void> result;
         doSetNeededMetadataTypes(&result, neededMetadataTypes);

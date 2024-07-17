@@ -2,17 +2,16 @@
 
 #include "string_list.h"
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 int StringList::count() const
 {
-    return (int)m_strings.size();
+    return (int) m_strings.size();
 }
 
-const char *StringList::at(int index) const
+const char* StringList::at(int index) const
 {
-    if (index < 0 || index >= (int)m_strings.size())
+    if (index < 0 || index >= (int) m_strings.size())
         return nullptr;
 
     return m_strings[index].c_str();

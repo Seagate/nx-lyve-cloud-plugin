@@ -9,12 +9,11 @@
 #include <nx/sdk/helpers/ref_countable.h>
 #include <nx/sdk/helpers/string_map.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-class ActiveSettingChangedAction : public RefCountable<IActiveSettingChangedAction>
+class ActiveSettingChangedAction: public RefCountable<IActiveSettingChangedAction>
 {
-  public:
+public:
     ActiveSettingChangedAction() = default;
 
     void setActiveSettingId(std::string value);
@@ -22,14 +21,14 @@ class ActiveSettingChangedAction : public RefCountable<IActiveSettingChangedActi
     void setSettingsValues(Ptr<const StringMap> value);
     void setParams(Ptr<const StringMap> value);
 
-    virtual const char *activeSettingName() const override;
-    virtual const char *settingsModel() const override;
+    virtual const char* activeSettingName() const override;
+    virtual const char* settingsModel() const override;
 
-  protected:
-    virtual const IStringMap *getSettingsValues() const override;
-    virtual const IStringMap *getParams() const override;
+protected:
+    virtual const IStringMap* getSettingsValues() const override;
+    virtual const IStringMap* getParams() const override;
 
-  private:
+private:
     std::string m_activeSettingName;
     std::string m_settingsModel;
     Ptr<const StringMap> m_settingsValues;

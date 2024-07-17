@@ -4,20 +4,16 @@
 
 #include <nx/sdk/interface.h>
 
-#include <nx/sdk/analytics/i_compressed_media_packet.h>
-#include <nx/sdk/analytics/i_metadata_packet.h>
 #include <nx/sdk/i_list.h>
+#include <nx/sdk/analytics/i_metadata_packet.h>
+#include <nx/sdk/analytics/i_compressed_media_packet.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-class ICompressedVideoPacket0 : public Interface<ICompressedVideoPacket0, ICompressedMediaPacket0>
+class ICompressedVideoPacket0: public Interface<ICompressedVideoPacket0, ICompressedMediaPacket0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::ICompressedVideoPacket");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::ICompressedVideoPacket"); }
 
     /**
      * @return Width of the video frame in pixels.
@@ -33,20 +29,14 @@ class ICompressedVideoPacket0 : public Interface<ICompressedVideoPacket0, ICompr
 /**
  * Represents a single video frame.
  */
-class ICompressedVideoPacket : public Interface<ICompressedVideoPacket, ICompressedVideoPacket0>
+class ICompressedVideoPacket: public Interface<ICompressedVideoPacket, ICompressedVideoPacket0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::ICompressedVideoPacket1");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::ICompressedVideoPacket1"); }
 
     /** Called by metadataList() */
-  protected:
-    virtual IList<IMetadataPacket> *getMetadataList() const = 0;
-
-  public:
-    Ptr<IList<IMetadataPacket>> metadataList() const
+    protected: virtual IList<IMetadataPacket>* getMetadataList() const = 0;
+    public: Ptr<IList<IMetadataPacket>> metadataList() const
     {
         return Ptr(getMetadataList());
     }

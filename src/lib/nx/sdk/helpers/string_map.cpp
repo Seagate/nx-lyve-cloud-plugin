@@ -6,10 +6,9 @@
 
 #include <nx/kit/debug.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-void StringMap::setItem(const std::string &key, const std::string &value)
+void StringMap::setItem(const std::string& key, const std::string& value)
 {
     NX_KIT_ASSERT(!key.empty());
     m_map[key] = value;
@@ -22,12 +21,12 @@ void StringMap::clear()
 
 int StringMap::count() const
 {
-    return (int)m_map.size();
+    return (int) m_map.size();
 }
 
-const char *StringMap::key(int i) const
+const char* StringMap::key(int i) const
 {
-    if (i < 0 || i >= (int)m_map.size())
+    if (i < 0 || i >= (int) m_map.size())
         return nullptr;
 
     auto position = m_map.cbegin();
@@ -35,9 +34,9 @@ const char *StringMap::key(int i) const
     return position->first.c_str();
 }
 
-const char *StringMap::value(int i) const
+const char* StringMap::value(int i) const
 {
-    if (i < 0 || i >= (int)m_map.size())
+    if (i < 0 || i >= (int) m_map.size())
         return nullptr;
 
     auto position = m_map.cbegin();
@@ -45,7 +44,7 @@ const char *StringMap::value(int i) const
     return position->second.c_str();
 }
 
-const char *StringMap::value(const char *key) const
+const char* StringMap::value(const char* key) const
 {
     if (key == nullptr)
         return nullptr;

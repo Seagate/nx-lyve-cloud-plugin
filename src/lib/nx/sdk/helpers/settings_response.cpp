@@ -2,25 +2,30 @@
 
 #include "settings_response.h"
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-SettingsResponse::SettingsResponse(Ptr<StringMap> values, Ptr<StringMap> errors, Ptr<String> model)
-    : m_values(values), m_errors(errors), m_model(model)
+SettingsResponse::SettingsResponse(
+    Ptr<StringMap> values,
+    Ptr<StringMap> errors,
+    Ptr<String> model)
+    :
+    m_values(values),
+    m_errors(errors),
+    m_model(model)
 {
 }
 
-IStringMap *SettingsResponse::getValues() const
+IStringMap* SettingsResponse::getValues() const
 {
     return shareToPtr(m_values).releasePtr();
 }
 
-IStringMap *SettingsResponse::getErrors() const
+IStringMap* SettingsResponse::getErrors() const
 {
     return shareToPtr(m_errors).releasePtr();
 }
 
-IString *SettingsResponse::getModel() const
+IString* SettingsResponse::getModel() const
 {
     return shareToPtr(m_model).releasePtr();
 }

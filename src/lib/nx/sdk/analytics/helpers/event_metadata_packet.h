@@ -4,16 +4,15 @@
 
 #include <vector>
 
-#include <nx/sdk/analytics/i_event_metadata_packet.h>
 #include <nx/sdk/helpers/ref_countable.h>
 #include <nx/sdk/ptr.h>
+#include <nx/sdk/analytics/i_event_metadata_packet.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-class EventMetadataPacket : public RefCountable<IEventMetadataPacket>
+class EventMetadataPacket: public RefCountable<IEventMetadataPacket>
 {
-  public:
+public:
     virtual Flags flags() const override;
     virtual int64_t timestampUs() const override;
     virtual int64_t durationUs() const override;
@@ -23,13 +22,13 @@ class EventMetadataPacket : public RefCountable<IEventMetadataPacket>
     void setFlags(Flags flags);
     void setTimestampUs(int64_t timestampUs);
     void setDurationUs(int64_t durationUs);
-    void addItem(const IEventMetadata *event);
+    void addItem(const IEventMetadata* event);
     void clear();
 
-  protected:
-    virtual const IEventMetadata *getAt(int index) const override;
+protected:
+    virtual const IEventMetadata* getAt(int index) const override;
 
-  private:
+private:
     Flags m_flags = Flags::none;
     int64_t m_timestampUs = -1;
     int64_t m_durationUs = -1;

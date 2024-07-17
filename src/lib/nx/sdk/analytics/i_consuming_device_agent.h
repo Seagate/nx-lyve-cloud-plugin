@@ -10,27 +10,21 @@
 #include "i_data_packet.h"
 #include "i_device_agent.h"
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-class IConsumingDeviceAgent0 : public Interface<IConsumingDeviceAgent0, IDeviceAgent0>
+class IConsumingDeviceAgent0: public Interface<IConsumingDeviceAgent0, IDeviceAgent0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IConsumingDeviceAgent");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IConsumingDeviceAgent"); }
 
     /** Called by pushDataPacket() */
-  protected:
-    virtual void doPushDataPacket(Result<void> *outResult, IDataPacket *dataPacket) = 0;
+    protected: virtual void doPushDataPacket(Result<void>* outResult, IDataPacket* dataPacket) = 0;
     /**
      * Supplies data to the Engine. Called from a worker thread.
      *
      * @param dataPacket Never null. Has a valid timestamp >= 0.
      */
-  public:
-    Result<void> pushDataPacket(IDataPacket *dataPacket)
+    public: Result<void> pushDataPacket(IDataPacket* dataPacket)
     {
         Result<void> result;
         doPushDataPacket(&result, dataPacket);
@@ -38,13 +32,10 @@ class IConsumingDeviceAgent0 : public Interface<IConsumingDeviceAgent0, IDeviceA
     }
 };
 
-class IConsumingDeviceAgent1 : public Interface<IConsumingDeviceAgent1, IConsumingDeviceAgent0>
+class IConsumingDeviceAgent1: public Interface<IConsumingDeviceAgent1, IConsumingDeviceAgent0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IConsumingDeviceAgent1");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IConsumingDeviceAgent1"); }
 
     /**
      * Called by the Server when this DeviceAgent is no longer needed, before releasing the ref.
@@ -55,18 +46,15 @@ class IConsumingDeviceAgent1 : public Interface<IConsumingDeviceAgent1, IConsumi
 /**
  * Interface for a DeviceAgent that requires input (e.g. audio or video stream) from the Device.
  */
-class IConsumingDeviceAgent : public Interface<IConsumingDeviceAgent, IConsumingDeviceAgent1>
+class IConsumingDeviceAgent: public Interface<IConsumingDeviceAgent, IConsumingDeviceAgent1>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IConsumingDeviceAgent2");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IConsumingDeviceAgent2"); }
 
     /** Called by getSettingsOnActiveSettingChange() */
-  protected:
-    virtual void doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChangedResponse *> *outResult,
-                                                    const IActiveSettingChangedAction *activeSettingChangedAction) = 0;
+    protected: virtual void doGetSettingsOnActiveSettingChange(
+        Result<const IActiveSettingChangedResponse*>* outResult,
+        const IActiveSettingChangedAction* activeSettingChangedAction) = 0;
     /**
      * When a setting marked as Active changes its value in the GUI, the Server calls this method
      * to notify the Plugin and allow it to adjust the values of the settings and the Settings
@@ -78,11 +66,10 @@ class IConsumingDeviceAgent : public Interface<IConsumingDeviceAgent, IConsuming
      *     procedure of analyzing the settings, or data defining the interaction with the user and
      *     the new state of the settings dialog. Can be null if no user interaction is needed.
      */
-  public:
-    Result<const IActiveSettingChangedResponse *> getSettingsOnActiveSettingChange(
-        const IActiveSettingChangedAction *activeSettingChangedAction)
+    public: Result<const IActiveSettingChangedResponse*> getSettingsOnActiveSettingChange(
+        const IActiveSettingChangedAction* activeSettingChangedAction)
     {
-        Result<const IActiveSettingChangedResponse *> result;
+        Result<const IActiveSettingChangedResponse*> result;
         doGetSettingsOnActiveSettingChange(&result, activeSettingChangedAction);
         return result;
     }

@@ -4,11 +4,10 @@
 
 #include <nx/sdk/i_string.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 /** Error codes used by Plugin methods. */
-enum class ErrorCode : int
+enum class ErrorCode: int
 {
     noError = 0,
     networkError = -22,
@@ -21,8 +20,9 @@ enum class ErrorCode : int
 
 class Error
 {
-  public:
-    Error(ErrorCode errorCode, const IString *errorMessage) : m_errorCode(errorCode), m_errorMessage(errorMessage)
+public:
+    Error(ErrorCode errorCode, const IString* errorMessage):
+        m_errorCode(errorCode), m_errorMessage(errorMessage)
     {
     }
 
@@ -31,99 +31,70 @@ class Error
         return m_errorCode == ErrorCode::noError && m_errorMessage == nullptr;
     }
 
-    ErrorCode errorCode() const
-    {
-        return m_errorCode;
-    }
-    const IString *errorMessage() const
-    {
-        return m_errorMessage;
-    }
+    ErrorCode errorCode() const { return m_errorCode; }
+    const IString* errorMessage() const { return m_errorMessage; }
 
-    Error(Error &&) = default;
-    Error &operator=(const Error &) = default;
+    Error(Error&&) = default;
+    Error& operator=(const Error&) = default;
 
-  private:
+private:
     ErrorCode m_errorCode;
-    const IString *m_errorMessage;
+    const IString* m_errorMessage;
 };
 
-template <typename Value> class Result
+template<typename Value>
+class Result
 {
-  public:
-    Result() : m_error(ErrorCode::noError, nullptr)
-    {
-    }
+public:
+    Result(): m_error(ErrorCode::noError, nullptr) {}
 
-    Result(Value value) : m_error(ErrorCode::noError, nullptr), m_value(std::move(value))
-    {
-    }
+    Result(Value value): m_error(ErrorCode::noError, nullptr), m_value(std::move(value)) {}
 
-    Result(Error &&error) : m_error(std::move(error))
-    {
-    }
+    Result(Error&& error): m_error(std::move(error)) {}
 
-    Result &operator=(Error &&error)
+    Result& operator=(Error&& error)
     {
         m_error = std::move(error);
         m_value = Value{};
         return *this;
     }
 
-    Result &operator=(Value value)
+    Result& operator=(Value value)
     {
         m_error = Error{ErrorCode::noError, nullptr};
         m_value = value;
         return *this;
     }
 
-    bool isOk() const
-    {
-        return m_error.isOk();
-    }
+    bool isOk() const { return m_error.isOk(); }
 
-    const Error &error() const
-    {
-        return m_error;
-    }
-    Value value() const
-    {
-        return m_value;
-    }
+    const Error& error() const { return m_error; }
+    Value value() const { return m_value; }
 
-  private:
+private:
     Error m_error;
     Value m_value{};
 };
 
-template <> class Result<void>
+template<>
+class Result<void>
 {
-  public:
-    Result() : m_error(ErrorCode::noError, nullptr)
-    {
-    }
+public:
+    Result(): m_error(ErrorCode::noError, nullptr) {}
 
-    Result(Error &&error) : m_error(std::move(error))
-    {
-    }
+    Result(Error&& error): m_error(std::move(error)) {}
 
-    Result &operator=(Error &&error)
+    Result& operator=(Error&& error)
     {
         m_error = std::move(error);
         return *this;
     }
 
-    bool isOk() const
-    {
-        return m_error.isOk();
-    }
+    bool isOk() const { return m_error.isOk(); }
 
-    const Error &error() const
-    {
-        return m_error;
-    }
+    const Error& error() const { return m_error; }
 
-  private:
+private:
     Error m_error;
 };
 

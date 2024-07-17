@@ -6,38 +6,22 @@
 
 #include <nx/sdk/i_string_list.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-class IMetadataTypes : public Interface<IMetadataTypes>
+class IMetadataTypes: public Interface<IMetadataTypes>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IMetadataTypes");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IMetadataTypes"); }
 
     virtual ~IMetadataTypes() = default;
 
     /** Called by eventTypeIds() */
-  protected:
-    virtual const IStringList *getEventTypeIds() const = 0;
-
-  public:
-    Ptr<const IStringList> eventTypeIds() const
-    {
-        return Ptr(getEventTypeIds());
-    }
+    protected: virtual const IStringList* getEventTypeIds() const = 0;
+    public: Ptr<const IStringList> eventTypeIds() const { return Ptr(getEventTypeIds()); }
 
     /** Called by objectTypeIds() */
-  protected:
-    virtual const IStringList *getObjectTypeIds() const = 0;
-
-  public:
-    Ptr<const IStringList> objectTypeIds() const
-    {
-        return Ptr(getObjectTypeIds());
-    }
+    protected: virtual const IStringList* getObjectTypeIds() const = 0;
+    public: Ptr<const IStringList> objectTypeIds() const { return Ptr(getObjectTypeIds()); }
 
     virtual bool isEmpty() const = 0;
 };

@@ -6,19 +6,15 @@
 
 #include <nx/sdk/analytics/i_metadata_packet.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 /**
  * Metadata packet containing information about motion on the scene.
  */
-class IMotionMetadataPacket : public Interface<IMotionMetadataPacket, IMetadataPacket0>
+class IMotionMetadataPacket: public Interface<IMotionMetadataPacket, IMetadataPacket0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IMotionMetadataPacket");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IMotionMetadataPacket"); }
 
     /**
      * Motion metadata is represented as a grid with a certain number of rows and columns. The grid
@@ -30,7 +26,7 @@ class IMotionMetadataPacket : public Interface<IMotionMetadataPacket, IMetadataP
      *
      * @return Pointer to the grid buffer.
      */
-    virtual const uint8_t *motionData() const = 0;
+    virtual const uint8_t* motionData() const = 0;
 
     /**
      * @return Size of the motion metadata buffer in bytes. Number of bits in the grid buffer may

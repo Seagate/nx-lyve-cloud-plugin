@@ -4,8 +4,7 @@
 
 #include <nx/sdk/interface.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 class IUtilityProvider;
 
@@ -24,13 +23,13 @@ class IUtilityProvider;
  * ATTENTION: If the Plugins's dynamic library is linked to any dynamic libraries, including the
  * ones from the OS, consult @ref md_src_nx_sdk_dynamic_libraries to avoid potential issues.
  */
-class IPlugin : public Interface<IPlugin>
+class IPlugin: public Interface<IPlugin>
 {
-  public:
+public:
     static auto interfaceId()
     {
         return makeIdWithAlternative("nx::sdk::IPlugin",
-                                     /* Planned future renaming. */ "nx::sdk::IIntegration");
+            /* Planned future renaming. */ "nx::sdk::IIntegration");
     }
 
     /**
@@ -39,10 +38,10 @@ class IPlugin : public Interface<IPlugin>
      * The Server calls this function only when the Plugin library does not export the
      * multi-IPlugin entry point function.
      */
-    typedef IPlugin *(*EntryPointFunc)();
+    typedef IPlugin* (*EntryPointFunc)();
 
     /** Name of a plugin entry point function for single-IPlugin plugins. */
-    static constexpr const char *kEntryPointFuncName = "createNxPlugin";
+    static constexpr const char* kEntryPointFuncName = "createNxPlugin";
 
     /**
      * Prototype of a plugin entry point function for multi-IPlugin Plugins.
@@ -54,10 +53,10 @@ class IPlugin : public Interface<IPlugin>
      * If this function is exported from the Plugin library and returns at least one Plugin
      * instance, the single-IPlugin entry point function will not be called.
      */
-    typedef IPlugin *(*MultiEntryPointFunc)(int instanceIndex);
+    typedef IPlugin* (*MultiEntryPointFunc)(int instanceIndex);
 
     /** Name of a Plugin entry point function for multi-IPlugin Plugins. */
-    static constexpr const char *kMultiEntryPointFuncName = "createNxPluginByIndex";
+    static constexpr const char* kMultiEntryPointFuncName = "createNxPluginByIndex";
 
     /**
      * Provides an object which the plugin can use for calling back to access some data and
@@ -65,7 +64,7 @@ class IPlugin : public Interface<IPlugin>
      *
      * For details, see the documentation for IUtilityProvider.
      */
-    virtual void setUtilityProvider(IUtilityProvider *utilityProvider) = 0;
+    virtual void setUtilityProvider(IUtilityProvider* utilityProvider) = 0;
 };
 using IPlugin0 = IPlugin;
 

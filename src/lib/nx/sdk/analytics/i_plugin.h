@@ -5,29 +5,27 @@
 #include <nx/sdk/interface.h>
 #include <nx/sdk/result.h>
 
-#include <nx/sdk/i_plugin.h>
 #include <nx/sdk/i_string.h>
+#include <nx/sdk/i_plugin.h>
 
 #include "i_engine.h"
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 /**
  * The main interface for an Analytics Plugin instance.
  */
-class IPlugin : public Interface<IPlugin, nx::sdk::IPlugin0>
+class IPlugin: public Interface<IPlugin, nx::sdk::IPlugin0>
 {
-  public:
+public:
     static auto interfaceId()
     {
         return makeIdWithAlternative("nx::sdk::analytics::IPlugin",
-                                     /* Planned future renaming. */ "nx::sdk::analytics::IIntegration");
+            /* Planned future renaming. */ "nx::sdk::analytics::IIntegration");
     }
 
     /** Called by manifest() */
-  protected:
-    virtual void getManifest(Result<const IString *> *outResult) const = 0;
+    protected: virtual void getManifest(Result<const IString*>* outResult) const = 0;
     /**
      * Provides Plugin Manifest in JSON format.
      *
@@ -35,25 +33,22 @@ class IPlugin : public Interface<IPlugin, nx::sdk::IPlugin0>
      *
      * @return JSON string in UTF-8.
      */
-  public:
-    Result<const IString *> manifest() const
+    public: Result<const IString*> manifest() const
     {
-        Result<const IString *> result;
+        Result<const IString*> result;
         getManifest(&result);
         return result;
     }
 
     /** Called by createEngine() */
-  protected:
-    virtual void doCreateEngine(Result<IEngine *> *outResult) = 0;
+    protected: virtual void doCreateEngine(Result<IEngine*>* outResult) = 0;
     /**
      * Creates a new instance of Analytics Engine.
      * @return Pointer to an object that implements the IEngine interface.
      */
-  public:
-    Result<IEngine *> createEngine()
+    public: Result<IEngine*> createEngine()
     {
-        Result<IEngine *> result;
+        Result<IEngine*> result;
         doCreateEngine(&result);
         return result;
     }

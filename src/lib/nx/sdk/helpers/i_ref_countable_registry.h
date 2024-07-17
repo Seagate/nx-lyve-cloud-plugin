@@ -4,8 +4,7 @@
 
 #include <nx/sdk/i_ref_countable.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 /**
  * Debugging mechanism that tracks ref-countable objects to detect leaks, double-frees and the
@@ -25,13 +24,15 @@ namespace nx::sdk
  */
 class IRefCountableRegistry
 {
-  public:
+public:
     /** Logs the remaining (leaked) ref-countable objects. */
     virtual ~IRefCountableRegistry() = default;
 
-    virtual void notifyCreated(const nx::sdk::IRefCountable *refCountable, int refCount) = 0;
+    virtual void notifyCreated(
+        const nx::sdk::IRefCountable* refCountable, int refCount) = 0;
 
-    virtual void notifyDestroyed(const nx::sdk::IRefCountable *refCountable, int refCount) = 0;
+    virtual void notifyDestroyed(
+        const nx::sdk::IRefCountable* refCountable, int refCount) = 0;
 };
 
 } // namespace nx::sdk

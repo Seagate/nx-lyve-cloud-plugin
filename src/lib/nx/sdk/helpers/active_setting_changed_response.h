@@ -5,26 +5,25 @@
 #include <nx/sdk/i_active_setting_changed_response.h>
 #include <nx/sdk/ptr.h>
 
-#include <nx/sdk/helpers/action_response.h>
 #include <nx/sdk/helpers/ref_countable.h>
+#include <nx/sdk/helpers/action_response.h>
 #include <nx/sdk/helpers/settings_response.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-class ActiveSettingChangedResponse : public RefCountable<IActiveSettingChangedResponse>
+class ActiveSettingChangedResponse: public RefCountable<IActiveSettingChangedResponse>
 {
-  public:
+public:
     ActiveSettingChangedResponse() = default;
 
     void setActionResponse(Ptr<const ActionResponse> value);
     void setSettingsResponse(Ptr<const SettingsResponse> value);
 
-  protected:
-    virtual const IActionResponse *getActionResponse() const override;
-    virtual const ISettingsResponse *getSettingsResponse() const override;
+protected:
+    virtual const IActionResponse* getActionResponse() const override;
+    virtual const ISettingsResponse* getSettingsResponse() const override;
 
-  private:
+private:
     Ptr<const ActionResponse> m_actionResponse;
     Ptr<const SettingsResponse> m_settingsResponse;
 };

@@ -2,12 +2,12 @@
 
 #pragma once
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-template <typename IItem> class IList : public Interface<IList<IItem>>
+template<typename IItem>
+class IList: public Interface<IList<IItem>>
 {
-  public:
+public:
     static auto interfaceId()
     {
         return IList::template makeIdForTemplate<IList<IItem>, IItem>("nx::sdk::IList");
@@ -16,15 +16,11 @@ template <typename IItem> class IList : public Interface<IList<IItem>>
     virtual int count() const = 0;
 
     /** Called by at() */
-  protected:
-    virtual IItem *getAt(int index) const = 0;
+    protected: virtual IItem* getAt(int index) const = 0;
     /** @return Element at the zero-based index, or null if the index is invalid. */
-  public:
-    Ptr<IItem> at(int index) const
-    {
-        return Ptr(getAt(index));
-    }
+    public: Ptr<IItem> at(int index) const { return Ptr(getAt(index)); }
 };
-template <typename IItem> using IList0 = IList<IItem>;
+template<typename IItem>
+using IList0 = IList<IItem>;
 
 } // namespace nx::sdk

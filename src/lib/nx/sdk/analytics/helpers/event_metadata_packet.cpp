@@ -4,8 +4,7 @@
 
 #include <nx/kit/debug.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 EventMetadataPacket::Flags EventMetadataPacket::flags() const
 {
@@ -24,12 +23,12 @@ int64_t EventMetadataPacket::durationUs() const
 
 int EventMetadataPacket::count() const
 {
-    return (int)m_events.size();
+    return (int) m_events.size();
 }
 
-const IEventMetadata *EventMetadataPacket::getAt(int index) const
+const IEventMetadata* EventMetadataPacket::getAt(int index) const
 {
-    if (index < 0 || index >= (int)m_events.size())
+    if (index < 0 || index >= (int) m_events.size())
         return nullptr;
 
     return shareToPtr(m_events[index]).releasePtr();
@@ -50,7 +49,7 @@ void EventMetadataPacket::setDurationUs(int64_t durationUs)
     m_durationUs = durationUs;
 }
 
-void EventMetadataPacket::addItem(const IEventMetadata *eventMetadata)
+void EventMetadataPacket::addItem(const IEventMetadata* eventMetadata)
 {
     if (!NX_KIT_ASSERT(eventMetadata))
         return;

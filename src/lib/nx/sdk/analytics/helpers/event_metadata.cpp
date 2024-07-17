@@ -6,10 +6,9 @@
 
 #include <nx/kit/debug.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-const char *EventMetadata::typeId() const
+const char* EventMetadata::typeId() const
 {
     return m_typeId.c_str();
 }
@@ -19,19 +18,19 @@ float EventMetadata::confidence() const
     return m_confidence;
 }
 
-const char *EventMetadata::caption() const
+const char* EventMetadata::caption() const
 {
     return m_caption.c_str();
 }
 
-const char *EventMetadata::description() const
+const char* EventMetadata::description() const
 {
     return m_description.c_str();
 }
 
-const IAttribute *EventMetadata::getAttribute(int index) const
+const IAttribute* EventMetadata::getAttribute(int index) const
 {
-    if (index >= (int)m_attributes.size() || index < 0)
+    if (index >= (int) m_attributes.size() || index < 0)
         return nullptr;
 
     return shareToPtr(m_attributes[index]).releasePtr();
@@ -39,7 +38,7 @@ const IAttribute *EventMetadata::getAttribute(int index) const
 
 int EventMetadata::attributeCount() const
 {
-    return (int)m_attributes.size();
+    return (int) m_attributes.size();
 }
 
 bool EventMetadata::isActive() const
@@ -47,7 +46,7 @@ bool EventMetadata::isActive() const
     return m_isActive;
 }
 
-const char *EventMetadata::key() const
+const char* EventMetadata::key() const
 {
     return m_key.c_str();
 }
@@ -62,12 +61,12 @@ void EventMetadata::setConfidence(float confidence)
     m_confidence = confidence;
 }
 
-void EventMetadata::setCaption(const std::string &caption)
+void EventMetadata::setCaption(const std::string& caption)
 {
     m_caption = caption;
 }
 
-void EventMetadata::setDescription(const std::string &description)
+void EventMetadata::setDescription(const std::string& description)
 {
     m_description = description;
 }
@@ -90,9 +89,9 @@ void EventMetadata::addAttribute(nx::sdk::Ptr<Attribute> attribute)
     m_attributes.push_back(std::move(attribute));
 }
 
-void EventMetadata::addAttributes(const std::vector<nx::sdk::Ptr<Attribute>> &value)
+void EventMetadata::addAttributes(const std::vector<nx::sdk::Ptr<Attribute>>& value)
 {
-    for (const auto &newAttribute : value)
+    for (const auto& newAttribute: value)
         addAttribute(newAttribute);
 }
 
@@ -101,7 +100,7 @@ void EventMetadata::setTrackId(Uuid trackId)
     m_trackId = trackId;
 }
 
-void EventMetadata::getTrackId(Uuid *outValue) const
+void EventMetadata::getTrackId(Uuid* outValue) const
 {
     if (!NX_KIT_ASSERT(outValue))
         return;

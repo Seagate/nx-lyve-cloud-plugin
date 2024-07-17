@@ -4,19 +4,15 @@
 
 #include <nx/sdk/interface.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-class IString : public nx::sdk::Interface<IString>
+class IString: public nx::sdk::Interface<IString>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::IString");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::IString"); }
 
     /** Never null. */
-    virtual const char *str() const = 0;
+    virtual const char* str() const = 0;
 };
 using IString0 = IString;
 

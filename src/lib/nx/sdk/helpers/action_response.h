@@ -8,12 +8,11 @@
 
 #include <nx/sdk/helpers/ref_countable.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-class ActionResponse : public RefCountable<IActionResponse>
+class ActionResponse: public RefCountable<IActionResponse>
 {
-  public:
+public:
     ActionResponse() = default;
 
     /** Additionally, makes messageToUser() return an empty string. */
@@ -22,10 +21,10 @@ class ActionResponse : public RefCountable<IActionResponse>
     /** Additionally, makes actionUrl() return an empty string. */
     void setMessageToUser(std::string value);
 
-    virtual const char *actionUrl() const override;
-    virtual const char *messageToUser() const override;
+    virtual const char* actionUrl() const override;
+    virtual const char* messageToUser() const override;
 
-  private:
+private:
     std::string m_actionUrl;
     std::string m_messageToUser;
 };

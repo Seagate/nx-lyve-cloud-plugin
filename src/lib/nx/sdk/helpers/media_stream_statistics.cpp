@@ -4,13 +4,16 @@
 
 #include <algorithm>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
 using namespace std::chrono;
 
-MediaStreamStatistics::MediaStreamStatistics(std::chrono::microseconds windowSize, int maxDurationInFrames)
-    : m_windowSize(windowSize), m_maxDurationInFrames(maxDurationInFrames)
+MediaStreamStatistics::MediaStreamStatistics(
+    std::chrono::microseconds windowSize,
+    int maxDurationInFrames)
+    :
+    m_windowSize(windowSize),
+    m_maxDurationInFrames(maxDurationInFrames)
 {
     reset();
 }
@@ -33,17 +36,22 @@ void MediaStreamStatistics::reset()
     m_lastDataTimer = steady_clock::now();
 }
 
-void MediaStreamStatistics::onData(microseconds timestamp, size_t dataSize, bool isKeyFrame)
+void MediaStreamStatistics::onData(
+    microseconds timestamp, size_t dataSize, bool isKeyFrame)
 {
-    auto toIterator = [this](microseconds timestamp) {
-        return std::lower_bound(m_data.begin(), m_data.end(), timestamp);
-    };
+    auto toIterator =
+        [this](microseconds timestamp)
+        {
+            return std::lower_bound(m_data.begin(), m_data.end(), timestamp);
+        };
 
-    auto removeRange = [this](auto left, auto right) {
-        for (auto itr = left; itr != right; ++itr)
-            m_totalSizeBytes -= itr->size;
-        m_data.erase(left, right);
-    };
+    auto removeRange =
+        [this](auto left, auto right)
+        {
+            for (auto itr = left; itr != right; ++itr)
+                m_totalSizeBytes -= itr->size;
+            m_data.erase(left, right);
+        };
 
     std::lock_guard<std::mutex> locker(m_mutex);
     m_data.insert(toIterator(timestamp), Data(timestamp, dataSize, isKeyFrame));
@@ -53,7 +61,7 @@ void MediaStreamStatistics::onData(microseconds timestamp, size_t dataSize, bool
     removeRange(toIterator(timestamp + m_windowSize), m_data.end());
     if (!m_data.empty())
         removeRange(m_data.begin(), toIterator(m_data.back().timestamp - m_windowSize));
-    const int extraFrames = (int)m_data.size() - m_maxDurationInFrames;
+    const int extraFrames = (int) m_data.size() - m_maxDurationInFrames;
     if (extraFrames > 0 && m_maxDurationInFrames > 0)
         removeRange(m_data.begin(), m_data.begin() + extraFrames);
     m_lastDataTimer = steady_clock::now();
@@ -98,9 +106,9 @@ microseconds MediaStreamStatistics::intervalUnsafe() const
 float MediaStreamStatistics::getAverageGopSize() const
 {
     std::lock_guard<std::mutex> locker(m_mutex);
-    const size_t keyFrames =
-        std::count_if(m_data.begin(), m_data.end(), [](const auto &value) { return value.isKeyFrame; });
-    return keyFrames > 0 ? m_data.size() / (float)keyFrames : 0;
+    const size_t keyFrames = std::count_if(m_data.begin(), m_data.end(),
+        [](const auto& value) { return value.isKeyFrame; });
+    return keyFrames > 0 ? m_data.size() / (float) keyFrames : 0;
 }
 
 } // namespace nx::sdk

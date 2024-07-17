@@ -4,25 +4,24 @@
 
 #include <string>
 
-#include <nx/sdk/helpers/ref_countable.h>
 #include <nx/sdk/i_device_info.h>
+#include <nx/sdk/helpers/ref_countable.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-class DeviceInfo : public nx::sdk::RefCountable<IDeviceInfo>
+class DeviceInfo: public nx::sdk::RefCountable<IDeviceInfo>
 {
-  public:
-    virtual const char *id() const override;
-    virtual const char *vendor() const override;
-    virtual const char *model() const override;
-    virtual const char *firmware() const override;
-    virtual const char *name() const override;
-    virtual const char *url() const override;
-    virtual const char *login() const override;
-    virtual const char *password() const override;
-    virtual const char *sharedId() const override;
-    virtual const char *logicalId() const override;
+public:
+    virtual const char* id() const override;
+    virtual const char* vendor() const override;
+    virtual const char* model() const override;
+    virtual const char* firmware() const override;
+    virtual const char* name() const override;
+    virtual const char* url() const override;
+    virtual const char* login() const override;
+    virtual const char* password() const override;
+    virtual const char* sharedId() const override;
+    virtual const char* logicalId() const override;
     virtual int channelNumber() const override;
 
     void setId(std::string id);
@@ -37,7 +36,7 @@ class DeviceInfo : public nx::sdk::RefCountable<IDeviceInfo>
     void setLogicalId(std::string logicalId);
     void setChannelNumber(int channelNumber);
 
-  private:
+private:
     std::string m_id;
     std::string m_vendor;
     std::string m_model;

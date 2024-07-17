@@ -4,22 +4,19 @@
 
 #include <nx/sdk/interface.h>
 
+#include <nx/sdk/i_list.h>
 #include <nx/sdk/analytics/i_metadata_packet.h>
 #include <nx/sdk/analytics/i_uncompressed_media_frame.h>
-#include <nx/sdk/i_list.h>
 
-namespace nx::sdk::analytics
+namespace nx::sdk::analytics {
+
+class IUncompressedVideoFrame0:
+    public Interface<IUncompressedVideoFrame0, IUncompressedMediaFrame0>
 {
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IUncompressedVideoFrame"); }
 
-class IUncompressedVideoFrame0 : public Interface<IUncompressedVideoFrame0, IUncompressedMediaFrame0>
-{
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IUncompressedVideoFrame");
-    }
-
-    enum class PixelFormat : int
+    enum class PixelFormat: int
     {
         yuv420,
         argb,
@@ -48,13 +45,11 @@ class IUncompressedVideoFrame0 : public Interface<IUncompressedVideoFrame0, IUnc
     virtual int height() const = 0;
 
     /** Called by pixelAspectRatio() */
-  protected:
-    virtual void getPixelAspectRatio(PixelAspectRatio *outValue) const = 0;
+    protected: virtual void getPixelAspectRatio(PixelAspectRatio* outValue) const = 0;
     /**
      * @return Aspect ratio of a frame pixel.
      */
-  public:
-    PixelAspectRatio pixelAspectRatio() const
+    public: PixelAspectRatio pixelAspectRatio() const
     {
         PixelAspectRatio value;
         getPixelAspectRatio(&value);
@@ -73,20 +68,14 @@ class IUncompressedVideoFrame0 : public Interface<IUncompressedVideoFrame0, IUnc
 /**
  * Represents a single uncompressed video frame.
  */
-class IUncompressedVideoFrame : public Interface<IUncompressedVideoFrame, IUncompressedVideoFrame0>
+class IUncompressedVideoFrame: public Interface<IUncompressedVideoFrame, IUncompressedVideoFrame0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IUncompressedVideoFrame1");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IUncompressedVideoFrame1"); }
 
     /** Called by metadataList() */
-  protected:
-    virtual IList<IMetadataPacket> *getMetadataList() const = 0;
-
-  public:
-    Ptr<IList<IMetadataPacket>> metadataList() const
+    protected: virtual IList<IMetadataPacket>* getMetadataList() const = 0;
+    public: Ptr<IList<IMetadataPacket>> metadataList() const
     {
         return Ptr(getMetadataList());
     }

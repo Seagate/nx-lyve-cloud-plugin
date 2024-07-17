@@ -2,27 +2,26 @@
 
 #pragma once
 
-#include <functional>
 #include <string>
+#include <functional>
 
+#include <nx/sdk/i_utility_provider.h>
 #include <nx/sdk/analytics/i_plugin.h>
 #include <nx/sdk/helpers/ref_countable.h>
-#include <nx/sdk/i_utility_provider.h>
 #include <nx/sdk/ptr.h>
 
 #include "engine.h"
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 /**
  * Base class for a typical implementation of an Analytics Plugin. Hides many technical details of
  * the Analytics Plugin SDK, but may limit plugin capabilities - use only when suitable.
  */
-class Plugin : public RefCountable<IPlugin>
+class Plugin: public RefCountable<IPlugin>
 {
-  public:
-    using CreateEngine = std::function<IEngine *(Plugin *plugin)>;
+public:
+    using CreateEngine = std::function<IEngine*(Plugin* plugin)>;
 
     /**
      * Allows to use this class directly without inhering it.
@@ -37,54 +36,42 @@ class Plugin : public RefCountable<IPlugin>
 
     virtual ~Plugin() override;
 
-    Ptr<IUtilityProvider> utilityProvider() const
-    {
-        return m_utilityProvider;
-    }
+    Ptr<IUtilityProvider> utilityProvider() const { return m_utilityProvider; }
 
     /**
      * Override for multi-IPlugin libraries; provide pluginId specified in the Manifest.
      */
-    virtual std::string instanceId() const
-    {
-        return "";
-    }
+    virtual std::string instanceId() const { return ""; }
 
-  protected:
+protected:
     Plugin();
 
     /**
      * Override this method instead of doCreateEngine().
      */
-    virtual Result<IEngine *> doObtainEngine();
+    virtual Result<IEngine*> doObtainEngine();
 
     virtual std::string manifestString() const;
 
-    //-------------------------------------------------------------------------------------------------
-    // Not intended to be used by a descendant.
+//-------------------------------------------------------------------------------------------------
+// Not intended to be used by a descendant.
 
-  public:
-    virtual void setUtilityProvider(IUtilityProvider *utilityProvider) override;
+public:
+    virtual void setUtilityProvider(IUtilityProvider* utilityProvider) override;
 
-  protected:
-    virtual void getManifest(Result<const IString *> *outResult) const override;
-    virtual void doCreateEngine(Result<IEngine *> *outResult) override;
+protected:
+    virtual void getManifest(Result<const IString*>* outResult) const override;
+    virtual void doCreateEngine(Result<IEngine*>* outResult) override;
 
-  private:
-    void logLifeCycleEvent(const std::string &event) const;
+private:
+    void logLifeCycleEvent(const std::string& event) const;
 
-    void logCreation() const
-    {
-        logLifeCycleEvent("Created");
-    }
-    void logDestruction() const
-    {
-        logLifeCycleEvent("Destroyed");
-    }
+    void logCreation() const { logLifeCycleEvent("Created"); }
+    void logDestruction() const { logLifeCycleEvent("Destroyed"); }
 
-    void logError(const std::string &message) const;
+    void logError(const std::string& message) const;
 
-  private:
+private:
     const std::string m_jsonManifest;
 
     CreateEngine m_createEngineFunc;

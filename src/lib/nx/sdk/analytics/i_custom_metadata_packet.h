@@ -6,30 +6,26 @@
 
 #include <nx/sdk/analytics/i_metadata_packet.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 /**
  * Arbitrary metadata represented as a byte array.
  */
-class ICustomMetadataPacket : public Interface<ICustomMetadataPacket, IMetadataPacket0>
+class ICustomMetadataPacket: public Interface<ICustomMetadataPacket, IMetadataPacket0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::ICustomMetadataPacket");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::ICustomMetadataPacket"); }
 
     /**
      * @return Null-terminated ASCII string describing the metadata format in a proprietary way.
      *     Never null, nor empty.
      */
-    virtual const char *codec() const = 0;
+    virtual const char* codec() const = 0;
 
     /**
      * @return Pointer to the compressed data. Is null if data size is zero.
      */
-    virtual const char *data() const = 0;
+    virtual const char* data() const = 0;
 
     /**
      * @return Size of the compressed data in bytes.
@@ -40,7 +36,7 @@ class ICustomMetadataPacket : public Interface<ICustomMetadataPacket, IMetadataP
      * @return Pointer to the binary data specific to the particular metadata format, or null if
      *     such data is not available.
      */
-    virtual const char *contextData() const = 0;
+    virtual const char* contextData() const = 0;
 
     /**
      * @return Size of the data returned by the contextData(), in bytes.

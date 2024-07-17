@@ -6,51 +6,44 @@
 #include <nx/sdk/result.h>
 
 #include <nx/sdk/i_device_info.h>
-#include <nx/sdk/i_plugin_diagnostic_event.h>
 #include <nx/sdk/i_string.h>
+#include <nx/sdk/i_plugin_diagnostic_event.h>
 
 #include <nx/sdk/i_active_setting_changed_action.h>
 #include <nx/sdk/i_active_setting_changed_response.h>
 #include <nx/sdk/i_settings_response.h>
 
-#include "i_action.h"
 #include "i_device_agent.h"
 #include "i_engine_info.h"
+#include "i_action.h"
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 class IPlugin; //< Forward declaration for the parent object.
 
-class IEngine0 : public Interface<IEngine0>
+class IEngine0: public Interface<IEngine0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IEngine");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IEngine"); }
 
-    class IHandler : public Interface<IHandler>
+    class IHandler: public Interface<IHandler>
     {
-      public:
-        static auto interfaceId()
-        {
-            return makeId("nx::sdk::analytics::IEngine::IHandler");
-        }
+    public:
+        static auto interfaceId() { return makeId("nx::sdk::analytics::IEngine::IHandler"); }
 
         virtual ~IHandler() = default;
-        virtual void handlePluginDiagnosticEvent(IPluginDiagnosticEvent *event) = 0;
+        virtual void handlePluginDiagnosticEvent(IPluginDiagnosticEvent* event) = 0;
     };
 
     /**
      * Called right after the Engine creation (before all other methods) or when some
      * Engine-related change occurs on the Server side (e.g. Engine name is changed).
      */
-    virtual void setEngineInfo(const IEngineInfo *engineInfo) = 0;
+    virtual void setEngineInfo(const IEngineInfo* engineInfo) = 0;
 
     /** Called by setSettings() */
-  protected:
-    virtual void doSetSettings(Result<const ISettingsResponse *> *outResult, const IStringMap *settings) = 0;
+    protected: virtual void doSetSettings(
+        Result<const ISettingsResponse*>* outResult, const IStringMap* settings) = 0;
     /**
      * Receives the values of settings stored in the Server database for this Engine instance. The
      * values must conform to the Settings Model, which is initially defined in the Plugin
@@ -66,17 +59,16 @@ class IEngine0 : public Interface<IEngine0>
      *     errors, optional new setting values in case they were changed during the applying, and
      *     an optional new Settings Model. Can be null if none of the above items are present.
      */
-  public:
-    Result<const ISettingsResponse *> setSettings(const IStringMap *settings)
+    public: Result<const ISettingsResponse*> setSettings(const IStringMap* settings)
     {
-        Result<const ISettingsResponse *> result;
+        Result<const ISettingsResponse*> result;
         doSetSettings(&result, settings);
         return result;
     }
 
     /** Called by pluginSideSettings() */
-  protected:
-    virtual void getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const = 0;
+    protected: virtual void getPluginSideSettings(
+        Result<const ISettingsResponse*>* outResult) const = 0;
     /**
      * In addition to the settings stored in the Server database, an Engine can have some settings
      * which are stored somewhere "under the hood" of the Engine, e.g. on a device acting as an
@@ -88,17 +80,15 @@ class IEngine0 : public Interface<IEngine0>
      *     optional individual setting errors, optional setting values, and an optional new
      *     Settings Model. Can be null if none of the above items are present.
      */
-  public:
-    Result<const ISettingsResponse *> pluginSideSettings() const
+    public: Result<const ISettingsResponse*> pluginSideSettings() const
     {
-        Result<const ISettingsResponse *> result;
+        Result<const ISettingsResponse*> result;
         getPluginSideSettings(&result);
         return result;
     }
 
     /** Called by manifest() */
-  protected:
-    virtual void getManifest(Result<const IString *> *outResult) const = 0;
+    protected: virtual void getManifest(Result<const IString*>* outResult) const = 0;
     /**
      * Provides a JSON Manifest for this Engine instance. See the example of such Manifest in
      * stub_analytics_plugin.
@@ -111,10 +101,9 @@ class IEngine0 : public Interface<IEngine0>
      *
      * @return JSON string in UTF-8.
      */
-  public:
-    Result<const IString *> manifest() const
+    public: Result<const IString*> manifest() const
     {
-        Result<const IString *> result;
+        Result<const IString*> result;
         getManifest(&result);
         return result;
     }
@@ -123,11 +112,11 @@ class IEngine0 : public Interface<IEngine0>
      * @return True if the Engine is able to create DeviceAgents for the provided device, false
      *     otherwise.
      */
-    virtual bool isCompatible(const IDeviceInfo *deviceInfo) const = 0;
+    virtual bool isCompatible(const IDeviceInfo* deviceInfo) const = 0;
 
     /** Called by obtainDeviceAgent() */
-  protected:
-    virtual void doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDeviceInfo *deviceInfo) = 0;
+    protected: virtual void doObtainDeviceAgent(
+        Result<IDeviceAgent*>* outResult, const IDeviceInfo* deviceInfo) = 0;
     /**
      * Creates, or returns an already existing, a DeviceAgent instance intended to work with the
      * given device.
@@ -138,17 +127,16 @@ class IEngine0 : public Interface<IEngine0>
      *     Analytics Events and Objects) - this is not treated as an error (the user is not
      *     notified).
      */
-  public:
-    Result<IDeviceAgent *> obtainDeviceAgent(const IDeviceInfo *deviceInfo)
+    public: Result<IDeviceAgent*> obtainDeviceAgent(const IDeviceInfo* deviceInfo)
     {
-        Result<IDeviceAgent *> result;
+        Result<IDeviceAgent*> result;
         doObtainDeviceAgent(&result, deviceInfo);
         return result;
     }
 
     /** Called by executeAction() */
-  protected:
-    virtual void doExecuteAction(Result<IAction::Result> *outResult, const IAction *action) = 0;
+    protected: virtual void doExecuteAction(
+        Result<IAction::Result>* outResult, const IAction* action) = 0;
     /**
      * Action handler. Called when some action defined by this Engine is triggered by Server.
      *
@@ -156,8 +144,7 @@ class IEngine0 : public Interface<IEngine0>
      *     been triggered, and a means for reporting back action results to Server. This object
      *     should not be used after returning from this function.
      */
-  public:
-    Result<IAction::Result> executeAction(const IAction *action)
+    public: Result<IAction::Result> executeAction(const IAction* action)
     {
         Result<IAction::Result> result;
         doExecuteAction(&result, action);
@@ -168,7 +155,7 @@ class IEngine0 : public Interface<IEngine0>
      * @param handler Generic Engine-related events (errors, warning, info messages)
      *     might be reported via this handler.
      */
-    virtual void setHandler(IHandler *handler) = 0;
+    virtual void setHandler(IHandler* handler) = 0;
 };
 
 /**
@@ -184,18 +171,15 @@ class IEngine0 : public Interface<IEngine0>
  * with a guaranteed barrier between the calls), thus, no synchronization is required for the
  * implementation.
  */
-class IEngine : public Interface<IEngine, IEngine0>
+class IEngine: public Interface<IEngine, IEngine0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IEngine1");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IEngine1"); }
 
     /** Called by getSettingsOnActiveSettingChange() */
-  protected:
-    virtual void doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChangedResponse *> *outResult,
-                                                    const IActiveSettingChangedAction *activeSettingChangedAction) = 0;
+    protected: virtual void doGetSettingsOnActiveSettingChange(
+        Result<const IActiveSettingChangedResponse*>* outResult,
+        const IActiveSettingChangedAction* activeSettingChangedAction) = 0;
     /**
      * When a setting marked as Active changes its value in the GUI, the Server calls this method
      * to notify the Plugin and allow it to adjust the values of the settings and the Settings
@@ -207,11 +191,10 @@ class IEngine : public Interface<IEngine, IEngine0>
      *     procedure of analyzing the settings, or data defining the interaction with the user and
      *     the new state of the settings dialog. Can be null if no user interaction is needed.
      */
-  public:
-    Result<const IActiveSettingChangedResponse *> getSettingsOnActiveSettingChange(
-        const IActiveSettingChangedAction *activeSettingChangedAction)
+    public: Result<const IActiveSettingChangedResponse*> getSettingsOnActiveSettingChange(
+        const IActiveSettingChangedAction* activeSettingChangedAction)
     {
-        Result<const IActiveSettingChangedResponse *> result;
+        Result<const IActiveSettingChangedResponse*> result;
         doGetSettingsOnActiveSettingChange(&result, activeSettingChangedAction);
         return result;
     }

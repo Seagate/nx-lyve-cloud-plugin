@@ -4,15 +4,15 @@
 
 #include <nx/kit/debug.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
-MetadataTypes::MetadataTypes()
-    : m_eventTypeIds(nx::sdk::makePtr<StringList>()), m_objectTypeIds(nx::sdk::makePtr<StringList>())
+MetadataTypes::MetadataTypes():
+    m_eventTypeIds(nx::sdk::makePtr<StringList>()),
+    m_objectTypeIds(nx::sdk::makePtr<StringList>())
 {
 }
 
-const IStringList *MetadataTypes::getEventTypeIds() const
+const IStringList* MetadataTypes::getEventTypeIds() const
 {
     if (!NX_KIT_ASSERT(m_eventTypeIds))
         return nullptr;
@@ -20,7 +20,7 @@ const IStringList *MetadataTypes::getEventTypeIds() const
     return shareToPtr(m_eventTypeIds).releasePtr();
 }
 
-const IStringList *MetadataTypes::getObjectTypeIds() const
+const IStringList* MetadataTypes::getObjectTypeIds() const
 {
     if (!NX_KIT_ASSERT(m_objectTypeIds))
         return nullptr;

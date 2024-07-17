@@ -2,16 +2,13 @@
 
 #pragma once
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 struct Point
 {
     Point() = default;
 
-    Point(float x, float y) : x(x), y(y)
-    {
-    }
+    Point(float x, float y): x(x), y(y) {}
 
     /**
      * X coordinate. Valid value must be in the range [0..1].

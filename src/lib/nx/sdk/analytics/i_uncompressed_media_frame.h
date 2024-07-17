@@ -6,19 +6,15 @@
 
 #include <nx/sdk/analytics/i_data_packet.h>
 
-namespace nx::sdk::analytics
-{
+namespace nx::sdk::analytics {
 
 /**
  * Decoded media frame, e.g. video or audio.
  */
-class IUncompressedMediaFrame : public Interface<IUncompressedMediaFrame, IDataPacket0>
+class IUncompressedMediaFrame: public Interface<IUncompressedMediaFrame, IDataPacket0>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::analytics::IUncompressedMediaFrame");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::analytics::IUncompressedMediaFrame"); }
 
     /**
      * @return Number of planes which contain raw byte data.
@@ -35,7 +31,7 @@ class IUncompressedMediaFrame : public Interface<IUncompressedMediaFrame, IDataP
      * @param plane Index of the plane, in range 0..planeCount() - 1.
      * @return Pointer to the byte data of the plane, or null if the data is not accessible.
      */
-    virtual const char *data(int plane) const = 0;
+    virtual const char* data(int plane) const = 0;
 };
 using IUncompressedMediaFrame0 = IUncompressedMediaFrame;
 

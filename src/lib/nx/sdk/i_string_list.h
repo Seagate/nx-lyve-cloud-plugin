@@ -4,21 +4,17 @@
 
 #include <nx/sdk/interface.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-class IStringList : public Interface<IStringList>
+class IStringList: public Interface<IStringList>
 {
-  public:
-    static auto interfaceId()
-    {
-        return makeId("nx::sdk::IStringList");
-    }
+public:
+    static auto interfaceId() { return makeId("nx::sdk::IStringList"); }
 
     virtual int count() const = 0;
 
     /** @return Null if the index is invalid. */
-    virtual const char *at(int index) const = 0;
+    virtual const char* at(int index) const = 0;
 };
 using IStringList0 = IStringList;
 

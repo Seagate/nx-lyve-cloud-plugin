@@ -5,11 +5,12 @@
 #include <nx/kit/debug.h>
 #include <nx/kit/utils.h>
 
-namespace nx::sdk
-{
+namespace nx::sdk {
 
-PluginDiagnosticEvent::PluginDiagnosticEvent(Level level, std::string caption, std::string description)
-    : m_level(level), m_caption(std::move(caption)), m_description(std::move(description))
+PluginDiagnosticEvent::PluginDiagnosticEvent(Level level, std::string caption, std::string description):
+    m_level(level),
+    m_caption(std::move(caption)),
+    m_description(std::move(description))
 {
 }
 
@@ -18,12 +19,12 @@ IPluginDiagnosticEvent::Level PluginDiagnosticEvent::level() const
     return m_level;
 }
 
-const char *PluginDiagnosticEvent::caption() const
+const char* PluginDiagnosticEvent::caption() const
 {
     return m_caption.c_str();
 }
 
-const char *PluginDiagnosticEvent::description() const
+const char* PluginDiagnosticEvent::description() const
 {
     return m_description.c_str();
 }
@@ -49,24 +50,23 @@ static std::string levelToString(IPluginDiagnosticEvent::Level level)
 
     switch (level)
     {
-    case Level::info:
-        return "info";
-    case Level::warning:
-        return "warning";
-    case Level::error:
-        return "error";
-    default:
-        NX_KIT_ASSERT(false);
-        return nx::kit::utils::format("unknown(%d)", (int)level);
+        case Level::info: return "info";
+        case Level::warning: return "warning";
+        case Level::error: return "error";
+        default:
+            NX_KIT_ASSERT(false);
+            return nx::kit::utils::format("unknown(%d)", (int) level);
     }
 }
 
 std::string PluginDiagnosticEvent::toString() const
 {
     static const std::string kIndent(4, ' ');
-    return "{\n" + kIndent + "\"level\": " + nx::kit::utils::toString(levelToString(m_level)) + ",\n" + kIndent +
-           "\"caption\": " + nx::kit::utils::toString(m_caption) + ",\n" + kIndent +
-           "\"description\": " + nx::kit::utils::toString(m_description) + "\n" + "}";
+    return "{\n"
+        + kIndent + "\"level\": " + nx::kit::utils::toString(levelToString(m_level)) + ",\n"
+        + kIndent + "\"caption\": " + nx::kit::utils::toString(m_caption) + ",\n"
+        + kIndent + "\"description\": " + nx::kit::utils::toString(m_description) + "\n"
+        + "}";
 }
 
 } // namespace nx::sdk
