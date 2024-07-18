@@ -77,6 +77,20 @@ s3storage:
   region: { AWS_REGION }
 )";
 
+// Return available drive letter to mount
+std::string getAvailableDriveLetter()
+{
+    DWORD driveMask = GetLogicalDrives();
+    for (char letter = 'Z'; letter >= 'A'; --letter)
+    {
+        if (!(driveMask & (1 << (letter - 'A'))))
+        {
+            return std::string(1, letter) + ":";
+        }
+    }
+    return "Z:";
+}
+
 CloudfuseMngr::CloudfuseMngr()
 {
     std::string appdataEnv;
@@ -97,7 +111,7 @@ CloudfuseMngr::CloudfuseMngr()
     const fs::path configFilePath = appdata / fs::path("Cloudfuse\\nx_plugin_config.aes");
     const fs::path templateFilePath = appdata / fs::path("Cloudfuse\\nx_plugin_config.yaml");
 
-    mountDir = "Z:";
+    mountDir = getAvailableDriveLetter();
     fileCacheDir = fileCacheDirPath.generic_string();
     configFile = configFilePath.generic_string();
     templateFile = templateFilePath.generic_string();
