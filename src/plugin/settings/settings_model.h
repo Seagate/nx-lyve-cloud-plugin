@@ -5,14 +5,6 @@
 
 #include <string>
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -140,7 +132,3 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
 )json";
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

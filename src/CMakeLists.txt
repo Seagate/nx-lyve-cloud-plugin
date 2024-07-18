@@ -17,8 +17,8 @@ project(
 
 set(metadataSdkDir "" CACHE PATH "Path to unpacked VMS Metadata SDK zip.")
 if(metadataSdkDir STREQUAL "")
-    set(metadataSdkDir ${CMAKE_CURRENT_LIST_DIR}/../..) #< Assume building samples inside the SDK.
-    if(NOT EXISTS ${metadataSdkDir}/src/nx/sdk OR NOT EXISTS ${metadataSdkDir}/nx_kit/src/nx/kit)
+    set(metadataSdkDir ${CMAKE_CURRENT_LIST_DIR}/..) #< Assume building samples inside the SDK.
+    if(NOT EXISTS ${metadataSdkDir}/src/lib/nx/sdk OR NOT EXISTS ${metadataSdkDir}/dependencies/nx_kit/src/nx/kit)
         message(FATAL_ERROR "Define metadataSdkDir cache variable to point to the unzipped SDK.")
     endif()
 endif()
@@ -57,12 +57,12 @@ endif()
 set(nxKitLibraryType "STATIC" CACHE STRING "" FORCE)
 set(nxKitWithTests "NO" CACHE STRING "" FORCE)
 
-add_subdirectory(${metadataSdkDir}/nx_kit ${CMAKE_CURRENT_BINARY_DIR}/nx_kit)
+add_subdirectory(${metadataSdkDir}/dependencies/nx_kit ${CMAKE_CURRENT_BINARY_DIR}/dependencies/nx_kit)
 
 #--------------------------------------------------------------------------------------------------
 # Define nx_sdk lib, static, depends on nx_kit.
 
-set(SDK_SRC_DIR ${metadataSdkDir}/src)
+set(SDK_SRC_DIR ${metadataSdkDir}/src/lib)
 file(GLOB_RECURSE SDK_SRC CONFIGURE_DEPENDS ${SDK_SRC_DIR}/*)
 
 add_library(nx_sdk STATIC ${SDK_SRC})
@@ -75,7 +75,7 @@ target_compile_features(nx_sdk PRIVATE cxx_std_17)
 #--------------------------------------------------------------------------------------------------
 # Define cloudfuse_plugin lib, dynamic, depends on nx_kit and nx_sdk.
 find_package(OpenSSL REQUIRED)
-set(CLOUDFUSE_PLUGIN_SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+set(CLOUDFUSE_PLUGIN_SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/plugin)
 file(GLOB_RECURSE CLOUDFUSE_PLUGIN_SRC CONFIGURE_DEPENDS ${CLOUDFUSE_PLUGIN_SRC_DIR}/*)
 
 add_library(cloudfuse_plugin SHARED ${CLOUDFUSE_PLUGIN_SRC})

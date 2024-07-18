@@ -12,14 +12,6 @@
 #include <nx/sdk/i_string_map.h>
 #include <nx/sdk/result.h>
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -54,7 +46,3 @@ class ActiveSettingsBuilder
 };
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

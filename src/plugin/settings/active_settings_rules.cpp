@@ -11,14 +11,6 @@
 #include <nx/sdk/helpers/string.h>
 #include <nx/sdk/helpers/string_map.h>
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -223,7 +215,3 @@ void updateMinMaxSpinBoxes(nx::kit::Json *inOutModel, std::map<std::string, std:
 }
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

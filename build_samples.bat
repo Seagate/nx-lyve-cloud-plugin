@@ -41,14 +41,54 @@ echo on
     rmdir /S /Q "%BUILD_DIR%" 2>NUL
 @echo off
 
-for /d %%S in (%BASE_DIR%\samples\*) do (
-    call :build_sample %%S %1 %2 %3 %4 %5 %6 %7 %8 %9 || goto :exit
+:: Build source
+set SOURCE_DIR="%BASE_DIR%\src"
+set PLUGIN_NAME="cloudfuse_plugin"
+
+set PLUGIN_BUILD_DIR=%BUILD_DIR%\%PLUGIN_NAME%
+@echo on
+    mkdir "%PLUGIN_BUILD_DIR%" || @exit /b
+    cd "%PLUGIN_BUILD_DIR%" || @exit /b
+
+    cmake "%SOURCE_DIR%" -G "Visual Studio 17 2022" -Ax64 %1 %2 %3 %4 %5 %6 %7 %8 %9 --preset default || @exit /b
+    cmake --build . %BUILD_OPTIONS% || @exit /b
+@echo off
+
+set ARTIFACT=%PLUGIN_BUILD_DIR%\%BUILD_TYPE%\%PLUGIN_NAME%.dll
+
+if not exist "%ARTIFACT%" (
+    echo ERROR: Failed to build %PLUGIN_NAME%.
+    exit /b 70
 )
+echo:
+echo Built: %ARTIFACT%
+
+::Build Tests
+set SOURCE_DIR="%BASE_DIR%\src\unit_tests"
+set UNIT_TESTS="unit_tests"
+
+set UNIT_TESTS_BUILD_DIR=%BUILD_DIR%\%UNIT_TESTS%
+@echo on
+    mkdir "%UNIT_TESTS_BUILD_DIR%" || @exit /b
+    cd "%UNIT_TESTS_BUILD_DIR%" || @exit /b
+
+    cmake "%SOURCE_DIR%" -G "Visual Studio 17 2022" -Ax64 %1 %2 %3 %4 %5 %6 %7 %8 %9 --preset default || @exit /b
+    cmake --build . %BUILD_OPTIONS% || @exit /b
+@echo off
+
+set ARTIFACT=%UNIT_TESTS_BUILD_DIR%\%BUILD_TYPE%\analytics_plugin_ut.exe
+
+if not exist "%ARTIFACT%" (
+    echo ERROR: Failed to build %UNIT_TESTS%.
+    exit /b 70
+)
+echo:
+echo Built: %ARTIFACT%
 
 :: Run unit tests if needed.
 if [%NO_TESTS%] == [1] echo NOTE: Unit tests were not run. & goto :skip_tests
 echo on
-    cd "%BUILD_DIR%/unit_tests" || @goto :exit
+    cd "%BUILD_DIR%\unit_tests" || @goto :exit
 
     ctest --output-on-failure -C %BUILD_TYPE% || @goto :exit
 @echo off
@@ -57,35 +97,6 @@ echo on
 echo:
 echo Samples built successfully, see the binaries in %BUILD_DIR%
 goto :exit
-
-:build_sample
-    set SOURCE_DIR=%1
-    set SAMPLE=%~n1
-    shift
-    if /i "%SAMPLE:~0,4%" == "rpi_" exit /b
-
-    set SAMPLE_BUILD_DIR=%BUILD_DIR%\%SAMPLE%
-    @echo on
-        mkdir "%SAMPLE_BUILD_DIR%" || @exit /b
-        cd "%SAMPLE_BUILD_DIR%" || @exit /b
-
-        cmake "%SOURCE_DIR%" -G "Visual Studio 17 2022" -Ax64 %1 %2 %3 %4 %5 %6 %7 %8 %9 --preset default || @exit /b
-        cmake --build . %BUILD_OPTIONS% || @exit /b
-    @echo off
-
-    if [%SAMPLE%] == [unit_tests] (
-        set ARTIFACT=%SAMPLE_BUILD_DIR%\%BUILD_TYPE%\analytics_plugin_ut.exe
-    ) else (
-        set ARTIFACT=%SAMPLE_BUILD_DIR%\%BUILD_TYPE%\%SAMPLE%.dll
-    )
-
-    if not exist "%ARTIFACT%" (
-        echo ERROR: Failed to build %SAMPLE%.
-        exit /b 70
-    )
-    echo:
-    echo Built: %ARTIFACT%
-exit /b
 
 :exit
     exit /b %ERRORLEVEL% %= Needed for a proper cmd.exe exit status. =%

@@ -8,14 +8,6 @@
 
 #include "settings_model.h"
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -76,7 +68,3 @@ void dumpStringMap(const char *prefix, const char *appendix, const nx::sdk::IStr
 }
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

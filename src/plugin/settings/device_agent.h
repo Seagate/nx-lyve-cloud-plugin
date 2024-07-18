@@ -11,29 +11,6 @@
 #include "engine.h"
 #include "stub_analytics_plugin_settings_ini.h"
 
-namespace nx
-{
-namespace sdk
-{
-class IActiveSettingChangedAction;
-}
-} // namespace nx
-namespace nx
-{
-namespace sdk
-{
-class IStringMap;
-}
-} // namespace nx
-
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -71,7 +48,3 @@ class DeviceAgent : public nx::sdk::analytics::ConsumingDeviceAgent
 };
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

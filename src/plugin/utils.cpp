@@ -7,15 +7,6 @@
 #include <fstream>
 #include <vector>
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
-
 using namespace nx::sdk;
 
 bool toBool(std::string str)
@@ -96,8 +87,3 @@ std::map<std::string, std::string> toStdMap(const Ptr<const IStringMap> &sdkMap)
 
     return result;
 }
-
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx

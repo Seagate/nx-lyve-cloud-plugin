@@ -9,14 +9,6 @@
 #include "engine.h"
 #include "settings_model.h"
 
-namespace nx
-{
-namespace vms_server_plugins
-{
-namespace analytics
-{
-namespace stub
-{
 namespace settings
 {
 
@@ -45,7 +37,3 @@ std::string Plugin::manifestString() const
 }
 
 } // namespace settings
-} // namespace stub
-} // namespace analytics
-} // namespace vms_server_plugins
-} // namespace nx
