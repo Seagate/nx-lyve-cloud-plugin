@@ -12,5 +12,6 @@ set -x #< Log each command.
 
 "$BASE_DIR"/build_samples.sh \
     --no-tests \
-    -DCMAKE_TOOLCHAIN_FILE=$BASE_DIR/toolchain_arm64.cmake \
+    -DCMAKE_TOOLCHAIN_FILE="$VCPKG"/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=arm64-linux \
+    -DCMAKE_C_COMPILER="/usr/bin/aarch64-linux-gnu-gcc" -DCMAKE_CXX_COMPILER="/usr/bin/aarch64-linux-gnu-g++" \
     "$@"
