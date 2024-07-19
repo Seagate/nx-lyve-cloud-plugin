@@ -47,7 +47,6 @@ jobs:
       run: >
         .\build_samples.bat
         --no-tests
-        --debug
 
     - name: Package Artifacts Linux
       if: ${{ Contains(matrix.os, 'ubuntu') }}
@@ -62,7 +61,7 @@ jobs:
       if: ${{ Contains(matrix.os, 'windows') }}
       run: |
         mkdir nx-lyve-cloud-plugin-windows
-        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Debug\cloudfuse_plugin.dll nx-lyve-cloud-plugin-windows/cloudfuse_plugin.dll
+        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll nx-lyve-cloud-plugin-windows/cloudfuse_plugin.dll
         Compress-Archive nx-lyve-cloud-plugin-windows nx-lyve-cloud-plugin-windows.zip
 
     - name: Archive production artifacts from Ubuntu
