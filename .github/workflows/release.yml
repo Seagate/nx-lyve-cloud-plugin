@@ -51,22 +51,25 @@ jobs:
     - name: Package Artifacts Linux
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: |
-        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so cloudfuse_plugin.so
+        mkdir nx-lyve-cloud-plugin-${{ matrix.os }}
+        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}/cloudfuse_plugin.so
+        cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}/
+        zip -r nx-lyve-cloud-plugin-${{ matrix.os }}.zip nx-lyve-cloud-plugin-${{ matrix.os }}
 
     - name: Package Artifacts Windows
       shell: powershell
       if: ${{ Contains(matrix.os, 'windows') }}
       run: |
-        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll cloudfuse_plugin.dll
+        mkdir nx-lyve-cloud-plugin-windows
+        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll nx-lyve-cloud-plugin-windows/cloudfuse_plugin.dll
+        Compress-Archive nx-lyve-cloud-plugin-windows nx-lyve-cloud-plugin-windows.zip
 
     - name: Archive production artifacts from Ubuntu
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       uses: actions/upload-artifact@v4
       with:
         name: nx-lyve-cloud-plugin-${{ matrix.os }}
-        path: |
-          cloudfuse_plugin.so
-          setup_fuse_allow_other.sh
+        path: nx-lyve-cloud-plugin-${{ matrix.os }}.zip
         if-no-files-found: error
     
     - name: Archive production artifacts from Windows
@@ -74,7 +77,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: nx-lyve-cloud-plugin-windows
-        path: cloudfuse_plugin.dll
+        path: nx-lyve-cloud-plugin-windows.zip
         if-no-files-found: error
 
   release:
