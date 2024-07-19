@@ -47,7 +47,6 @@ jobs:
       run: >
         .\build_samples.bat
         --no-tests
-        --debug
 
     - name: Package Artifacts Linux
       if: ${{ Contains(matrix.os, 'ubuntu') }}
@@ -58,7 +57,7 @@ jobs:
       shell: powershell
       if: ${{ Contains(matrix.os, 'windows') }}
       run: |
-        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Debug\cloudfuse_plugin.dll cloudfuse_plugin.dll
+        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll cloudfuse_plugin.dll
 
     - name: Archive production artifacts from Ubuntu
       if: ${{ Contains(matrix.os, 'ubuntu') }}
