@@ -75,4 +75,3 @@ jobs:
       run: >
         ./build_samples.bat
         --no-tests
-        --debug
