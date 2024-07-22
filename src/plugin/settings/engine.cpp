@@ -150,7 +150,8 @@ bool Engine::settingsChanged()
 {
     // If cloudfuse is not mounted and settings are the same, then return true so
     // it tries to mount again.
-    if (!cfManager.isMounted()) {
+    if (!cfManager.isMounted())
+    {
         return true;
     }
 
