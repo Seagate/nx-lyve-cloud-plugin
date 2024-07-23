@@ -10,7 +10,7 @@ BASE_DIR=$(readlink -f "$(dirname "$0")") #< Absolute path to the current dir.
 
 set -x #< Log each command.
 
-"$BASE_DIR"/build_samples.sh \
+"$BASE_DIR"/build_plugin.sh \
     --no-tests \
     -DCMAKE_TOOLCHAIN_FILE=$BASE_DIR/toolchain_arm64.cmake \
     "$@"

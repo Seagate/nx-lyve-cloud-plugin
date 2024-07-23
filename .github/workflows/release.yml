@@ -28,7 +28,7 @@ jobs:
     - name: Run build script for Linux
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
-        ./build_samples.sh
+        ./build_plugin.sh
         --no-tests
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
@@ -45,7 +45,7 @@ jobs:
       shell: powershell
       if: ${{ Contains(matrix.os, 'windows') }}
       run: >
-        .\build_samples.bat
+        .\build_plugin.bat
         --no-tests
 
     - name: Package Artifacts Linux
