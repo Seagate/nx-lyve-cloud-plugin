@@ -9,7 +9,7 @@ endif()
 
 project(
     cloudfuse_plugin
-    VERSION 0.1.0
+    VERSION 0.1.2
     DESCRIPTION "VMS Plugin for Lyve Cloud"
     HOMEPAGE_URL "https://github.com/Seagate/nx-lyve-cloud-plugin"
     LANGUAGES CXX
