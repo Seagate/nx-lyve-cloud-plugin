@@ -14,24 +14,54 @@ jobs:
           - os: ubuntu-24.04
             c_compiler: gcc
             cpp_compiler: g++
+            arm_c_compiler: aarch64-linux-gnu-gcc
+            arm_cpp_compiler: aarch64-linux-gnu-g++
           - os: ubuntu-22.04
             c_compiler: gcc
             cpp_compiler: g++
+            arm_c_compiler: aarch64-linux-gnu-gcc
+            arm_cpp_compiler: aarch64-linux-gnu-g++
           - os: ubuntu-20.04
             c_compiler: gcc
             cpp_compiler: g++
+            arm_c_compiler: aarch64-linux-gnu-gcc
+            arm_cpp_compiler: aarch64-linux-gnu-g++
           - os: windows-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Run build script for Linux
+    - name: Run build script for Linux x64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
-        ./build_samples.sh
+        ./build_samples_x64.sh
         --no-tests
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+
+    - name: Package Artifacts Linux x64
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      run: |
+        mkdir nx-lyve-cloud-plugin-${{ matrix.os }}_x64
+        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}_x64/cloudfuse_plugin.so
+        cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}_x64/
+        zip -r nx-lyve-cloud-plugin-${{ matrix.os }}_x64.zip nx-lyve-cloud-plugin-${{ matrix.os }}_x64
+        
+    - name: Run build script for Linux arm64
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      run: >
+        ./build_samples_arm64.sh
+        --no-tests
+        -DCMAKE_CXX_COMPILER=${{ matrix.arm_c_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.arm_cpp_compiler }}
+
+    - name: Package Artifacts Linux arm64
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      run: |
+        mkdir nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
+        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/cloudfuse_plugin.so
+        cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/
+        zip -r nx-lyve-cloud-plugin-${{ matrix.os }}_arm64.zip nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
@@ -48,14 +78,6 @@ jobs:
         .\build_samples.bat
         --no-tests
 
-    - name: Package Artifacts Linux
-      if: ${{ Contains(matrix.os, 'ubuntu') }}
-      run: |
-        mkdir nx-lyve-cloud-plugin-${{ matrix.os }}
-        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}/cloudfuse_plugin.so
-        cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}/
-        zip -r nx-lyve-cloud-plugin-${{ matrix.os }}.zip nx-lyve-cloud-plugin-${{ matrix.os }}
-
     - name: Package Artifacts Windows
       shell: powershell
       if: ${{ Contains(matrix.os, 'windows') }}
@@ -64,12 +86,20 @@ jobs:
         mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll nx-lyve-cloud-plugin-windows/cloudfuse_plugin.dll
         Compress-Archive nx-lyve-cloud-plugin-windows nx-lyve-cloud-plugin-windows.zip
 
-    - name: Archive production artifacts from Ubuntu
+    - name: Archive production artifacts from Ubuntu x64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       uses: actions/upload-artifact@v4
       with:
-        name: nx-lyve-cloud-plugin-${{ matrix.os }}
-        path: nx-lyve-cloud-plugin-${{ matrix.os }}.zip
+        name: nx-lyve-cloud-plugin-${{ matrix.os }}_x64
+        path: nx-lyve-cloud-plugin-${{ matrix.os }}_x64.zip
+        if-no-files-found: error
+  
+    - name: Archive production artifacts from Ubuntu arm64
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
+        path: nx-lyve-cloud-plugin-${{ matrix.os }}_arm64.zip
         if-no-files-found: error
     
     - name: Archive production artifacts from Windows
@@ -94,7 +124,10 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          nx-lyve-cloud-plugin-ubuntu-24.04/*
-          nx-lyve-cloud-plugin-ubuntu-22.04/*
-          nx-lyve-cloud-plugin-ubuntu-20.04/*
+          nx-lyve-cloud-plugin-ubuntu-24.04_x64/*
+          nx-lyve-cloud-plugin-ubuntu-22.04_x64/*
+          nx-lyve-cloud-plugin-ubuntu-20.04_x64/*
+          nx-lyve-cloud-plugin-ubuntu-24.04_arm64/*
+          nx-lyve-cloud-plugin-ubuntu-22.04_arm64/*
+          nx-lyve-cloud-plugin-ubuntu-20.04_arm64/*
           nx-lyve-cloud-plugin-windows/*
