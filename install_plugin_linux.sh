@@ -1,4 +1,6 @@
 #!/bin/bash
+
+## Copyright © 2024 Seagate Technology LLC and/or its Affiliates
 set -e
 
 ### Setup Fuse Allow Other
@@ -22,11 +24,12 @@ else
 fi
 
 ### Install Cloudfuse
-echo "Installing Cloudfuse plugin"
+echo "Installing Cloudfuse"
 apt-get install libssl-dev
 apt-get install ./cloudfuse*.deb
 
 ### Install plugin
+echo "Installing Cloudfuse plugin"
 systemctl stop networkoptix-mediaserver.service
 cp cloudfuse_plugin.so /opt/networkoptix/mediaserver/bin/plugins/
 systemctl start networkoptix-mediaserver.service

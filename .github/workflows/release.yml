@@ -53,7 +53,7 @@ jobs:
       run: |
         mkdir nx-lyve-cloud-plugin-${{ matrix.os }}
         mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}/cloudfuse_plugin.so
-        cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}/
+        cp ./install_plugin_linux.sh nx-lyve-cloud-plugin-${{ matrix.os }}/
         zip -r nx-lyve-cloud-plugin-${{ matrix.os }}.zip nx-lyve-cloud-plugin-${{ matrix.os }}
 
     - name: Package Artifacts Windows
@@ -61,7 +61,8 @@ jobs:
       if: ${{ Contains(matrix.os, 'windows') }}
       run: |
         mkdir nx-lyve-cloud-plugin-windows
-        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll nx-lyve-cloud-plugin-windows/cloudfuse_plugin.dll
+        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll nx-lyve-cloud-plugin-windows\cloudfuse_plugin.dll
+        cp .\install_plugin_windows.bat nx-lyve-cloud-plugin-windows\
         Compress-Archive nx-lyve-cloud-plugin-windows nx-lyve-cloud-plugin-windows.zip
 
     - name: Archive production artifacts from Ubuntu
