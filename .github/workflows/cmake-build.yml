@@ -94,8 +94,8 @@ jobs:
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
         ./build_samples_arm64.sh
-        -DCMAKE_CXX_COMPILER=${{ matrix.arm_c_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.arm_cpp_compiler }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.arm_cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.arm_c_compiler }}
 
     - name: Build using CMake on Windows
       shell: powershell
