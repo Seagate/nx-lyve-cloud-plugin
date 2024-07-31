@@ -76,7 +76,6 @@ jobs:
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
         ./build_samples_x64.sh
-        --no-tests
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
 
@@ -89,7 +88,6 @@ jobs:
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
         ./build_samples_arm64.sh
-        --no-tests
         -DCMAKE_CXX_COMPILER=${{ matrix.arm_c_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.arm_cpp_compiler }}
 
