@@ -31,6 +31,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      id: runvcpkg
+      with:
+        # The vcpkg.json file, which will be part of cache key computation.
+        vcpkgJsonGlob: '**/src/vcpkg.json'
+
     - name: Run build script for Linux x64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
@@ -46,7 +53,12 @@ jobs:
         mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}_x64/cloudfuse_plugin.so
         cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}_x64/
         zip -r nx-lyve-cloud-plugin-${{ matrix.os }}_x64.zip nx-lyve-cloud-plugin-${{ matrix.os }}_x64
-        
+     
+    - name: Cleanup Build
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      run: >
+        rm -r ../nx-lyve-cloud-plugin-build/
+
     - name: Run build script for Linux arm64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
@@ -62,14 +74,6 @@ jobs:
         mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/cloudfuse_plugin.so
         cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/
         zip -r nx-lyve-cloud-plugin-${{ matrix.os }}_arm64.zip nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
-
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      if: ${{ Contains(matrix.os, 'windows') }}
-      id: runvcpkg
-      with:
-        # The vcpkg.json file, which will be part of cache key computation.
-        vcpkgJsonGlob: '**/src/vcpkg.json'
     
     - name: Run build script for Windows
       shell: powershell

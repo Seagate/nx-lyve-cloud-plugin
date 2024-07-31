@@ -38,8 +38,8 @@ jobs:
           - os: ubuntu-24.04
             c_compiler: clang
             cpp_compiler: clang++
-            arm_c_compiler: aarch64-linux-gnu-gcc
-            arm_cpp_compiler: aarch64-linux-gnu-g++
+            arm_c_compiler: clang
+            arm_cpp_compiler: clang++
           - os: ubuntu-22.04
             c_compiler: gcc
             cpp_compiler: g++
@@ -48,8 +48,8 @@ jobs:
           - os: ubuntu-22.04
             c_compiler: clang
             cpp_compiler: clang++
-            arm_c_compiler: aarch64-linux-gnu-gcc
-            arm_cpp_compiler: aarch64-linux-gnu-g++
+            arm_c_compiler: clang
+            arm_cpp_compiler: clang++
           - os: ubuntu-20.04
             c_compiler: gcc
             cpp_compiler: g++
@@ -58,8 +58,8 @@ jobs:
           - os: ubuntu-20.04
             c_compiler: clang
             cpp_compiler: clang++
-            arm_c_compiler: aarch64-linux-gnu-gcc
-            arm_cpp_compiler: aarch64-linux-gnu-g++
+            arm_c_compiler: clang
+            arm_cpp_compiler: clang++
           - os: windows-latest
   
     steps:
@@ -79,6 +79,11 @@ jobs:
         --no-tests
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+
+    - name: Cleanup Build
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      run: >
+        rm -r ../nx-lyve-cloud-plugin-build/
 
     - name: Build using CMake on Linux for arm64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
