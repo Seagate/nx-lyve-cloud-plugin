@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - 'enable-cross-compiling-arm'
 
 jobs:
   build:
