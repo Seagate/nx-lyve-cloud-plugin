@@ -148,6 +148,13 @@ bool Engine::processActiveSettings(Json::object *model, std::map<std::string, st
 
 bool Engine::settingsChanged()
 {
+    // If cloudfuse is not mounted and settings are the same, then return true so
+    // it tries to mount again.
+    if (!cfManager.isMounted())
+    {
+        return true;
+    }
+
     std::map<std::string, std::string> prevValues = prevSettings();
     std::map<std::string, std::string> newValues = currentSettings();
     if (newValues == prevValues)
