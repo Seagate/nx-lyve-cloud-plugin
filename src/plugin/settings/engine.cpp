@@ -235,6 +235,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             BIO_get_mem_ptr(b64, &bptr);
 
             passphrase = std::string(bptr->data, bptr->length);
+            NX_PRINT << "Generated passphrase for config file" << std::endl;
         }
         else
         {
@@ -245,6 +246,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         std::error_code errCode;
 
         // Create mount directory if it does not exist
+        NX_PRINT << "Creating mount directory if it does not exist" << std::endl;
         if (fs::exists(mountDir))
         {
             // Unmmount before mounting
@@ -252,6 +254,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 
 #if defined(__linux__)
             // On Linux we need to check the folder has the correct permissions
+            NX_PRINT << "checking " + mountDir + "has the correct permissions" << std::endl;
             fs::file_status s = fs::status(mountDir);
             if ((s.permissions() & fs::perms::all) != fs::perms::all)
             {
@@ -269,6 +272,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         {
 #if defined(__linux__)
             // On Linux we need to create the folder if it does not yet exist
+            NX_PRINT << "creating the folder if it does not yet exist" << std::endl;
             if (!fs::create_directory(mountDir, errCode))
             {
                 NX_PRINT << "Unable to create mount directory with error: " + errCode.message() << std::endl;
@@ -286,6 +290,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         }
 
         // Create file cache if it does not exist
+        NX_PRINT << "creating file cache if it does not exist" << std::endl;
         if (fs::exists(fileCacheDir))
         {
             fs::file_status s = fs::status(fileCacheDir);
@@ -324,8 +329,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         }
 
 #if defined(__linux__)
+        NX_PRINT <<  "spawning process from genS3Config" << std::endl;
         const processReturn dryGenConfig = cfManager.genS3Config(endpointRegion, endpointUrl, bucketName, passphrase);
 #elif defined(_WIN32)
+        NX_PRINT <<  "spawning process from genS3Config" << std::endl;
         const processReturn dryGenConfig =
             cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, bucketName, passphrase);
 #endif
@@ -337,8 +344,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         }
 
 #if defined(__linux__)
+        NX_PRINT <<  "spawning process from dryRun" << std::endl;
         const processReturn dryRunRet = cfManager.dryRun(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
+        NX_PRINT <<  "spawning process from dryRun" << std::endl;
         const processReturn dryRunRet = cfManager.dryRun(passphrase);
 #endif
 
@@ -391,8 +400,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         }
 
 #if defined(__linux__)
+        NX_PRINT <<  "spawning process from mount" << std::endl;
         const processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
+NX_PRINT <<  "spawning process from mount" << std::endl;
         const processReturn mountRet = cfManager.mount(passphrase);
 #endif
 
