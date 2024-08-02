@@ -403,7 +403,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         NX_PRINT <<  "spawning process from mount" << std::endl;
         const processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
-NX_PRINT <<  "spawning process from mount" << std::endl;
+        NX_PRINT <<  "spawning process from mount" << std::endl;
         const processReturn mountRet = cfManager.mount(passphrase);
 #endif
 
@@ -432,8 +432,11 @@ NX_PRINT <<  "spawning process from mount" << std::endl;
         NX_PRINT << "Settings have not changed." << std::endl;
     }
 
-    if (!processActiveSettings(&model, &values))
+    if (!processActiveSettings(&model, &values)) 
+    {
+        NX_PRINT << "Unable to process the active settings section" << std::endl;
         return error(ErrorCode::internalError, "Unable to process the active settings section");
+    }
 
     auto settingsResponse = new SettingsResponse();
     settingsResponse->setModel(makePtr<String>(Json(model).dump()));
