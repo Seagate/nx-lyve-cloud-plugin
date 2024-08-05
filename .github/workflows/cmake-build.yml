@@ -33,41 +33,69 @@ jobs:
           - os: ubuntu-24.04
             c_compiler: gcc
             cpp_compiler: g++
+            arm_c_compiler: aarch64-linux-gnu-gcc
+            arm_cpp_compiler: aarch64-linux-gnu-g++
           - os: ubuntu-24.04
             c_compiler: clang
             cpp_compiler: clang++
+            arm_c_compiler: clang
+            arm_cpp_compiler: clang++
           - os: ubuntu-22.04
             c_compiler: gcc
             cpp_compiler: g++
+            arm_c_compiler: aarch64-linux-gnu-gcc
+            arm_cpp_compiler: aarch64-linux-gnu-g++
           - os: ubuntu-22.04
             c_compiler: clang
             cpp_compiler: clang++
+            arm_c_compiler: clang
+            arm_cpp_compiler: clang++
           - os: ubuntu-20.04
             c_compiler: gcc
             cpp_compiler: g++
+            arm_c_compiler: aarch64-linux-gnu-gcc
+            arm_cpp_compiler: aarch64-linux-gnu-g++
           - os: ubuntu-20.04
             c_compiler: clang
             cpp_compiler: clang++
+            arm_c_compiler: aarch64-linux-gnu-gcc
+            arm_cpp_compiler: aarch64-linux-gnu-g++
           - os: windows-latest
   
     steps:
     - uses: actions/checkout@v4
-
-    - name: Build using CMake on Linux
+    
+    - name: Install cross compiler
       if: ${{ Contains(matrix.os, 'ubuntu') }}
-      run: >
-        ./build_plugin.sh
-        --no-tests
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y g++-aarch64-linux-gnu gcc-aarch64-linux-gnu libstdc++6-arm64-cross linux-libc-dev-arm64-cross
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
-      if: ${{ Contains(matrix.os, 'windows') }}
       id: runvcpkg
       with:
         # The vcpkg.json file, which will be part of cache key computation.
         vcpkgJsonGlob: '**/src/vcpkg.json'
+
+    - name: Build using CMake on Linux for amd64
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      run: >
+        ./build_samples_x64.sh
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+
+    - name: Cleanup Build
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      run: >
+        rm -r ../nx-lyve-cloud-plugin-build/
+
+    - name: Build using CMake on Linux for arm64
+      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      run: >
+        ./build_samples_arm64.sh
+        -DCMAKE_CXX_COMPILER=${{ matrix.arm_cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.arm_c_compiler }}
 
     - name: Build using CMake on Windows
       shell: powershell
