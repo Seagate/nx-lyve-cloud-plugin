@@ -58,8 +58,8 @@ jobs:
           - os: ubuntu-20.04
             c_compiler: clang
             cpp_compiler: clang++
-            arm_c_compiler: clang
-            arm_cpp_compiler: clang++
+            arm_c_compiler: aarch64-linux-gnu-gcc
+            arm_cpp_compiler: aarch64-linux-gnu-g++
           - os: windows-latest
   
     steps:
