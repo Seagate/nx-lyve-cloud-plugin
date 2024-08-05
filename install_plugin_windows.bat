@@ -1,7 +1,10 @@
 :: Copyright © 2024 Seagate Technology LLC and/or its Affiliates
 @echo off
 
-set installer=cloudfuse*.exe
+for %%I in (cloudfuse*.exe) do (
+    set "installer=%%I"
+    break
+)
 
 REM Check if the installer file exists
 if exist "%installer%" (
