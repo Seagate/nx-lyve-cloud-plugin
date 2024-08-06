@@ -32,13 +32,13 @@ Run one of the following to build the plugin.
 The following will default to your OS selected C compiler.
 
 ```bash
-./build_samples.sh --no-tests
+./build_plugin.sh --no-tests
 ```
 
 The following will use gcc. You may also replace gcc/g++ with clang/clang++.
 
 ```bash
-./build_samples.sh --no-tests -DCMAKE_CXX_COMPILER=gcc -DCMAKE_C_COMPILER=g++
+./build_plugin.sh --no-tests -DCMAKE_CXX_COMPILER=gcc -DCMAKE_C_COMPILER=g++
 ```
 
 After running the script the resulting .so file can be found at
@@ -69,7 +69,7 @@ $Env:VCPKG_ROOT = "Path/To/Vcpkg"
 Run the following to build the plugin.
 
 ```powershell
-./build_samples.bat --no-tests --debug
+./build_plugin.bat --no-tests --debug
 ```
 
 After running the script the resulting `.so` file can be found at
