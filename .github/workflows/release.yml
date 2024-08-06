@@ -67,7 +67,7 @@ jobs:
     - name: Run build script for Linux x64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
-        ./build_samples_x64.sh
+        ./build_plugin_x64.sh
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
 
@@ -89,7 +89,7 @@ jobs:
     - name: Run build script for Linux arm64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
-        ./build_samples_arm64.sh
+        ./build_plugin_arm64.sh
         -DCMAKE_CXX_COMPILER=${{ matrix.arm_cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.arm_c_compiler }}
 
@@ -107,7 +107,7 @@ jobs:
       shell: powershell
       if: ${{ Contains(matrix.os, 'windows') }}
       run: >
-        .\build_samples.bat
+        .\build_plugin.bat
         --no-tests
 
     - name: Package Artifacts Windows
