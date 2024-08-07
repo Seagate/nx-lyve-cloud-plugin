@@ -27,18 +27,24 @@ echo Service stopped successfully.
 :: Copy the plugin file
 echo Attempting to copy the plugin file
 copy ".\cloudfuse_plugin.dll" "C:\Program Files\Network Optix\Nx Meta\MediaServer\plugins\"
-if %errorlevel% neq 0 (
+set copyError=%errorlevel%
+if %copyError% neq 0 (
     echo Failed to copy the plugin file
-    exit /b
 )
 
 :: Restart the VMS
 echo Attempting to start %serviceName%
 sc start %serviceName% >NUL 2>&1
 if %errorlevel% neq 0 (
-    echo Failed to start %serviceName%
+    echo Installation failed: Unable to restart %serviceName%. It must be restarted manually.
     exit /b
 )
+
+if %copyError% neq 0 (
+    echo Installation failed: Unable to copy plugin file
+    exit /b
+)
+
 
 echo Service started successfully.
 echo Finished installing Cloudfuse plugin
