@@ -48,7 +48,7 @@ jobs:
       if: ${{ Contains(matrix.os, 'windows') }}
       shell: pwsh
       run: |
-        $download_url = Invoke-RestMethod -Uri "https://api.github.com/repos/Seagate/cloudfuse/releases/latest" | Select-Object -ExpandProperty assets | Where-Object { $_.name -like "*no_gui" -and $_.name -like "*windows_amd64.exe" } | Select-Object -ExpandProperty browser_download_url
+        $download_url = Invoke-RestMethod -Uri "https://api.github.com/repos/Seagate/cloudfuse/releases/latest" | Select-Object -ExpandProperty assets | Where-Object { $_.name -like "*no_gui*" } | Where-Object { $_.name -like "*windows_amd64.exe*" } | Select-Object -ExpandProperty browser_download_url
         $file_name = $download_url.Split('/')[-1]
         Invoke-WebRequest -Uri $download_url -OutFile $file_name
 
