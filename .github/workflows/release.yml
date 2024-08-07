@@ -48,20 +48,20 @@ jobs:
       if: ${{ Contains(matrix.os, 'windows') }}
       shell: pwsh
       run: |
-        $download_url = Invoke-RestMethod -Uri "https://api.github.com/repos/Seagate/cloudfuse/releases/latest" | Select-Object -ExpandProperty assets | Where-Object { $_.name -like "*windows_amd64.exe" } | Select-Object -ExpandProperty browser_download_url
+        $download_url = Invoke-RestMethod -Uri "https://api.github.com/repos/Seagate/cloudfuse/releases/latest" | Select-Object -ExpandProperty assets | Where-Object { $_.name -like "*no_gui_windows_amd64.exe" } | Select-Object -ExpandProperty browser_download_url
         $file_name = $download_url.Split('/')[-1]
         Invoke-WebRequest -Uri $download_url -OutFile $file_name
 
     - name: Download cloudfuse for Linux amd64 (no_gui)
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: |
-        download_url=$(curl -s https://api.github.com/repos/Seagate/cloudfuse/releases/latest | jq -r '.assets[] | select(.name | contains("linux_amd64.deb")) | .browser_download_url')
+        download_url=$(curl -s https://api.github.com/repos/Seagate/cloudfuse/releases/latest | jq -r '.assets[] | select(.name | contains("no_gui_linux_amd64.deb")) | .browser_download_url')
         curl -LO $download_url
     
     - name: Download cloudfuse for Linux arm64 (no_gui)
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: |
-        download_url=$(curl -s https://api.github.com/repos/Seagate/cloudfuse/releases/latest | jq -r '.assets[] | select(.name | contains("linux_arm64.deb")) | .browser_download_url')
+        download_url=$(curl -s https://api.github.com/repos/Seagate/cloudfuse/releases/latest | jq -r '.assets[] | select(.name | contains("no_gui_linux_arm64.deb")) | .browser_download_url')
         curl -LO $download_url
 
     - name: Run build script for Linux x64
