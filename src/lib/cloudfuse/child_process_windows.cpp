@@ -60,7 +60,7 @@ std::string getSystemName()
     std::string systemName;
     char computerName[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD size = sizeof(computerName) / sizeof(char);
-    if (GetComputerName(computerName, &size))
+    if (GetComputerNameA(computerName, &size))
     {
         systemName = computerName;
     }
