@@ -21,7 +21,7 @@ echo Installing plugin
 :: Stop the VMS server
 set serviceName="metavmsMediaServer"
 echo Attempting to stop %serviceName%
-sc stop %serviceName% >NUL 2>&1
+net stop %serviceName% >NUL 2>&1
 echo Service stopped successfully.
 
 :: Copy the plugin file
@@ -34,7 +34,7 @@ if %copyError% neq 0 (
 
 :: Restart the VMS
 echo Attempting to start %serviceName%
-sc start %serviceName% >NUL 2>&1
+net start %serviceName% >NUL 2>&1
 if %errorlevel% neq 0 (
     echo Installation failed: Unable to restart %serviceName%. It must be restarted manually.
     exit /b
