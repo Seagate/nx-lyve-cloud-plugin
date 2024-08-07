@@ -1,5 +1,16 @@
 # Nx-Lyve-Cloud-Plugin Changelog #
 
+## **0.2.0** ##
+
+August 7 2024
+This release includes all features planned for the 1.0.0 release of the nx-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
+
+### Bug Fixes ###
+
+- [#41](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/41) Fixed issue with multiple servers mounting on same bucket
+- [#37](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/37) Create simple install scripts for Linux and Windows
+- [#38](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/38) Release plugin for arm
+
 ## **0.1.2** ##
 
 July 23 2024
