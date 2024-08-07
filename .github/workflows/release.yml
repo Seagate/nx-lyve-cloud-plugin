@@ -76,7 +76,7 @@ jobs:
       run: |
         mkdir nx-lyve-cloud-plugin-${{ matrix.os }}_x64
         mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}_x64/cloudfuse_plugin.so
-        mv ./cloudfuse*_linux_amd64.deb nx-lyve-cloud-plugin-${{ matrix.os }}/
+        mv ./cloudfuse*_linux_amd64.deb nx-lyve-cloud-plugin-${{ matrix.os }}_x64/
         cp ./install_plugin_linux.sh nx-lyve-cloud-plugin-${{ matrix.os }}_x64/
         cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}_x64/
         zip -r nx-lyve-cloud-plugin-${{ matrix.os }}_x64.zip nx-lyve-cloud-plugin-${{ matrix.os }}_x64
@@ -98,7 +98,7 @@ jobs:
       run: |
         mkdir nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
         mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/cloudfuse_plugin.so
-        mv ./cloudfuse*_linux_arm64.deb nx-lyve-cloud-plugin-${{ matrix.os }}/
+        mv ./cloudfuse*_linux_arm64.deb nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/
         cp ./install_plugin_linux.sh nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/
         cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/
         zip -r nx-lyve-cloud-plugin-${{ matrix.os }}_arm64.zip nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
