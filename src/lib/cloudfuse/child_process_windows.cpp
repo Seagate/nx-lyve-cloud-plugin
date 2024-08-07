@@ -41,42 +41,6 @@ namespace fs = std::filesystem;
 #include <fstream>
 #include <locale>
 
-std::string config_template = R"(
-allow-other: true
-logging:
-  level: log_err
-  type: syslog
-
-components:
-  - libfuse
-  - file_cache
-  - attr_cache
-  - s3storage
-
-libfuse:
-  attribute-expiration-sec: 1800
-  entry-expiration-sec: 1800
-  negative-entry-expiration-sec: 1800
-  ignore-open-flags: true
-  network-share: true
-
-file_cache:
-  path: { 0 }
-  timeout-sec: 180
-  allow-non-empty-temp: true
-  cleanup-on-start: false
-
-attr_cache:
-  timeout-sec: 3600
-
-s3storage:
-  key-id: { AWS_ACCESS_KEY_ID }
-  secret-key: { AWS_SECRET_ACCESS_KEY }
-  bucket-name: { BUCKET_NAME }
-  endpoint: { ENDPOINT }
-  region: { AWS_REGION }
-)";
-
 // Return available drive letter to mount
 std::string getAvailableDriveLetter()
 {
@@ -91,8 +55,59 @@ std::string getAvailableDriveLetter()
     return "Z:";
 }
 
+std::string getSystemName()
+{
+    std::string systemName;
+    char computerName[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD size = sizeof(computerName) / sizeof(char);
+    if (GetComputerName(computerName, &size))
+    {
+        systemName = computerName;
+    }
+
+    return systemName;
+}
+
 CloudfuseMngr::CloudfuseMngr()
 {
+    std::string systemName = getSystemName();
+    std::string config_template = R"(
+    allow-other: true
+    logging:
+      level: log_err
+      type: syslog
+
+    components:
+    - libfuse
+    - file_cache
+    - attr_cache
+    - s3storage
+
+    libfuse:
+      attribute-expiration-sec: 1800
+      entry-expiration-sec: 1800
+      negative-entry-expiration-sec: 1800
+      ignore-open-flags: true
+      network-share: true
+
+    file_cache:
+      path: { 0 }
+      timeout-sec: 180
+      allow-non-empty-temp: true
+      cleanup-on-start: false
+
+    attr_cache:
+      timeout-sec: 3600
+
+    s3storage:
+      key-id: { AWS_ACCESS_KEY_ID }
+      secret-key: { AWS_SECRET_ACCESS_KEY }
+      bucket-name: { BUCKET_NAME }
+      endpoint: { ENDPOINT }
+      region: { AWS_REGION }
+      subdirectory: )" + systemName +
+                                  "\n";
+
     std::string appdataEnv;
     char *buf = nullptr;
     size_t len;
@@ -116,13 +131,9 @@ CloudfuseMngr::CloudfuseMngr()
     configFile = configFilePath.generic_string();
     templateFile = templateFilePath.generic_string();
 
-    std::ifstream in(templateFile.c_str());
-    if (!in.good())
-    {
-        std::ofstream out(templateFile.c_str());
-        out << config_template;
-        out.close();
-    }
+    std::ofstream out(templateFile, std::ios::trunc);
+    out << config_template;
+    out.close();
 }
 
 processReturn CloudfuseMngr::spawnProcess(wchar_t *argv, std::wstring envp)

@@ -26,45 +26,60 @@
 #include "child_process.h"
 #include <fstream>
 #include <sys/stat.h>
+#include <sys/utsname.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-std::string config_template = R"(
-allow-other: true
-logging:
-  level: log_err
-  type: syslog
+std::string getSystemName()
+{
+    std::string systemName;
+    struct utsname buffer;
+    if (uname(&buffer) != -1)
+    {
+        systemName = buffer.nodename;
+    }
 
-components:
-  - libfuse
-  - file_cache
-  - attr_cache
-  - s3storage
-
-libfuse:
-  attribute-expiration-sec: 1800
-  entry-expiration-sec: 1800
-  negative-entry-expiration-sec: 1800
-  ignore-open-flags: true
-  network-share: true
-
-file_cache:
-  path: { 0 }
-  timeout-sec: 180
-  allow-non-empty-temp: true
-  cleanup-on-start: false
-
-attr_cache:
-  timeout-sec: 3600
-
-s3storage:
-  bucket-name: { BUCKET_NAME }
-  endpoint: { ENDPOINT }
-  region: { AWS_REGION }
-)";
+    return systemName;
+}
 
 CloudfuseMngr::CloudfuseMngr()
 {
+    std::string systemName = getSystemName();
+    std::string config_template = R"(
+    allow-other: true
+    logging:
+      level: log_err
+      type: syslog
+
+    components:
+    - libfuse
+    - file_cache
+    - attr_cache
+    - s3storage
+
+    libfuse:
+      attribute-expiration-sec: 1800
+      entry-expiration-sec: 1800
+      negative-entry-expiration-sec: 1800
+      ignore-open-flags: true
+      network-share: true
+
+    file_cache:
+      path: { 0 }
+      timeout-sec: 180
+      allow-non-empty-temp: true
+      cleanup-on-start: false
+
+    attr_cache:
+      timeout-sec: 3600
+
+    s3storage:
+      bucket-name: { BUCKET_NAME }
+      endpoint: { ENDPOINT }
+      region: { AWS_REGION }
+      subdirectory: )" + systemName +
+                                  "\n";
+
     std::string homeEnv;
     const char *home = std::getenv("HOME");
     if (home == nullptr)
@@ -80,13 +95,9 @@ CloudfuseMngr::CloudfuseMngr()
     configFile = homeEnv + "/nx_plugin_config.aes";
     templateFile = homeEnv + "/nx_plugin_config.yaml";
 
-    std::ifstream in(templateFile);
-    if (!in.good())
-    {
-        std::ofstream out(templateFile);
-        out << config_template;
-        out.close();
-    }
+    std::ofstream out(templateFile, std::ios::trunc);
+    out << config_template;
+    out.close();
 }
 
 processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[])
