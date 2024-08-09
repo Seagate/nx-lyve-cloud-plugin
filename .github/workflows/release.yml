@@ -48,7 +48,7 @@ jobs:
       if: ${{ Contains(matrix.os, 'windows') }}
       shell: pwsh
       run: |
-        $download_url = Invoke-RestMethod -Uri "https://api.github.com/repos/Seagate/cloudfuse/releases/latest" | Select-Object -ExpandProperty assets | Where-Object { $_.name -like "*no_gui" -and $_.name -like "*windows_amd64.exe" } | Select-Object -ExpandProperty browser_download_url
+        $download_url = Invoke-RestMethod -Uri "https://api.github.com/repos/Seagate/cloudfuse/releases/latest" | Select-Object -ExpandProperty assets | Where-Object { $_.name -like "*no_gui*" } | Where-Object { $_.name -like "*windows_amd64.exe*" } | Select-Object -ExpandProperty browser_download_url
         $file_name = $download_url.Split('/')[-1]
         Invoke-WebRequest -Uri $download_url -OutFile $file_name
 
@@ -76,9 +76,8 @@ jobs:
       run: |
         mkdir nx-lyve-cloud-plugin-${{ matrix.os }}_x64
         mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}_x64/cloudfuse_plugin.so
-        mv ./cloudfuse*_linux_amd64.deb nx-lyve-cloud-plugin-${{ matrix.os }}/
+        mv ./cloudfuse*_linux_amd64.deb nx-lyve-cloud-plugin-${{ matrix.os }}_x64/
         cp ./install_plugin_linux.sh nx-lyve-cloud-plugin-${{ matrix.os }}_x64/
-        cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}_x64/
         zip -r nx-lyve-cloud-plugin-${{ matrix.os }}_x64.zip nx-lyve-cloud-plugin-${{ matrix.os }}_x64
      
     - name: Cleanup Build
@@ -98,9 +97,8 @@ jobs:
       run: |
         mkdir nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
         mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/cloudfuse_plugin.so
-        mv ./cloudfuse*_linux_arm64.deb nx-lyve-cloud-plugin-${{ matrix.os }}/
+        mv ./cloudfuse*_linux_arm64.deb nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/
         cp ./install_plugin_linux.sh nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/
-        cp ./setup_fuse_allow_other.sh nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/
         zip -r nx-lyve-cloud-plugin-${{ matrix.os }}_arm64.zip nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
     
     - name: Run build script for Windows
@@ -117,7 +115,7 @@ jobs:
         mkdir nx-lyve-cloud-plugin-windows
         mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll nx-lyve-cloud-plugin-windows\cloudfuse_plugin.dll
         mv .\install_plugin_windows.bat nx-lyve-cloud-plugin-windows\
-        mv .\cloudfuse*_windows_amd64.deb nx-lyve-cloud-plugin-windows\
+        mv .\cloudfuse*_windows_amd64.exe nx-lyve-cloud-plugin-windows\
         Compress-Archive nx-lyve-cloud-plugin-windows nx-lyve-cloud-plugin-windows.zip
 
     - name: Archive production artifacts from Ubuntu x64
