@@ -288,7 +288,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         }
 
         // Create file cache if it does not exist
-        NX_PRINT << "creating file cache if it does not exist" << std::endl;
+        
         if (fs::exists(fileCacheDir))
         {
             fs::file_status s = fs::status(fileCacheDir);
@@ -305,6 +305,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         }
         else
         {
+            NX_PRINT << "creating file cache since it does not exist" << std::endl;
             if (!fs::create_directories(fileCacheDir, errCode))
             {
                 NX_PRINT <<  "Unable to create file cache directory " + fileCacheDir + " with error: " + errCode.message() << std::endl;
