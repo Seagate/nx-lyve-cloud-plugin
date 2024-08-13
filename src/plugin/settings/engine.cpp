@@ -235,7 +235,6 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             BIO_get_mem_ptr(b64, &bptr);
 
             passphrase = std::string(bptr->data, bptr->length);
-            NX_PRINT << "Generated passphrase for config file" << std::endl;
         }
         else
         {
