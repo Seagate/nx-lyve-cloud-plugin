@@ -253,7 +253,6 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 
 #if defined(__linux__)
             // On Linux we need to check the folder has the correct permissions
-            NX_PRINT << "checking " + mountDir + "has the correct permissions" << std::endl;
             fs::file_status s = fs::status(mountDir);
             if ((s.permissions() & fs::perms::all) != fs::perms::all)
             {
