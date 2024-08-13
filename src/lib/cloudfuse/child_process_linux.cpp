@@ -48,8 +48,7 @@ CloudfuseMngr::CloudfuseMngr()
     std::string config_template = R"(
     allow-other: true
     logging:
-      level: log_err
-      type: syslog
+      type: base
 
     components:
     - libfuse
