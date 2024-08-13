@@ -465,6 +465,7 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
 
     if (!processActiveSettings(&model, &values, {settingId}))
     {
+        NX_PRINT << "Unable to process the active settings section" << std::endl;
         *outResult = error(ErrorCode::internalError, "Unable to process the active settings section");
 
         return;
