@@ -270,10 +270,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         {
 #if defined(__linux__)
             // On Linux we need to create the folder if it does not yet exist
-            NX_PRINT << "creating the folder if it does not yet exist" << std::endl;
+            NX_PRINT << "creating the folder since it does not yet exist" << std::endl;
             if (!fs::create_directory(mountDir, errCode))
             {
-                NX_PRINT << "The mount directory does not exist. Unable to create mount directory with error: " + errCode.message() << std::endl;
                 return error(ErrorCode::internalError,
                              "Unable to create mount directory with error: " + errCode.message());
             }
