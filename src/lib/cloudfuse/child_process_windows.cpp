@@ -71,41 +71,42 @@ std::string getSystemName()
 CloudfuseMngr::CloudfuseMngr()
 {
     std::string systemName = getSystemName();
-    std::string config_template = R"(
-    allow-other: true
-    logging:
-      type: base
+    // NOTE: increment the version number when the config template changes
+    templateVersionString= "template-version: 0.1";
+    std::string config_template = templateVersionString + R"(
+allow-other: true
+logging:
+  type: base
 
-    components:
-    - libfuse
-    - file_cache
-    - attr_cache
-    - s3storage
+components:
+- libfuse
+- file_cache
+- attr_cache
+- s3storage
 
-    libfuse:
-      attribute-expiration-sec: 1800
-      entry-expiration-sec: 1800
-      negative-entry-expiration-sec: 1800
-      ignore-open-flags: true
-      network-share: true
+libfuse:
+  attribute-expiration-sec: 1800
+  entry-expiration-sec: 1800
+  negative-entry-expiration-sec: 1800
+  ignore-open-flags: true
+  network-share: true
 
-    file_cache:
-      path: { 0 }
-      timeout-sec: 180
-      allow-non-empty-temp: true
-      cleanup-on-start: false
+file_cache:
+  path: { 0 }
+  timeout-sec: 180
+  allow-non-empty-temp: true
+  cleanup-on-start: false
 
-    attr_cache:
-      timeout-sec: 3600
+attr_cache:
+  timeout-sec: 3600
 
-    s3storage:
-      key-id: { AWS_ACCESS_KEY_ID }
-      secret-key: { AWS_SECRET_ACCESS_KEY }
-      bucket-name: { BUCKET_NAME }
-      endpoint: { ENDPOINT }
-      region: { AWS_REGION }
-      subdirectory: )" + systemName +
-                                  "\n";
+s3storage:
+  key-id: { AWS_ACCESS_KEY_ID }
+  secret-key: { AWS_SECRET_ACCESS_KEY }
+  bucket-name: { BUCKET_NAME }
+  endpoint: { ENDPOINT }
+  region: { AWS_REGION }
+  subdirectory: )" + systemName + "\n";
 
     std::string appdataEnv;
     char *buf = nullptr;
@@ -130,9 +131,12 @@ CloudfuseMngr::CloudfuseMngr()
     configFile = configFilePath.generic_string();
     templateFile = templateFilePath.generic_string();
 
-    std::ofstream out(templateFile, std::ios::trunc);
-    out << config_template;
-    out.close();
+    if (templateOutdated(templateFile))
+    {
+        std::ofstream out(templateFile, std::ios::trunc);
+        out << config_template;
+        out.close();
+    }
 }
 
 processReturn CloudfuseMngr::spawnProcess(wchar_t *argv, std::wstring envp)
