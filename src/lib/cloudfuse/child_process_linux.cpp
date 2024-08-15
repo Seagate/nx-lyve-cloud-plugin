@@ -45,39 +45,39 @@ std::string getSystemName()
 CloudfuseMngr::CloudfuseMngr()
 {
     std::string systemName = getSystemName();
-    std::string config_template = R"(
-    allow-other: true
-    logging:
-      type: base
+    // NOTE: increment the version number in templateVersionString when the config template changes
+    std::string config_template = templateVersionString + R"(
+allow-other: true
+logging:
+  type: base
 
-    components:
-    - libfuse
-    - file_cache
-    - attr_cache
-    - s3storage
+components:
+- libfuse
+- file_cache
+- attr_cache
+- s3storage
 
-    libfuse:
-      attribute-expiration-sec: 1800
-      entry-expiration-sec: 1800
-      negative-entry-expiration-sec: 1800
-      ignore-open-flags: true
-      network-share: true
+libfuse:
+  attribute-expiration-sec: 1800
+  entry-expiration-sec: 1800
+  negative-entry-expiration-sec: 1800
+  ignore-open-flags: true
+  network-share: true
 
-    file_cache:
-      path: { 0 }
-      timeout-sec: 180
-      allow-non-empty-temp: true
-      cleanup-on-start: false
+file_cache:
+  path: { 0 }
+  timeout-sec: 180
+  allow-non-empty-temp: true
+  cleanup-on-start: false
 
-    attr_cache:
-      timeout-sec: 3600
+attr_cache:
+  timeout-sec: 3600
 
-    s3storage:
-      bucket-name: { BUCKET_NAME }
-      endpoint: { ENDPOINT }
-      region: { AWS_REGION }
-      subdirectory: )" + systemName +
-                                  "\n";
+s3storage:
+  bucket-name: { BUCKET_NAME }
+  endpoint: { ENDPOINT }
+  region: { AWS_REGION }
+  subdirectory: )" + systemName + "\n";
 
     std::string homeEnv;
     const char *home = std::getenv("HOME");
@@ -94,9 +94,12 @@ CloudfuseMngr::CloudfuseMngr()
     configFile = homeEnv + "/nx_plugin_config.aes";
     templateFile = homeEnv + "/nx_plugin_config.yaml";
 
-    std::ofstream out(templateFile, std::ios::trunc);
-    out << config_template;
-    out.close();
+    if (templateOutdated(templateFile))
+    {
+        std::ofstream out(templateFile, std::ios::trunc);
+        out << config_template;
+        out.close();
+    }
 }
 
 processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[])
