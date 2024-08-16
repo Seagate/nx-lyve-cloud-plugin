@@ -262,8 +262,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
                 fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
                 if (errCode)
                 {
-                    NX_PRINT << "Unable to set mount directory permission with error: " + errCode.message()
-                             << std::endl;
+                    NX_PRINT << "Unable to set mount directory permission with error: " + errCode.message();
                     return error(ErrorCode::internalError,
                                  "Unable to set mount directory permission with error: " + errCode.message());
                 }
@@ -301,8 +300,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
                 fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
                 if (errCode)
                 {
-                    NX_PRINT << "Unable to set mount directory permission with error: " + errCode.message()
-                             << std::endl;
+                    NX_PRINT << "Unable to set mount directory permission with error: " + errCode.message();
                     return error(ErrorCode::internalError,
                                  "Unable to set mount directory permission with error: " + errCode.message());
                 }
@@ -314,16 +312,14 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             if (!fs::create_directories(fileCacheDir, errCode))
             {
                 NX_PRINT << "Unable to create file cache directory " + fileCacheDir +
-                                " with error: " + errCode.message()
-                         << std::endl;
+                                " with error: " + errCode.message();
                 return error(ErrorCode::internalError, "Unable to create file cache directory " + fileCacheDir +
                                                            " with error: " + errCode.message());
             }
             fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode)
             {
-                NX_PRINT << "Unable to set file cache directory permissions with error: " + errCode.message()
-                         << std::endl;
+                NX_PRINT << "Unable to set file cache directory permissions with error: " + errCode.message();
                 return error(ErrorCode::internalError,
                              "Unable to set file cache directory permissions with error: " + errCode.message());
             }
@@ -371,8 +367,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
                     IPluginDiagnosticEvent::Level::error, "Plugin Credential or Endpoint Error",
                     "Error with cloud credentials or incorrect endpoint: " + parseCloudfuseError(dryRunRet.output));
                 NX_PRINT << "Error with cloud credentials or incorrect endpoint: " +
-                                parseCloudfuseError(dryRunRet.output)
-                         << std::endl;
+                                parseCloudfuseError(dryRunRet.output);
                 return error(ErrorCode::otherError, "Error with cloud credentials or incorrect endpoint: " +
                                                         parseCloudfuseError(dryRunRet.output));
             }
@@ -399,8 +394,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             Engine::pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Plugin Error",
                                               "Unable to validate credentials with error: " +
                                                   parseCloudfuseError(dryRunRet.output));
-            NX_PRINT << "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output)
-                     << std::endl;
+            NX_PRINT << "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output);
             return error(ErrorCode::otherError,
                          "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output));
         }
