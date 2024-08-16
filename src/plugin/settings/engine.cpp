@@ -291,7 +291,6 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         }
 
         // Create file cache if it does not exist
-
         if (fs::exists(fileCacheDir))
         {
             fs::file_status s = fs::status(fileCacheDir);
