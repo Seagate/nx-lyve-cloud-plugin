@@ -395,12 +395,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             return error(ErrorCode::otherError,
                          "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output));
         }
-    NX_PRINT <<  "spawning process from genS3Config" << std::endl;
+    NX_PRINT <<  "spawning process from mount" << std::endl;
 #if defined(__linux__)
-        NX_PRINT <<  "spawning process from mount" << std::endl;
         const processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
-        NX_PRINT <<  "spawning process from mount" << std::endl;
         const processReturn mountRet = cfManager.mount(passphrase);
 #endif
 
