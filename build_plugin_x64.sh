@@ -10,7 +10,8 @@ BASE_DIR=$(readlink -f "$(dirname "$0")") #< Absolute path to the current dir.
 
 set -x #< Log each command.
 
-"$BASE_DIR"/build_samples.sh \
+"$BASE_DIR"/build_plugin.sh \
     --no-tests \
-    -DCMAKE_TOOLCHAIN_FILE=$BASE_DIR/toolchain_arm64.cmake \
+    -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux \
+    -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$BASE_DIR/toolchain_x64.cmake" \
     "$@"

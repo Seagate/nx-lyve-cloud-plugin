@@ -26,20 +26,37 @@
 #include "child_process.h"
 #include <fstream>
 #include <sys/stat.h>
+#include <sys/utsname.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-std::string config_template = R"(
+std::string getSystemName()
+{
+    std::string systemName;
+    struct utsname buffer;
+    if (uname(&buffer) != -1)
+    {
+        systemName = buffer.nodename;
+    }
+
+    return systemName;
+}
+
+CloudfuseMngr::CloudfuseMngr()
+{
+    std::string systemName = getSystemName();
+    // NOTE: increment the version number when the config template changes
+    templateVersionString = "template-version: 0.1";
+    std::string config_template = templateVersionString + R"(
 allow-other: true
 logging:
-  level: log_err
-  type: syslog
+  type: base
 
 components:
-  - libfuse
-  - file_cache
-  - attr_cache
-  - s3storage
+- libfuse
+- file_cache
+- attr_cache
+- s3storage
 
 libfuse:
   attribute-expiration-sec: 1800
@@ -61,10 +78,8 @@ s3storage:
   bucket-name: { BUCKET_NAME }
   endpoint: { ENDPOINT }
   region: { AWS_REGION }
-)";
+  subdirectory: )" + systemName + "\n";
 
-CloudfuseMngr::CloudfuseMngr()
-{
     std::string homeEnv;
     const char *home = std::getenv("HOME");
     if (home == nullptr)
@@ -80,10 +95,9 @@ CloudfuseMngr::CloudfuseMngr()
     configFile = homeEnv + "/nx_plugin_config.aes";
     templateFile = homeEnv + "/nx_plugin_config.yaml";
 
-    std::ifstream in(templateFile);
-    if (!in.good())
+    if (templateOutdated(templateFile))
     {
-        std::ofstream out(templateFile);
+        std::ofstream out(templateFile, std::ios::trunc);
         out << config_template;
         out.close();
     }

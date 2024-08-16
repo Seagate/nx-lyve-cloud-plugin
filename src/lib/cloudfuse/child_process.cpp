@@ -23,6 +23,7 @@
 */
 
 #include "child_process.h"
+#include <fstream>
 
 std::string CloudfuseMngr::getMountDir()
 {
@@ -32,4 +33,21 @@ std::string CloudfuseMngr::getMountDir()
 std::string CloudfuseMngr::getFileCacheDir()
 {
     return fileCacheDir;
+}
+
+bool CloudfuseMngr::templateOutdated(std::string templateFilePath)
+{
+    // check the first line of the template file for a matching version
+    std::string firstLine;
+    // read the first line of the template file
+    std::ifstream templateFileStream(templateFilePath);
+    // if the file doesn't exist (or can't be opened), we need to write it
+    if (templateFileStream.fail())
+    {
+        return true;
+    }
+    getline(templateFileStream, firstLine);
+    templateFileStream.close();
+    // if the versions don't match, we need to overwrite the template
+    return templateVersionString.compare(firstLine) != 0;
 }

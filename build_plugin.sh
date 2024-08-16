@@ -65,19 +65,19 @@ esac
 
 # Build source plugin
 SOURCE_DIR="$BASE_DIR/src"
-SAMPLE="cloudfuse_plugin"
+PLUGIN_NAME="cloudfuse_plugin"
 (set -x #< Log each command.
-    mkdir -p "$BUILD_DIR/$SAMPLE"
-    cd "$BUILD_DIR/$SAMPLE"
+    mkdir -p "$BUILD_DIR/$PLUGIN_NAME"
+    cd "$BUILD_DIR/$PLUGIN_NAME"
 
     cmake "$SOURCE_DIR" `# allow empty array #` ${GEN_OPTIONS[@]+"${GEN_OPTIONS[@]}"} "$@"
     cmake --build . `# allow empty array #` ${BUILD_OPTIONS[@]+"${BUILD_OPTIONS[@]}"}
 )
 
-ARTIFACT=$(find "$BUILD_DIR" -name "$SAMPLE.dll" -o -name "lib$SAMPLE.so")
+ARTIFACT=$(find "$BUILD_DIR" -name "$PLUGIN_NAME.dll" -o -name "lib$PLUGIN_NAME.so")
 if [ ! -f "$ARTIFACT" ]
 then
-    echo "ERROR: Failed to build $SAMPLE."
+    echo "ERROR: Failed to build $PLUGIN_NAME."
     exit 64
 fi
 echo ""
@@ -86,10 +86,10 @@ echo ""
 
 # Build unit tests
 SOURCE_DIR="$BASE_DIR/src/unit_tests"
-SAMPLE="unit_tests"
+UNIT_TESTS="unit_tests"
 (set -x #< Log each command.
-    mkdir -p "$BUILD_DIR/$SAMPLE"
-    cd "$BUILD_DIR/$SAMPLE"
+    mkdir -p "$BUILD_DIR/$UNIT_TESTS"
+    cd "$BUILD_DIR/$UNIT_TESTS"
 
     cmake "$SOURCE_DIR" `# allow empty array #` ${GEN_OPTIONS[@]+"${GEN_OPTIONS[@]}"} "$@"
     cmake --build . `# allow empty array #` ${BUILD_OPTIONS[@]+"${BUILD_OPTIONS[@]}"}
@@ -98,7 +98,7 @@ SAMPLE="unit_tests"
 ARTIFACT=$(find "$BUILD_DIR" -name "analytics_plugin_ut.exe" -o -name "analytics_plugin_ut")
 if [ ! -f "$ARTIFACT" ]
 then
-    echo "ERROR: Failed to build $SAMPLE."
+    echo "ERROR: Failed to build $UNIT_TESTS."
     exit 64
 fi
 echo ""

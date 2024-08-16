@@ -248,8 +248,12 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         NX_PRINT << "Creating mount directory if it does not exist" << std::endl;
         if (fs::exists(mountDir))
         {
-            // Unmmount before mounting
-            cfManager.unmount();
+            // Unmount before mounting
+            const processReturn unmountReturn = cfManager.unmount();
+            if (unmountReturn.errCode != 0)
+            {
+                return error(ErrorCode::internalError, "Failed to unmount. Here's why: " + unmountReturn.output);
+            }
 
 #if defined(__linux__)
             // On Linux we need to check the folder has the correct permissions

@@ -41,17 +41,48 @@ namespace fs = std::filesystem;
 #include <fstream>
 #include <locale>
 
-std::string config_template = R"(
+// Return available drive letter to mount
+std::string getAvailableDriveLetter()
+{
+    DWORD driveMask = GetLogicalDrives();
+    for (char letter = 'Z'; letter >= 'A'; --letter)
+    {
+        if (!(driveMask & (1 << (letter - 'A'))))
+        {
+            return std::string(1, letter) + ":";
+        }
+    }
+    return "Z:";
+}
+
+std::string getSystemName()
+{
+    std::string systemName;
+    char computerName[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD size = sizeof(computerName) / sizeof(char);
+    if (GetComputerNameA(computerName, &size))
+    {
+        systemName = computerName;
+    }
+
+    return systemName;
+}
+
+CloudfuseMngr::CloudfuseMngr()
+{
+    std::string systemName = getSystemName();
+    // NOTE: increment the version number when the config template changes
+    templateVersionString= "template-version: 0.1";
+    std::string config_template = templateVersionString + R"(
 allow-other: true
 logging:
-  level: log_err
-  type: syslog
+  type: base
 
 components:
-  - libfuse
-  - file_cache
-  - attr_cache
-  - s3storage
+- libfuse
+- file_cache
+- attr_cache
+- s3storage
 
 libfuse:
   attribute-expiration-sec: 1800
@@ -75,24 +106,8 @@ s3storage:
   bucket-name: { BUCKET_NAME }
   endpoint: { ENDPOINT }
   region: { AWS_REGION }
-)";
+  subdirectory: )" + systemName + "\n";
 
-// Return available drive letter to mount
-std::string getAvailableDriveLetter()
-{
-    DWORD driveMask = GetLogicalDrives();
-    for (char letter = 'Z'; letter >= 'A'; --letter)
-    {
-        if (!(driveMask & (1 << (letter - 'A'))))
-        {
-            return std::string(1, letter) + ":";
-        }
-    }
-    return "Z:";
-}
-
-CloudfuseMngr::CloudfuseMngr()
-{
     std::string appdataEnv;
     char *buf = nullptr;
     size_t len;
@@ -116,10 +131,9 @@ CloudfuseMngr::CloudfuseMngr()
     configFile = configFilePath.generic_string();
     templateFile = templateFilePath.generic_string();
 
-    std::ifstream in(templateFile.c_str());
-    if (!in.good())
+    if (templateOutdated(templateFile))
     {
-        std::ofstream out(templateFile.c_str());
+        std::ofstream out(templateFile, std::ios::trunc);
         out << config_template;
         out.close();
     }

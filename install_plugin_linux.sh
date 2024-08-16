@@ -1,4 +1,9 @@
 #!/bin/bash
+
+## Copyright © 2024 Seagate Technology LLC and/or its Affiliates
+set -e
+
+### Setup Fuse Allow Other
 FUSE_CONF="/etc/fuse.conf"
 
 # Check if "user_allow_other" is already in the file
@@ -17,3 +22,15 @@ else
         echo "Added user_allow_other added to $FUSE_CONF"
     fi
 fi
+
+### Install Cloudfuse
+echo "Installing Cloudfuse"
+apt-get install libssl-dev
+apt-get install ./cloudfuse*.deb
+
+### Install plugin
+echo "Installing Cloudfuse plugin"
+cp cloudfuse_plugin.so /opt/networkoptix-metavms/mediaserver/bin/plugins/
+systemctl restart networkoptix-mediaserver.service
+
+echo "Finished installing Cloudfuse plugin"
