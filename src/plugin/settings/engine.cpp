@@ -325,10 +325,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         {
             NX_PRINT <<  "Cloudfuse is not installed" << std::endl;
             return error(ErrorCode::internalError, "Cloudfuse is not installed");
-        }
-
-NX_PRINT <<  "spawning process from genS3Config" << std::endl;
+        }  
 #if defined(__linux__)
+        NX_PRINT <<  "spawning process from genS3Config" << std::endl;
         const processReturn dryGenConfig = cfManager.genS3Config(endpointRegion, endpointUrl, bucketName, passphrase);
 #elif defined(_WIN32)
         const processReturn dryGenConfig =
