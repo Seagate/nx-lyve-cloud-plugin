@@ -339,12 +339,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             NX_PRINT <<  "Unable to generate config file with error: " + dryGenConfig.output << std::endl;
             return error(ErrorCode::internalError, "Unable to generate config file with error: " + dryGenConfig.output);
         }
-
+    NX_PRINT <<  "spawning process from dryRun" << std::endl;
 #if defined(__linux__)
-        NX_PRINT <<  "spawning process from dryRun" << std::endl;
         const processReturn dryRunRet = cfManager.dryRun(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
-        NX_PRINT <<  "spawning process from dryRun" << std::endl;
         const processReturn dryRunRet = cfManager.dryRun(passphrase);
 #endif
 
