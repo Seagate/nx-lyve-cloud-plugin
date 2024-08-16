@@ -72,7 +72,7 @@ CloudfuseMngr::CloudfuseMngr()
 {
     std::string systemName = getSystemName();
     // NOTE: increment the version number when the config template changes
-    templateVersionString= "template-version: 0.1";
+    templateVersionString = "template-version: 0.1";
     std::string config_template = templateVersionString + R"(
 allow-other: true
 logging:
