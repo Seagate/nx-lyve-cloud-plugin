@@ -12,6 +12,7 @@
 #include <openssl/rand.h>
 #include <string.h>
 #include <thread>
+#include <fstream>
 
 #include "actions.h"
 #include "active_settings_rules.h"
@@ -22,6 +23,7 @@
 #include "cloudfuse_helper.h"
 
 #include <nx/kit/debug.h>
+#include <nx/kit/ini_config.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
 #include <nx/sdk/helpers/error.h>
 #include <utils.h>
@@ -39,10 +41,15 @@ using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
 
+void enableLogging(std::string iniDir);
+
 Engine::Engine(Plugin *plugin)
     : nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()), m_plugin(plugin), cfManager()
 {
+    // logging will begin the _next_ time the mediaserver starts
+    enableLogging(IniConfig::iniFilesDir());
     NX_PRINT << "cloudfuse Engine::Engine";
+
     for (const auto &entry : kActiveSettingsRules)
     {
         const ActiveSettingsBuilder::ActiveSettingKey key = entry.first;
@@ -102,6 +109,26 @@ std::string Engine::manifestString() const
 )json";
 
     return result;
+}
+
+void enableLogging(std::string iniDir)
+{
+    // enable logging by touching stdout and stderr redirect files
+    if (!fs::is_directory(iniDir))
+    {
+        fs::create_directories(iniDir);
+    }
+    const std::string processName = utils::getProcessName();
+    const std::string stdoutFilename = iniDir + processName + "_stdout.log";
+    const std::string stderrFilename = iniDir + processName + "_stderr.log";
+    if (!fs::exists(stdoutFilename) || !fs::exists(stderrFilename))
+    {
+        NX_PRINT << "cloudfuse Engine::enableLogging - creating files";
+        std::ofstream stdoutFile(stdoutFilename);
+        std::ofstream stderrFile(stderrFilename);
+        // the service will need to be restarted for logging to actually begin
+    }
+    NX_PRINT << "cloudfuse Engine::enableLogging - plugin stderr logging file: " + stderrFilename;
 }
 
 bool Engine::processActiveSettings(Json::object *model, std::map<std::string, std::string> *values,
