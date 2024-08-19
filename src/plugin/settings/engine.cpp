@@ -6,13 +6,13 @@
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <string.h>
 #include <thread>
-#include <fstream>
 
 #include "actions.h"
 #include "active_settings_rules.h"
