@@ -273,7 +273,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             {
                 NX_PRINT << "Unable to set mount directory permissions with error: " + errCode.message();
                 return error(ErrorCode::internalError,
-                                "Unable to set mount directory permissions with error: " + errCode.message());
+                             "Unable to set mount directory permissions with error: " + errCode.message());
             }
         }
 #endif
@@ -298,7 +298,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             {
                 NX_PRINT << "Unable to set file cache directory permission with error: " + errCode.message();
                 return error(ErrorCode::internalError,
-                                "Unable to set file cache directory permission with error: " + errCode.message());
+                             "Unable to set file cache directory permission with error: " + errCode.message());
             }
         }
 
