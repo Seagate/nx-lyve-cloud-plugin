@@ -237,8 +237,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         }
         else
         {
-            NX_PRINT << "OpenSSL Error: Unable to generate secure passphrase";
-            return error(ErrorCode::internalError, "OpenSSL Error: Unable to generate secure passphrase");
+            std::string errorMessage = "OpenSSL Error: Unable to generate secure passphrase";
+            NX_PRINT << errorMessage;
+            return error(ErrorCode::internalError, errorMessage);
         }
 
         // Unmount before mounting
@@ -247,8 +248,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             const processReturn unmountReturn = cfManager.unmount();
             if (unmountReturn.errCode != 0)
             {
-                NX_PRINT << "Failed to unmount. Here's why: " + unmountReturn.output;
-                return error(ErrorCode::internalError, "Failed to unmount. Here's why: " + unmountReturn.output);
+                std::string errorMessage = "Failed to unmount. Here's why: " + unmountReturn.output;
+                NX_PRINT << errorMessage;
+                return error(ErrorCode::internalError, errorMessage);
             }
         }
         std::error_code errCode;
@@ -259,9 +261,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             NX_PRINT << "Creating mount directory";
             if (!fs::create_directory(mountDir, errCode))
             {
-                NX_PRINT << "Unable to create mount directory with error: " + errCode.message();
-                return error(ErrorCode::internalError,
-                             "Unable to create mount directory with error: " + errCode.message());
+                std::string errorMessage = "Unable to create mount directory with error: " + errCode.message();
+                NX_PRINT << errorMessage;
+                return error(ErrorCode::internalError, errorMessage);
             }
         }
         // check and set mount folder permissions
@@ -271,9 +273,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode)
             {
-                NX_PRINT << "Unable to set mount directory permissions with error: " + errCode.message();
-                return error(ErrorCode::internalError,
-                             "Unable to set mount directory permissions with error: " + errCode.message());
+                std::string errorMessage = "Unable to set mount directory permissions with error: " + errCode.message();
+                NX_PRINT << errorMessage;
+                return error(ErrorCode::internalError, errorMessage);
             }
         }
 #endif
@@ -283,10 +285,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             NX_PRINT << "creating file cache since it does not exist";
             if (!fs::create_directories(fileCacheDir, errCode))
             {
-                NX_PRINT << "Unable to create file cache directory " + fileCacheDir +
-                                " with error: " + errCode.message();
-                return error(ErrorCode::internalError, "Unable to create file cache directory " + fileCacheDir +
-                                                           " with error: " + errCode.message());
+                std::string errorMessage =
+                    "Unable to create file cache directory " + fileCacheDir + " with error: " + errCode.message();
+                NX_PRINT << errorMessage;
+                return error(ErrorCode::internalError, errorMessage);
             }
         }
         // check and set file cache directory permissions
@@ -296,17 +298,19 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode)
             {
-                NX_PRINT << "Unable to set file cache directory permission with error: " + errCode.message();
-                return error(ErrorCode::internalError,
-                             "Unable to set file cache directory permission with error: " + errCode.message());
+                std::string errorMessage =
+                    "Unable to set file cache directory permission with error: " + errCode.message();
+                NX_PRINT << errorMessage;
+                return error(ErrorCode::internalError, errorMessage);
             }
         }
 
         // generate cloudfuse config
         if (!cfManager.isInstalled())
         {
-            NX_PRINT << "Cloudfuse is not installed";
-            return error(ErrorCode::internalError, "Cloudfuse is not installed");
+            std::string errorMessage = "Cloudfuse is not installed";
+            NX_PRINT << errorMessage;
+            return error(ErrorCode::internalError, errorMessage);
         }
         NX_PRINT << "spawning process from genS3Config";
 #if defined(__linux__)
@@ -317,8 +321,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 #endif
         if (dryGenConfig.errCode != 0)
         {
-            NX_PRINT << "Unable to generate config file with error: " + dryGenConfig.output;
-            return error(ErrorCode::internalError, "Unable to generate config file with error: " + dryGenConfig.output);
+            std::string errorMessage = "Unable to generate config file with error: " + dryGenConfig.output;
+            NX_PRINT << errorMessage;
+            return error(ErrorCode::internalError, errorMessage);
         }
 
         // do a dry run to verify user credentials
@@ -332,48 +337,44 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         {
             if (dryRunRet.output.find("Bucket Error") != std::string::npos)
             {
+                std::string errorMessage =
+                    "Unable to authenticate with bucket: " + parseCloudfuseError(dryRunRet.output);
+                NX_PRINT << errorMessage;
                 Engine::pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Plugin Bucket Error",
-                                                  "Error with provided cloud bucket: " +
-                                                      parseCloudfuseError(dryRunRet.output));
-                NX_PRINT << "Unable to authenticate with bucket: " + parseCloudfuseError(dryRunRet.output);
-                return error(ErrorCode::otherError,
-                             "Unable to authenticate with bucket: " + parseCloudfuseError(dryRunRet.output));
+                                                  errorMessage);
+                return error(ErrorCode::otherError, errorMessage);
             }
             if (dryRunRet.output.find("Credential or Endpoint Error") != std::string::npos)
             {
-                Engine::pushPluginDiagnosticEvent(
-                    IPluginDiagnosticEvent::Level::error, "Plugin Credential or Endpoint Error",
-                    "Error with cloud credentials or incorrect endpoint: " + parseCloudfuseError(dryRunRet.output));
-                NX_PRINT << "Error with cloud credentials or incorrect endpoint: " +
-                                parseCloudfuseError(dryRunRet.output);
-                return error(ErrorCode::otherError, "Error with cloud credentials or incorrect endpoint: " +
-                                                        parseCloudfuseError(dryRunRet.output));
+                std::string errorMessage =
+                    "Error with cloud credentials or incorrect endpoint: " + parseCloudfuseError(dryRunRet.output);
+                NX_PRINT << errorMessage;
+                Engine::pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error,
+                                                  "Plugin Credential or Endpoint Error", errorMessage);
+                return error(ErrorCode::otherError, errorMessage);
             }
             if (dryRunRet.output.find("Endpoint Error") != std::string::npos)
             {
+                std::string errorMessage = "Error with provided endpoint: " + parseCloudfuseError(dryRunRet.output);
+                NX_PRINT << errorMessage;
                 Engine::pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Plugin Endpoint Error",
-                                                  "Error with provided endpoint: " +
-                                                      parseCloudfuseError(dryRunRet.output));
-                NX_PRINT << "Error with provided endpoint: " + parseCloudfuseError(dryRunRet.output);
-                return error(ErrorCode::otherError,
-                             "Error with provided endpoint: " + parseCloudfuseError(dryRunRet.output));
+                                                  errorMessage);
+                return error(ErrorCode::otherError, errorMessage);
             }
             if (dryRunRet.output.find("Secret Error") != std::string::npos)
             {
+                std::string errorMessage = "Secret key provided is incorrect: " + parseCloudfuseError(dryRunRet.output);
+                NX_PRINT << errorMessage;
                 Engine::pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Plugin Secret Error",
-                                                  "Secret key provided is incorrect: " +
-                                                      parseCloudfuseError(dryRunRet.output));
-                NX_PRINT << "Error with provided endpoint: " + parseCloudfuseError(dryRunRet.output);
-                return error(ErrorCode::otherError,
-                             "Secret key provided is incorrect: " + parseCloudfuseError(dryRunRet.output));
+                                                  errorMessage);
+                return error(ErrorCode::otherError, errorMessage);
             }
             // Otherwise this is an error we did not prepare for
-            Engine::pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Plugin Error",
-                                              "Unable to validate credentials with error: " +
-                                                  parseCloudfuseError(dryRunRet.output));
-            NX_PRINT << "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output);
-            return error(ErrorCode::otherError,
-                         "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output));
+            std::string errorMessage =
+                "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output);
+            NX_PRINT << errorMessage;
+            Engine::pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Plugin Error", errorMessage;
+            return error(ErrorCode::otherError, errorMessage);
         }
 
         // mount the bucket
@@ -385,8 +386,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 #endif
         if (mountRet.errCode != 0)
         {
-            NX_PRINT << "Unable to launch mount with error: " + mountRet.output;
-            return error(ErrorCode::internalError, "Unable to launch mount with error: " + mountRet.output);
+            std::string errorMessage = "Unable to launch mount with error: " + mountRet.output;
+            NX_PRINT << errorMessage;
+            return error(ErrorCode::internalError, errorMessage);
         }
 
         // Mount might not show up immediately, so wait for mount to appear
@@ -402,8 +404,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 
         if (!cfManager.isMounted())
         {
-            NX_PRINT << "Cloudfuse was not able to successfully mount";
-            return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
+            std::string errorMessage = "Cloudfuse was not able to successfully mount";
+            NX_PRINT << errorMessage;
+            return error(ErrorCode::internalError, errorMessage);
         }
     }
     else
@@ -413,8 +416,9 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 
     if (!processActiveSettings(&model, &values))
     {
-        NX_PRINT << "Unable to process the active settings section";
-        return error(ErrorCode::internalError, "Unable to process the active settings section");
+        std::string errorMessage = "Unable to process the active settings section";
+        NX_PRINT << errorMessage;
+        return error(ErrorCode::internalError, errorMessage);
     }
 
     auto settingsResponse = new SettingsResponse();
@@ -446,8 +450,9 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
 
     if (!processActiveSettings(&model, &values, {settingId}))
     {
-        NX_PRINT << "Unable to process the active settings section";
-        *outResult = error(ErrorCode::internalError, "Unable to process the active settings section");
+        std::string errorMessage = "Unable to process the active settings section";
+        NX_PRINT << errorMessage;
+        *outResult = error(ErrorCode::internalError, errorMessage);
 
         return;
     }
