@@ -207,7 +207,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     updatePrevSettings(values);
     if (mountRequired)
     {
-        NX_PRINT << "Values changed";
+        NX_PRINT << "Settings changed";
         const std::string keyId = values[kKeyIdTextFieldId];
         const std::string secretKey = values[kSecretKeyPasswordFieldId];
         const std::string endpointUrl = values[kEndpointUrlTextFieldId];
@@ -241,71 +241,44 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             return error(ErrorCode::internalError, "OpenSSL Error: Unable to generate secure passphrase");
         }
 
-        std::error_code errCode;
-
-        // Create mount directory if it does not exist
-        NX_PRINT << "Creating mount directory if it does not exist";
+        // Unmount before mounting
         if (fs::exists(mountDir))
         {
-            // Unmount before mounting
             const processReturn unmountReturn = cfManager.unmount();
             if (unmountReturn.errCode != 0)
             {
+                NX_PRINT << "Failed to unmount. Here's why: " + unmountReturn.output;
                 return error(ErrorCode::internalError, "Failed to unmount. Here's why: " + unmountReturn.output);
             }
-
-#if defined(__linux__)
-            // On Linux we need to check the folder has the correct permissions
-            fs::file_status s = fs::status(mountDir);
-            if ((s.permissions() & fs::perms::all) != fs::perms::all)
-            {
-                fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
-                if (errCode)
-                {
-                    NX_PRINT << "Unable to set mount directory permission with error: " + errCode.message();
-                    return error(ErrorCode::internalError,
-                                 "Unable to set mount directory permission with error: " + errCode.message());
-                }
-            }
-#endif
         }
-        else
-        {
+        std::error_code errCode;
 #if defined(__linux__)
-            // On Linux we need to create the folder if it does not yet exist
-            NX_PRINT << "creating the folder since it does not yet exist";
+        // On Linux the mount folder needs to exist before mounting
+        if (!fs::exists(mountDir))
+        {
+            NX_PRINT << "Creating mount directory";
             if (!fs::create_directory(mountDir, errCode))
             {
                 NX_PRINT << "Unable to create mount directory with error: " + errCode.message();
                 return error(ErrorCode::internalError,
                              "Unable to create mount directory with error: " + errCode.message());
             }
+        }
+        // check and set mount folder permissions
+        fs::file_status s = fs::status(mountDir);
+        if ((s.permissions() & fs::perms::all) != fs::perms::all)
+        {
             fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode)
             {
                 NX_PRINT << "Unable to set mount directory permissions with error: " + errCode.message();
                 return error(ErrorCode::internalError,
-                             "Unable to set mount directory permissions with error: " + errCode.message());
+                                "Unable to set mount directory permissions with error: " + errCode.message());
             }
+        }
 #endif
-        }
-
         // Create file cache if it does not exist
-        if (fs::exists(fileCacheDir))
-        {
-            fs::file_status s = fs::status(fileCacheDir);
-            if ((s.permissions() & fs::perms::all) != fs::perms::all)
-            {
-                fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
-                if (errCode)
-                {
-                    NX_PRINT << "Unable to set mount directory permission with error: " + errCode.message();
-                    return error(ErrorCode::internalError,
-                                 "Unable to set mount directory permission with error: " + errCode.message());
-                }
-            }
-        }
-        else
+        if (!fs::exists(fileCacheDir))
         {
             NX_PRINT << "creating file cache since it does not exist";
             if (!fs::create_directories(fileCacheDir, errCode))
@@ -315,15 +288,21 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
                 return error(ErrorCode::internalError, "Unable to create file cache directory " + fileCacheDir +
                                                            " with error: " + errCode.message());
             }
+        }
+        // check and set file cache directory permissions
+        fs::file_status s = fs::status(fileCacheDir);
+        if ((s.permissions() & fs::perms::all) != fs::perms::all)
+        {
             fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
             if (errCode)
             {
-                NX_PRINT << "Unable to set file cache directory permissions with error: " + errCode.message();
+                NX_PRINT << "Unable to set file cache directory permission with error: " + errCode.message();
                 return error(ErrorCode::internalError,
-                             "Unable to set file cache directory permissions with error: " + errCode.message());
+                                "Unable to set file cache directory permission with error: " + errCode.message());
             }
         }
 
+        // generate cloudfuse config
         if (!cfManager.isInstalled())
         {
             NX_PRINT << "Cloudfuse is not installed";
@@ -336,19 +315,19 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         const processReturn dryGenConfig =
             cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, bucketName, passphrase);
 #endif
-
         if (dryGenConfig.errCode != 0)
         {
             NX_PRINT << "Unable to generate config file with error: " + dryGenConfig.output;
             return error(ErrorCode::internalError, "Unable to generate config file with error: " + dryGenConfig.output);
         }
-        NX_PRINT << "spawning process from dryRun";
+
+        // do a dry run to verify user credentials
+        NX_PRINT << "Checking cloud credentials (cloudfuse dry run)";
 #if defined(__linux__)
         const processReturn dryRunRet = cfManager.dryRun(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
         const processReturn dryRunRet = cfManager.dryRun(passphrase);
 #endif
-
         if (dryRunRet.errCode != 0)
         {
             if (dryRunRet.output.find("Bucket Error") != std::string::npos)
@@ -388,7 +367,6 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
                 return error(ErrorCode::otherError,
                              "Secret key provided is incorrect: " + parseCloudfuseError(dryRunRet.output));
             }
-
             // Otherwise this is an error we did not prepare for
             Engine::pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Plugin Error",
                                               "Unable to validate credentials with error: " +
@@ -397,13 +375,14 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
             return error(ErrorCode::otherError,
                          "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output));
         }
-        NX_PRINT << "spawning process from mount";
+
+        // mount the bucket
+        NX_PRINT << "Starting cloud storage mount";
 #if defined(__linux__)
         const processReturn mountRet = cfManager.mount(keyId, secretKey, passphrase);
 #elif defined(_WIN32)
         const processReturn mountRet = cfManager.mount(passphrase);
 #endif
-
         if (mountRet.errCode != 0)
         {
             NX_PRINT << "Unable to launch mount with error: " + mountRet.output;
@@ -411,14 +390,17 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         }
 
         // Mount might not show up immediately, so wait for mount to appear
-        int retryCount = 0;
-        while (!cfManager.isMounted() && retryCount < 10)
+        int maxRetries = 10;
+        for (int retryCount = 0; retryCount < maxRetries; retryCount++)
         {
+            if (cfManager.isMounted())
+            {
+                break;
+            }
             std::this_thread::sleep_for(std::chrono::seconds(1));
-            retryCount++;
         }
 
-        if (retryCount == 10)
+        if (!cfManager.isMounted())
         {
             NX_PRINT << "Cloudfuse was not able to successfully mount";
             return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
