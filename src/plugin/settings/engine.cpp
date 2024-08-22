@@ -405,7 +405,7 @@ nx::sdk::Error Engine::validateMount()
         return error(ErrorCode::internalError,
                      "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output));
     }
-    return error(ErrorCode::noError, nullptr);
+    return Error(ErrorCode::noError, nullptr);
 }
 
 nx::sdk::Error Engine::spawnMount()
@@ -442,7 +442,7 @@ nx::sdk::Error Engine::spawnMount()
         return error(ErrorCode::internalError, errorMessage);
     }
 
-    return error(ErrorCode::noError, nullptr);
+    return Error(ErrorCode::noError, nullptr);
 }
 
 void Engine::getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const
