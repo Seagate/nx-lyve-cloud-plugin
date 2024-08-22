@@ -69,6 +69,12 @@ Engine::~Engine()
     }
 }
 
+void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDeviceInfo *deviceInfo)
+{
+    NX_PRINT << "cloudfuse Engine::doObtainDeviceAgent";
+    *outResult = new DeviceAgent(this, deviceInfo);
+}
+
 static std::string buildCapabilities()
 {
     std::string capabilities;
@@ -96,12 +102,6 @@ std::string Engine::manifestString() const
 )json";
 
     return result;
-}
-
-void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDeviceInfo *deviceInfo)
-{
-    NX_PRINT << "cloudfuse Engine::doObtainDeviceAgent";
-    *outResult = new DeviceAgent(this, deviceInfo);
 }
 
 bool Engine::processActiveSettings(Json::object *model, std::map<std::string, std::string> *values,
@@ -142,6 +142,64 @@ bool Engine::processActiveSettings(Json::object *model, std::map<std::string, st
     (*model)[kItems] = items;
 
     return true;
+}
+
+bool Engine::settingsChanged()
+{
+    // If cloudfuse is not mounted and settings are the same, then return true so
+    // it tries to mount again.
+    if (!m_cfManager.isMounted())
+    {
+        return true;
+    }
+
+    std::map<std::string, std::string> prevValues = prevSettings();
+    std::map<std::string, std::string> newValues = currentSettings();
+    if (newValues == prevValues)
+    {
+        return false;
+    }
+    // we only really care about certain values
+    // key ID
+    if (prevValues[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])
+    {
+        return true;
+    }
+    // secret key
+    if (prevValues[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId])
+    {
+        return true;
+    }
+    // endpoint
+    if (prevValues[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
+    {
+        // if they're different, but both amount to the same thing, then there is no effective change
+        bool prevIsDefault =
+            prevValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || prevValues[kEndpointUrlTextFieldId] == "";
+        bool newIsDefault =
+            newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
+        if (!prevIsDefault || !newIsDefault)
+        {
+            return true;
+        }
+    }
+    // bucket name
+    if (prevValues[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
+    {
+        return true;
+    }
+    // nothing we care about changed
+    return false;
+}
+
+std::map<std::string, std::string> Engine::prevSettings() const
+{
+    return m_prev_settings;
+}
+
+void Engine::updatePrevSettings(std::map<std::string, std::string> settings)
+{
+    m_prev_settings = settings;
 }
 
 Result<const ISettingsResponse *> Engine::settingsReceived()
@@ -200,16 +258,6 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     settingsResponse->setValues(makePtr<StringMap>(values));
 
     return settingsResponse;
-}
-
-std::map<std::string, std::string> Engine::prevSettings() const
-{
-    return m_prev_settings;
-}
-
-void Engine::updatePrevSettings(std::map<std::string, std::string> settings)
-{
-    m_prev_settings = settings;
 }
 
 nx::sdk::Error Engine::validateMount()
@@ -384,54 +432,6 @@ nx::sdk::Error Engine::mount()
     }
 
     return error(ErrorCode::noError, nullptr);
-}
-
-bool Engine::settingsChanged()
-{
-    // If cloudfuse is not mounted and settings are the same, then return true so
-    // it tries to mount again.
-    if (!m_cfManager.isMounted())
-    {
-        return true;
-    }
-
-    std::map<std::string, std::string> prevValues = prevSettings();
-    std::map<std::string, std::string> newValues = currentSettings();
-    if (newValues == prevValues)
-    {
-        return false;
-    }
-    // we only really care about certain values
-    // key ID
-    if (prevValues[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])
-    {
-        return true;
-    }
-    // secret key
-    if (prevValues[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId])
-    {
-        return true;
-    }
-    // endpoint
-    if (prevValues[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
-    {
-        // if they're different, but both amount to the same thing, then there is no effective change
-        bool prevIsDefault =
-            prevValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || prevValues[kEndpointUrlTextFieldId] == "";
-        bool newIsDefault =
-            newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
-        if (!prevIsDefault || !newIsDefault)
-        {
-            return true;
-        }
-    }
-    // bucket name
-    if (prevValues[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
-    {
-        return true;
-    }
-    // nothing we care about changed
-    return false;
 }
 
 void Engine::getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const
