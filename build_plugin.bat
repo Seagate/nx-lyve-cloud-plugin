@@ -37,17 +37,13 @@ if [%BUILD_TYPE%] == [Release] (
     set BUILD_OPTIONS=--config %BUILD_TYPE%
 )
 
-echo on
-    rmdir /S /Q "%BUILD_DIR%" 2>NUL
-@echo off
-
 :: Build source
-set SOURCE_DIR="%BASE_DIR%\src"
-set PLUGIN_NAME="cloudfuse_plugin"
+set SOURCE_DIR=%BASE_DIR%\src
+set PLUGIN_NAME=cloudfuse_plugin
 
 set PLUGIN_BUILD_DIR=%BUILD_DIR%\%PLUGIN_NAME%
 @echo on
-    mkdir "%PLUGIN_BUILD_DIR%" || @exit /b
+    if not exist "%PLUGIN_BUILD_DIR%\" mkdir "%PLUGIN_BUILD_DIR%" || @exit /b
     cd "%PLUGIN_BUILD_DIR%" || @exit /b
 
     cmake "%SOURCE_DIR%" -G "Visual Studio 17 2022" -Ax64 %1 %2 %3 %4 %5 %6 %7 %8 %9 --preset default || @exit /b
@@ -64,12 +60,12 @@ echo:
 echo Built: %ARTIFACT%
 
 ::Build Tests
-set SOURCE_DIR="%BASE_DIR%\src\unit_tests"
+set SOURCE_DIR=%BASE_DIR%\src\unit_tests
 set UNIT_TESTS="unit_tests"
 
 set UNIT_TESTS_BUILD_DIR=%BUILD_DIR%\%UNIT_TESTS%
 @echo on
-    mkdir "%UNIT_TESTS_BUILD_DIR%" || @exit /b
+    if not exist "%UNIT_TESTS_BUILD_DIR%" mkdir "%UNIT_TESTS_BUILD_DIR%" || @exit /b
     cd "%UNIT_TESTS_BUILD_DIR%" || @exit /b
 
     cmake "%SOURCE_DIR%" -G "Visual Studio 17 2022" -Ax64 %1 %2 %3 %4 %5 %6 %7 %8 %9 --preset default || @exit /b
