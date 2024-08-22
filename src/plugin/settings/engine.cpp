@@ -326,8 +326,8 @@ nx::sdk::Error Engine::validateMount()
         }
     }
     // check and set mount folder permissions
-    auto s = fs::status(m_mountDir);
-    if ((s.permissions() & fs::perms::all) != fs::perms::all)
+    auto mountDirStat = fs::status(m_mountDir);
+    if ((mountDirStat.permissions() & fs::perms::all) != fs::perms::all)
     {
         fs::permissions(m_mountDir, fs::perms::all, fs::perm_options::add, errCode);
         if (errCode)
@@ -348,8 +348,8 @@ nx::sdk::Error Engine::validateMount()
         }
     }
     // check and set file cache directory permissions
-    s = fs::status(m_fileCacheDir);
-    if ((s.permissions() & fs::perms::all) != fs::perms::all)
+    auto fileCacheDirStat = fs::status(m_fileCacheDir);
+    if ((fileCacheDirStat.permissions() & fs::perms::all) != fs::perms::all)
     {
         fs::permissions(m_fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
         if (errCode)
@@ -370,7 +370,7 @@ nx::sdk::Error Engine::validateMount()
         m_cfManager.genS3Config(m_endpointRegion, m_endpointUrl, m_bucketName, m_passphrase);
 #elif defined(_WIN32)
     const processReturn dryGenConfig =
-        cfManager.genS3Config(m_keyId, m_secretKey, m_endpointRegion, m_endpointUrl, m_bucketName, m_passphrase);
+        m_cfManager.genS3Config(m_keyId, m_secretKey, m_endpointRegion, m_endpointUrl, m_bucketName, m_passphrase);
 #endif
     if (dryGenConfig.errCode != 0)
     {
@@ -382,7 +382,7 @@ nx::sdk::Error Engine::validateMount()
 #if defined(__linux__)
     const processReturn dryRunRet = m_cfManager.dryRun(m_keyId, m_secretKey, m_passphrase);
 #elif defined(_WIN32)
-    const processReturn dryRunRet = cfManager.dryRun(m_passphrase);
+    const processReturn dryRunRet = m_cfManager.dryRun(m_passphrase);
 #endif
     // possible error codes from dry run:
     std::array<std::string, 4> errorMatchStrings{"Bucket Error", "Credential or Endpoint Error", "Endpoint Error",
@@ -392,7 +392,7 @@ nx::sdk::Error Engine::validateMount()
                                                    "Error with provided endpoint", "Secret key provided is incorrect"};
     if (dryRunRet.errCode != 0)
     {
-        for (uint i = 0; i < errorMatchStrings.size(); i++)
+        for (size_t i = 0; i < errorMatchStrings.size(); i++)
         {
             if (dryRunRet.output.find(errorMatchStrings[i]) != std::string::npos)
             {
@@ -414,7 +414,7 @@ nx::sdk::Error Engine::spawnMount()
 #if defined(__linux__)
     const processReturn mountRet = m_cfManager.mount(m_keyId, m_secretKey, m_passphrase);
 #elif defined(_WIN32)
-    const processReturn mountRet = cfManager.mount(m_passphrase);
+    const processReturn mountRet = m_cfManager.mount(m_passphrase);
 #endif
     if (mountRet.errCode != 0)
     {
