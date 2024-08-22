@@ -99,8 +99,8 @@ std::string Engine::manifestString() const
 {
     "capabilities": ")json" +
                          buildCapabilities() + R"json(",
-    "deviceAgentSettingsModel": )json" +
-                         kEngineSettingsModel + R"json(
+    "deviceAgentSettingsModel":
+)json" + kEngineSettingsModel + R"json(
 }
 )json";
 
