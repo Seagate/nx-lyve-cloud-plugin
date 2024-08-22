@@ -56,16 +56,6 @@ std::map<std::string, std::string> Engine::currentSettings() const
     return m_settings;
 }
 
-std::map<std::string, std::string> Engine::prevSettings() const
-{
-    return prev_settings;
-}
-
-void Engine::updatePrevSettings(std::map<std::string, std::string> settings)
-{
-    prev_settings = settings;
-}
-
 Result<IAction::Result> Engine::executeAction(
     const std::string& /*actionId*/,
     Uuid /*objectTrackId*/,

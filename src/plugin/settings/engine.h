@@ -28,7 +28,11 @@ class Engine : public nx::sdk::analytics::Engine
     virtual std::string manifestString() const override;
 
     virtual nx::sdk::Result<const nx::sdk::ISettingsResponse *> settingsReceived() override;
+    std::map<std::string, std::string> prevSettings() const;
+    void updatePrevSettings(std::map<std::string, std::string>);
     bool settingsChanged();
+    nx::sdk::Error validateMount();
+    nx::sdk::Error mount();
 
   protected:
     virtual void doObtainDeviceAgent(nx::sdk::Result<nx::sdk::analytics::IDeviceAgent *> *outResult,
@@ -47,7 +51,16 @@ class Engine : public nx::sdk::analytics::Engine
   private:
     nx::sdk::analytics::Plugin *const m_plugin;
     ActiveSettingsBuilder m_activeSettingsBuilder;
-    CloudfuseMngr cfManager;
+    CloudfuseMngr m_cfManager;
+    std::map<std::string, std::string> m_prev_settings;
+    std::string m_keyId;
+    std::string m_secretKey;
+    std::string m_endpointUrl;
+    std::string m_endpointRegion;
+    std::string m_bucketName;
+    std::string m_mountDir;
+    std::string m_fileCacheDir;
+    std::string m_passphrase;
 };
 
 } // namespace settings
