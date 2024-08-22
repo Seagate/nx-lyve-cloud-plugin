@@ -153,29 +153,28 @@ bool Engine::settingsChanged()
         return true;
     }
 
-    std::map<std::string, std::string> prevValues = prevSettings();
     std::map<std::string, std::string> newValues = currentSettings();
-    if (newValues == prevValues)
+    if (newValues == m_prevSettings)
     {
         return false;
     }
     // we only really care about certain values
     // key ID
-    if (prevValues[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])
+    if (m_prevSettings[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])
     {
         return true;
     }
     // secret key
-    if (prevValues[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId])
+    if (m_prevSettings[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId])
     {
         return true;
     }
     // endpoint
-    if (prevValues[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
+    if (m_prevSettings[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
     {
         // if they're different, but both amount to the same thing, then there is no effective change
-        bool prevIsDefault =
-            prevValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || prevValues[kEndpointUrlTextFieldId] == "";
+        bool prevIsDefault = m_prevSettings[kEndpointUrlTextFieldId] == kDefaultEndpoint ||
+                             m_prevSettings[kEndpointUrlTextFieldId] == "";
         bool newIsDefault =
             newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
         if (!prevIsDefault || !newIsDefault)
@@ -184,22 +183,12 @@ bool Engine::settingsChanged()
         }
     }
     // bucket name
-    if (prevValues[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
+    if (m_prevSettings[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
     {
         return true;
     }
     // nothing we care about changed
     return false;
-}
-
-std::map<std::string, std::string> Engine::prevSettings() const
-{
-    return m_prev_settings;
-}
-
-void Engine::updatePrevSettings(std::map<std::string, std::string> settings)
-{
-    m_prev_settings = settings;
 }
 
 Result<const ISettingsResponse *> Engine::settingsReceived()
@@ -213,33 +202,11 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     // check if settings changed
     bool mountRequired = settingsChanged();
     // write new settings to previous
-    updatePrevSettings(values);
+    m_prevSettings = values;
     if (mountRequired)
     {
         NX_PRINT << "Settings changed.";
-        // prepare to mount
-        auto validationErr = validateMount();
-        if (validationErr.isOk())
-        {
-            auto mountErr = mount();
-            if (!mountErr.isOk())
-            {
-                // mount failed - this is very unexpected
-                std::string errorMessage =
-                    "mount failed. Here's why: " + std::string(Ptr(mountErr.errorMessage())->str());
-                NX_PRINT << errorMessage;
-                pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Mount Error",
-                                          errorMessage);
-            }
-        }
-        else
-        {
-            std::string errorMessage = "mount aborted (validation failed). Here's why: " +
-                                       std::string(Ptr(validationErr.errorMessage())->str());
-            NX_PRINT << errorMessage;
-            pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Connection Error",
-                                      errorMessage);
-        }
+        mount();
     }
     else
     {
@@ -260,7 +227,46 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     return settingsResponse;
 }
 
-nx::sdk::Error Engine::validateMount()
+std::string generatePassphrase();
+
+bool Engine::mount()
+{
+    // gather mount options
+    getMountOptions();
+    // generate the config passphrase
+    m_passphrase = generatePassphrase();
+    if (m_passphrase == "")
+    {
+        std::string errorMessage = "OpenSSL Error: Unable to generate secure passphrase";
+        NX_PRINT << errorMessage;
+        pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "OpenSSL Error", errorMessage);
+        return false;
+    }
+
+    auto validationErr = validateMount();
+    if (!validationErr.isOk())
+    {
+        std::string errorMessage =
+            "mount aborted (validation failed). Here's why: " + std::string(Ptr(validationErr.errorMessage())->str());
+        NX_PRINT << errorMessage;
+        pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Connection Error", errorMessage);
+        return false;
+    }
+
+    auto mountErr = spawnMount();
+    if (!mountErr.isOk())
+    {
+        // mount failed - this is very unexpected
+        std::string errorMessage = "mount failed. Here's why: " + std::string(Ptr(mountErr.errorMessage())->str());
+        NX_PRINT << errorMessage;
+        pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Mount Error", errorMessage);
+        return false;
+    }
+
+    return true;
+}
+
+void Engine::getMountOptions()
 {
     std::map<std::string, std::string> values = currentSettings();
     m_keyId = values[kKeyIdTextFieldId];
@@ -271,30 +277,33 @@ nx::sdk::Error Engine::validateMount()
                                                    // to select first available bucket
     m_mountDir = m_cfManager.getMountDir();
     m_fileCacheDir = m_cfManager.getFileCacheDir();
-    m_passphrase = "";
+}
+
+std::string generatePassphrase()
+{
     // Generate passphrase for config file
     unsigned char key[32]; // AES-256 key
-    if (RAND_bytes(key, sizeof(key)))
+    if (!RAND_bytes(key, sizeof(key)))
     {
-        // Need to encode passphrase to base64 to pass to cloudfuse
-        BIO *bmem, *b64;
-        BUF_MEM *bptr;
-
-        b64 = BIO_new(BIO_f_base64());
-        bmem = BIO_new(BIO_s_mem());
-        b64 = BIO_push(b64, bmem);
-        BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-        BIO_write(b64, key, 32);
-        BIO_flush(b64);
-        BIO_get_mem_ptr(b64, &bptr);
-
-        m_passphrase = std::string(bptr->data, bptr->length);
+        return "";
     }
-    else
-    {
-        return error(ErrorCode::internalError, "OpenSSL Error: Unable to generate secure passphrase");
-    }
+    // Need to encode passphrase to base64 to pass to cloudfuse
+    BIO *bmem, *b64;
+    BUF_MEM *bptr;
 
+    b64 = BIO_new(BIO_f_base64());
+    bmem = BIO_new(BIO_s_mem());
+    b64 = BIO_push(b64, bmem);
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    BIO_write(b64, key, 32);
+    BIO_flush(b64);
+    BIO_get_mem_ptr(b64, &bptr);
+
+    return std::string(bptr->data, bptr->length);
+}
+
+nx::sdk::Error Engine::validateMount()
+{
     // Unmount before mounting
     if (fs::exists(m_mountDir))
     {
@@ -397,7 +406,7 @@ nx::sdk::Error Engine::validateMount()
     return error(ErrorCode::noError, nullptr);
 }
 
-nx::sdk::Error Engine::mount()
+nx::sdk::Error Engine::spawnMount()
 {
     // mount the bucket
     NX_PRINT << "Starting cloud storage mount";
