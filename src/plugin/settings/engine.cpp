@@ -75,6 +75,9 @@ void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDevic
     *outResult = new DeviceAgent(this, deviceInfo);
 }
 
+// functions are not "hoisted", so we need "prototypes"
+std::string generatePassphrase();
+
 static std::string buildCapabilities()
 {
     std::string capabilities;
@@ -226,8 +229,6 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 
     return settingsResponse;
 }
-
-std::string generatePassphrase();
 
 bool Engine::mount()
 {
