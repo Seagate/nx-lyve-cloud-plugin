@@ -202,6 +202,12 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     NX_PRINT << "cloudfuse Engine::settingsReceived";
     std::string parseError;
     Json::object model = Json::parse(kEngineSettingsModel, parseError).object_items();
+    if (parseError != "")
+    {
+        std::string errorMessage = "Failed to parse engine settings model. Here's why:" + parseError;
+        NX_PRINT << errorMessage;
+        return error(ErrorCode::internalError, errorMessage);
+    }
 
     std::map<std::string, std::string> values = currentSettings();
 
@@ -219,17 +225,28 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         NX_PRINT << "Settings have not changed.";
     }
 
-    if (!processActiveSettings(&model, &values))
+    // TODO: use this to update the model when validation succeeds (or fails)
+    // if (!processActiveSettings(&model, &values))
+    // {
+    //     std::string errorMessage = "Unable to process the active settings section";
+    //     NX_PRINT << errorMessage;
+    //     return error(ErrorCode::internalError, errorMessage);
+    // }
+
+    // returning invalid JSON to the VMS will crash the server
+    // validate JSON before sending.
+    auto settingValuesMap = makePtr<StringMap>(values);
+    std::map<std::string, std::string> validSettings;
+    if (!logUtils.convertAndOutputStringMap(&validSettings, settingValuesMap.get(), "Validating settingsResponse"))
     {
-        std::string errorMessage = "Unable to process the active settings section";
+        std::string errorMessage = "SettingsResponse - invalid return JSON";
         NX_PRINT << errorMessage;
         return error(ErrorCode::internalError, errorMessage);
     }
 
     auto settingsResponse = new SettingsResponse();
     settingsResponse->setModel(makePtr<String>(Json(model).dump()));
-    settingsResponse->setValues(makePtr<StringMap>(values));
-
+    settingsResponse->setValues(settingValuesMap);
     return settingsResponse;
 }
 
