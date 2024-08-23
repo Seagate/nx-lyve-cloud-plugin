@@ -326,6 +326,7 @@ nx::sdk::Error Engine::validateMount()
     std::string mountDir = m_cfManager.getMountDir();
     std::string fileCacheDir = m_cfManager.getFileCacheDir();
     // Unmount before mounting
+    std::error_code errCode;
     if (m_cfManager.isMounted())
     {
         NX_PRINT << "Bucket is mounted. Unmounting...";
@@ -337,20 +338,19 @@ nx::sdk::Error Engine::validateMount()
 #if defined(_WIN32)
         for (int s = 0; s < maxWaitSecondsAfterMount; s++)
         {
-            if (!m_cfManager.isMounted())
+            if (!fs::exists(mountDir, errCode) && !(bool)errCode)
             {
                 break;
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-        if (m_cfManager.isMounted())
+        if (fs::exists(mountDir, errCode) && !(bool)errCode)
         {
             return error(ErrorCode::internalError,
                          "Unmount failed - " + std::to_string(maxWaitSecondsAfterMount) + "s timeout reached.");
         }
 #endif
     }
-    std::error_code errCode;
 #if defined(__linux__)
     // On Linux the mount folder needs to exist before mounting
     if (!fs::exists(mountDir))
