@@ -218,7 +218,10 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     if (mountRequired)
     {
         NX_PRINT << "Settings changed.";
-        mount();
+        if (!mount())
+        {
+            NX_PRINT << "Mount failed.";
+        }
     }
     else
     {
@@ -336,7 +339,7 @@ nx::sdk::Error Engine::validateMount()
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-        if (!fs::exists(mountDir))
+        if (fs::exists(mountDir))
         {
             return error(ErrorCode::internalError,
                          "Unmount failed - " + std::to_string(maxWaitSecondsAfterMount) + "s timeout reached.");
