@@ -310,6 +310,21 @@ nx::sdk::Error Engine::validateMount()
         {
             return error(ErrorCode::internalError, "Failed to unmount. Here's why: " + unmountReturn.output);
         }
+#if defined(_WIN32)
+        for (int s = 0; s < maxWaitSecondsAfterMount; s++)
+        {
+            if (!fs::exists(mountDir))
+            {
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+        if (!fs::exists(mountDir))
+        {
+            return error(ErrorCode::internalError,
+                         "Unmount failed - " + std::to_string(maxWaitSecondsAfterMount) + "s timeout reached.");
+        }
+#endif
     }
     std::error_code errCode;
 #if defined(__linux__)
