@@ -344,7 +344,7 @@ nx::sdk::Error Engine::validateMount()
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-        if (fs::exists(mountDir, errCode) && !(bool)errCode)
+        if (fs::exists(mountDir, errCode) || (bool)errCode)
         {
             return error(ErrorCode::internalError,
                          "Unmount failed - " + std::to_string(maxWaitSecondsAfterMount) + "s timeout reached.");
