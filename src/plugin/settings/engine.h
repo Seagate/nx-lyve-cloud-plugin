@@ -30,7 +30,6 @@ class Engine : public nx::sdk::analytics::Engine
     virtual nx::sdk::Result<const nx::sdk::ISettingsResponse *> settingsReceived() override;
     bool settingsChanged();
     bool mount();
-    void getMountOptions();
     nx::sdk::Error validateMount();
     nx::sdk::Error spawnMount();
 
@@ -53,13 +52,6 @@ class Engine : public nx::sdk::analytics::Engine
     ActiveSettingsBuilder m_activeSettingsBuilder;
     CloudfuseMngr m_cfManager;
     std::map<std::string, std::string> m_prevSettings;
-    std::string m_keyId;
-    std::string m_secretKey;
-    std::string m_endpointUrl;
-    std::string m_endpointRegion;
-    std::string m_bucketName;
-    std::string m_mountDir;
-    std::string m_fileCacheDir;
     std::string m_passphrase;
 };
 

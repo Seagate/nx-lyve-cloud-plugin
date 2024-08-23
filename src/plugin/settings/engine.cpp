@@ -40,6 +40,8 @@ using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
 
+static int maxWaitSecondsAfterMount = 10;
+
 Engine::Engine(Plugin *plugin)
     : nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()), m_plugin(plugin), m_cfManager()
 {
@@ -233,8 +235,6 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 
 bool Engine::mount()
 {
-    // gather mount options
-    getMountOptions();
     // generate the config passphrase
     m_passphrase = generatePassphrase();
     if (m_passphrase == "")
@@ -268,19 +268,6 @@ bool Engine::mount()
     return true;
 }
 
-void Engine::getMountOptions()
-{
-    std::map<std::string, std::string> values = currentSettings();
-    m_keyId = values[kKeyIdTextFieldId];
-    m_secretKey = values[kSecretKeyPasswordFieldId];
-    m_endpointUrl = values[kEndpointUrlTextFieldId];
-    m_endpointRegion = "us-east-1";
-    m_bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
-                                                   // to select first available bucket
-    m_mountDir = m_cfManager.getMountDir();
-    m_fileCacheDir = m_cfManager.getFileCacheDir();
-}
-
 std::string generatePassphrase()
 {
     // Generate passphrase for config file
@@ -306,8 +293,17 @@ std::string generatePassphrase()
 
 nx::sdk::Error Engine::validateMount()
 {
+    std::map<std::string, std::string> values = currentSettings();
+    std::string keyId = values[kKeyIdTextFieldId];
+    std::string secretKey = values[kSecretKeyPasswordFieldId];
+    std::string endpointUrl = values[kEndpointUrlTextFieldId];
+    std::string endpointRegion = "us-east-1";
+    std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
+                                                             // to select first available bucket
+    std::string mountDir = m_cfManager.getMountDir();
+    std::string fileCacheDir = m_cfManager.getFileCacheDir();
     // Unmount before mounting
-    if (fs::exists(m_mountDir))
+    if (fs::exists(mountDir))
     {
         const processReturn unmountReturn = m_cfManager.unmount();
         if (unmountReturn.errCode != 0)
@@ -318,19 +314,19 @@ nx::sdk::Error Engine::validateMount()
     std::error_code errCode;
 #if defined(__linux__)
     // On Linux the mount folder needs to exist before mounting
-    if (!fs::exists(m_mountDir))
+    if (!fs::exists(mountDir))
     {
         NX_PRINT << "Creating mount directory";
-        if (!fs::create_directory(m_mountDir, errCode))
+        if (!fs::create_directory(mountDir, errCode))
         {
             return error(ErrorCode::internalError, "Unable to create mount directory with error: " + errCode.message());
         }
     }
     // check and set mount folder permissions
-    auto mountDirStat = fs::status(m_mountDir);
+    auto mountDirStat = fs::status(mountDir);
     if ((mountDirStat.permissions() & fs::perms::all) != fs::perms::all)
     {
-        fs::permissions(m_mountDir, fs::perms::all, fs::perm_options::add, errCode);
+        fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
         if (errCode)
         {
             return error(ErrorCode::internalError,
@@ -339,20 +335,20 @@ nx::sdk::Error Engine::validateMount()
     }
 #endif
     // Create file cache if it does not exist
-    if (!fs::exists(m_fileCacheDir))
+    if (!fs::exists(fileCacheDir))
     {
         NX_PRINT << "creating file cache since it does not exist";
-        if (!fs::create_directories(m_fileCacheDir, errCode))
+        if (!fs::create_directories(fileCacheDir, errCode))
         {
-            return error(ErrorCode::internalError, "Unable to create file cache directory " + m_fileCacheDir +
-                                                       " with error: " + errCode.message());
+            return error(ErrorCode::internalError,
+                         "Unable to create file cache directory " + fileCacheDir + " with error: " + errCode.message());
         }
     }
     // check and set file cache directory permissions
-    auto fileCacheDirStat = fs::status(m_fileCacheDir);
+    auto fileCacheDirStat = fs::status(fileCacheDir);
     if ((fileCacheDirStat.permissions() & fs::perms::all) != fs::perms::all)
     {
-        fs::permissions(m_fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
+        fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
         if (errCode)
         {
             return error(ErrorCode::internalError,
@@ -367,11 +363,10 @@ nx::sdk::Error Engine::validateMount()
     }
     NX_PRINT << "spawning process from genS3Config";
 #if defined(__linux__)
-    const processReturn dryGenConfig =
-        m_cfManager.genS3Config(m_endpointRegion, m_endpointUrl, m_bucketName, m_passphrase);
+    const processReturn dryGenConfig = m_cfManager.genS3Config(endpointRegion, endpointUrl, bucketName, m_passphrase);
 #elif defined(_WIN32)
     const processReturn dryGenConfig =
-        m_cfManager.genS3Config(m_keyId, m_secretKey, m_endpointRegion, m_endpointUrl, m_bucketName, m_passphrase);
+        m_cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, bucketName, m_passphrase);
 #endif
     if (dryGenConfig.errCode != 0)
     {
@@ -381,7 +376,7 @@ nx::sdk::Error Engine::validateMount()
     // do a dry run to verify user credentials
     NX_PRINT << "Checking cloud credentials (cloudfuse dry run)";
 #if defined(__linux__)
-    const processReturn dryRunRet = m_cfManager.dryRun(m_keyId, m_secretKey, m_passphrase);
+    const processReturn dryRunRet = m_cfManager.dryRun(keyId, secretKey, m_passphrase);
 #elif defined(_WIN32)
     const processReturn dryRunRet = m_cfManager.dryRun(m_passphrase);
 #endif
@@ -410,10 +405,13 @@ nx::sdk::Error Engine::validateMount()
 
 nx::sdk::Error Engine::spawnMount()
 {
+    std::map<std::string, std::string> values = currentSettings();
+    std::string keyId = values[kKeyIdTextFieldId];
+    std::string secretKey = values[kSecretKeyPasswordFieldId];
     // mount the bucket
     NX_PRINT << "Starting cloud storage mount";
 #if defined(__linux__)
-    const processReturn mountRet = m_cfManager.mount(m_keyId, m_secretKey, m_passphrase);
+    const processReturn mountRet = m_cfManager.mount(keyId, secretKey, m_passphrase);
 #elif defined(_WIN32)
     const processReturn mountRet = m_cfManager.mount(m_passphrase);
 #endif
@@ -425,8 +423,7 @@ nx::sdk::Error Engine::spawnMount()
     }
 
     // Mount might not show up immediately, so wait for mount to appear
-    int maxRetries = 10;
-    for (int retryCount = 0; retryCount < maxRetries; retryCount++)
+    for (int s = 0; s < maxWaitSecondsAfterMount; s++)
     {
         if (m_cfManager.isMounted())
         {
