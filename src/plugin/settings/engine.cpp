@@ -394,7 +394,7 @@ nx::sdk::Error Engine::validateMount()
                          "Unable to set file cache directory permission with error: " + errCode.message());
         }
     }
-    
+
     // generate cloudfuse config
     if (!m_cfManager.isInstalled())
     {
