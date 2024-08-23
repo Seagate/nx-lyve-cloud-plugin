@@ -238,6 +238,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 
     // returning invalid JSON to the VMS will crash the server
     // validate JSON before sending.
+    NX_PRINT << "Returning settingsResponse...";
     auto settingValuesMap = makePtr<StringMap>(values);
     std::map<std::string, std::string> validSettings;
     if (!logUtils.convertAndOutputStringMap(&validSettings, settingValuesMap.get(), "Validating settingsResponse"))
@@ -290,6 +291,7 @@ bool Engine::mount()
 
 std::string generatePassphrase()
 {
+    NX_PRINT << "Generating passphrase...";
     // Generate passphrase for config file
     unsigned char key[32]; // AES-256 key
     if (!RAND_bytes(key, sizeof(key)))
@@ -313,6 +315,7 @@ std::string generatePassphrase()
 
 nx::sdk::Error Engine::validateMount()
 {
+    NX_PRINT << "Validating mount options...";
     std::map<std::string, std::string> values = currentSettings();
     std::string keyId = values[kKeyIdTextFieldId];
     std::string secretKey = values[kSecretKeyPasswordFieldId];
@@ -323,8 +326,9 @@ nx::sdk::Error Engine::validateMount()
     std::string mountDir = m_cfManager.getMountDir();
     std::string fileCacheDir = m_cfManager.getFileCacheDir();
     // Unmount before mounting
-    if (fs::exists(mountDir))
+    if (m_cfManager.isMounted())
     {
+        NX_PRINT << "Bucket is mounted. Unmounting...";
         const processReturn unmountReturn = m_cfManager.unmount();
         if (unmountReturn.errCode != 0)
         {
@@ -333,13 +337,13 @@ nx::sdk::Error Engine::validateMount()
 #if defined(_WIN32)
         for (int s = 0; s < maxWaitSecondsAfterMount; s++)
         {
-            if (!fs::exists(mountDir))
+            if (m_cfManager.isMounted())
             {
                 break;
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-        if (fs::exists(mountDir))
+        if (m_cfManager.isMounted())
         {
             return error(ErrorCode::internalError,
                          "Unmount failed - " + std::to_string(maxWaitSecondsAfterMount) + "s timeout reached.");
@@ -390,7 +394,7 @@ nx::sdk::Error Engine::validateMount()
                          "Unable to set file cache directory permission with error: " + errCode.message());
         }
     }
-
+    
     // generate cloudfuse config
     if (!m_cfManager.isInstalled())
     {
