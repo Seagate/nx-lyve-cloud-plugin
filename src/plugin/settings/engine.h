@@ -29,6 +29,9 @@ class Engine : public nx::sdk::analytics::Engine
 
     virtual nx::sdk::Result<const nx::sdk::ISettingsResponse *> settingsReceived() override;
     bool settingsChanged();
+    bool mount();
+    nx::sdk::Error validateMount();
+    nx::sdk::Error spawnMount();
 
   protected:
     virtual void doObtainDeviceAgent(nx::sdk::Result<nx::sdk::analytics::IDeviceAgent *> *outResult,
@@ -47,7 +50,9 @@ class Engine : public nx::sdk::analytics::Engine
   private:
     nx::sdk::analytics::Plugin *const m_plugin;
     ActiveSettingsBuilder m_activeSettingsBuilder;
-    CloudfuseMngr cfManager;
+    CloudfuseMngr m_cfManager;
+    std::map<std::string, std::string> m_prevSettings;
+    std::string m_passphrase;
 };
 
 } // namespace settings
