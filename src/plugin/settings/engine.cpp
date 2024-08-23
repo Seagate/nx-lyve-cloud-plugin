@@ -257,6 +257,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
 bool Engine::mount()
 {
     // generate the config passphrase
+    NX_PRINT << "Generating passphrase...";
     m_passphrase = generatePassphrase();
     if (m_passphrase == "")
     {
@@ -291,7 +292,6 @@ bool Engine::mount()
 
 std::string generatePassphrase()
 {
-    NX_PRINT << "Generating passphrase...";
     // Generate passphrase for config file
     unsigned char key[32]; // AES-256 key
     if (!RAND_bytes(key, sizeof(key)))
