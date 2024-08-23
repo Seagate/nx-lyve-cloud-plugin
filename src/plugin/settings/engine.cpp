@@ -337,7 +337,7 @@ nx::sdk::Error Engine::validateMount()
 #if defined(_WIN32)
         for (int s = 0; s < maxWaitSecondsAfterMount; s++)
         {
-            if (m_cfManager.isMounted())
+            if (!m_cfManager.isMounted())
             {
                 break;
             }
