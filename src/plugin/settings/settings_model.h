@@ -56,7 +56,8 @@ static const std::string kStatusBannerId = "connectionStatus";
 static const std::string kStatusSuccess = R"json(
         {
             "type": "Banner",
-            "name": ")json" + kStatusBannerId + R"json(",
+            "name": ")json" + kStatusBannerId +
+                                          R"json(",
             "icon": "info",
             "text": "Cloud storage connected successfully!"
         }
@@ -65,7 +66,8 @@ static const std::string kStatusSuccess = R"json(
 static const std::string kStatusFailure = R"json(
         {
             "type": "Banner",
-            "name": ")json" + kStatusBannerId + R"json(",
+            "name": ")json" + kStatusBannerId +
+                                          R"json(",
             "icon": "warning",
             "text": "Cloud storage connection failed!"
         }
