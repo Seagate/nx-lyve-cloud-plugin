@@ -136,42 +136,41 @@ void enableLogging(std::string iniDir)
     NX_PRINT << "cloudfuse Engine::enableLogging - plugin stderr logging file: " + stderrFilename;
 }
 
-bool Engine::processActiveSettings(Json::object *model, std::map<std::string, std::string> *values,
-                                   const std::vector<std::string> &settingIdsToUpdate) const
+bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
 {
-    NX_PRINT << "cloudfuse Engine::processActiveSettings";
-    Json::array items = (*model)[kItems].array_items();
-
-    auto activeSettingsGroupBoxIt = std::find_if(items.begin(), items.end(), [](Json &item) {
-        return item[kCaption].string_value() == kAdvancedSettingsGroupBoxCaption;
-    });
-
-    if (activeSettingsGroupBoxIt == items.cend())
-        return false;
-
-    Json activeSettingsItems = (*activeSettingsGroupBoxIt)[kItems];
-
-    std::vector<std::string> activeSettingNames = settingIdsToUpdate;
-    if (activeSettingNames.empty())
+    NX_PRINT << "cloudfuse Engine::updateModel";
+    
+    // prepare the new status item
+    auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
+    std::string error;
+    auto newStatus = Json::parse(statusJson, error);
+    if (error != "")
     {
-        for (const auto &item : activeSettingsItems.array_items())
-        {
-            if (item["type"].string_value() == "Button")
-                continue;
-
-            std::string name = item[kName].string_value();
-            activeSettingNames.push_back(name);
-        }
+        NX_PRINT << "Failed to parse status JSON with error: " << error;
+        return false;
+    }
+    
+    // find where to put it
+    auto items = (*model)[kItems];
+    auto itemsArray = items.array_items();
+    // find the status banner, if it's already present
+    auto statusBannerIt = std::find_if(itemsArray.begin(), itemsArray.end(),
+        [](Json &item) { return item[kName].string_value() == kStatusBannerId; });
+    // if the banner is not there, add it
+    if (statusBannerIt == itemsArray.end())
+    {
+        // add the status banner to the beginning of the list of items
+        itemsArray.insert(itemsArray.begin(), newStatus);
+    }
+    else
+    {
+        // update the status
+        *statusBannerIt = newStatus;
     }
 
-    for (const auto &settingId : activeSettingNames)
-        m_activeSettingsBuilder.updateSettings(settingId, &activeSettingsItems, values);
-
-    Json::array updatedActiveSettingsItems = activeSettingsItems.array_items();
-    Json::object updatedActiveGroupBox = activeSettingsGroupBoxIt->object_items();
-    updatedActiveGroupBox[kItems] = updatedActiveSettingsItems;
-    *activeSettingsGroupBoxIt = updatedActiveGroupBox;
-    (*model)[kItems] = items;
+    // write the updated array back into the model Json
+    // TODO: why do we have to do this?
+    (*model)[kItems] = itemsArray;
 
     return true;
 }
@@ -244,23 +243,22 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     if (mountRequired)
     {
         NX_PRINT << "Settings changed.";
-        if (!mount())
+        bool mountSuccessful = mount();
+        if (!mountSuccessful)
         {
             NX_PRINT << "Mount failed.";
+        }
+        // update the model so user can see mount status
+        if (!updateModel(&model, mountSuccessful))
+        {
+            // on failure, no changes will be written to the model
+            NX_PRINT << "Status message update failed!";
         }
     }
     else
     {
         NX_PRINT << "Settings have not changed.";
     }
-
-    // TODO: use this to update the model when validation succeeds (or fails)
-    // if (!processActiveSettings(&model, &values))
-    // {
-    //     std::string errorMessage = "Unable to process the active settings section";
-    //     NX_PRINT << errorMessage;
-    //     return error(ErrorCode::internalError, errorMessage);
-    // }
 
     // returning invalid JSON to the VMS will crash the server
     // validate JSON before sending.
@@ -527,14 +525,14 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
 
     std::map<std::string, std::string> values = toStdMap(shareToPtr(activeSettingChangedAction->settingsValues()));
 
-    if (!processActiveSettings(&model, &values, {settingId}))
-    {
-        std::string errorMessage = "Unable to process the active settings section";
-        NX_PRINT << errorMessage;
-        *outResult = error(ErrorCode::internalError, errorMessage);
+    // if (!updateModel(&model, &values, {settingId}))
+    // {
+    //     std::string errorMessage = "Unable to process the active settings section";
+    //     NX_PRINT << errorMessage;
+    //     *outResult = error(ErrorCode::internalError, errorMessage);
 
-        return;
-    }
+    //     return;
+    // }
 
     const auto settingsResponse = makePtr<SettingsResponse>();
     settingsResponse->setValues(makePtr<StringMap>(values));
