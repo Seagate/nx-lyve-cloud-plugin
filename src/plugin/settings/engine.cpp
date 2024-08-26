@@ -139,7 +139,7 @@ void enableLogging(std::string iniDir)
 bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
 {
     NX_PRINT << "cloudfuse Engine::updateModel";
-    
+
     // prepare the new status item
     auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
     std::string error;
@@ -149,13 +149,13 @@ bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
         NX_PRINT << "Failed to parse status JSON with error: " << error;
         return false;
     }
-    
+
     // find where to put it
     auto items = (*model)[kItems];
     auto itemsArray = items.array_items();
     // find the status banner, if it's already present
     auto statusBannerIt = std::find_if(itemsArray.begin(), itemsArray.end(),
-        [](Json &item) { return item[kName].string_value() == kStatusBannerId; });
+                                       [](Json &item) { return item[kName].string_value() == kStatusBannerId; });
     // if the banner is not there, add it
     if (statusBannerIt == itemsArray.end())
     {
