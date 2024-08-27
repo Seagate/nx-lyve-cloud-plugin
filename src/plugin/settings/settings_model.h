@@ -51,6 +51,101 @@ static const std::string kGermanCitiesSettingsModelPart = /*suppress newline*/ 1
 static const std::string kRegularSettingsModelPart2 = /*suppress newline*/ 1 + R"json(")json";
 // ------------------------------------------------------------------------------------------------
 
+// Enable this flag hide all but the credentials section
+// NOTE: enabling this will prevent the user from changing the default endpoint (kDefaultEndpoint)
+// Only set this flag true if you want to tie your users to a specific cloud storage endpoint
+static const bool credentialsOnly = false;
+
+// credentials
+static const std::string kKeyIdTextFieldId = "keyId";
+static const std::string kSecretKeyPasswordFieldId = "secretKey";
+static const std::string kCheckCredentialsButtonId = "checkCredentialsButton";
+static const std::string kCredentialGroupBox = R"json(
+        {
+            "type": "GroupBox",
+            "caption": "Credentials",
+            "items":
+            [
+                {
+                    "type": "TextField",
+                    "name": ")json" + kKeyIdTextFieldId +
+                                               R"json(",
+                    "caption": "Access Key ID",
+                    "description": "Cloud bucket access key ID",
+                    "defaultValue": "",
+                    "validationErrorMessage": "Access key ID must be >=16 alphanumeric characters (uppercase or 2-7).",
+                    "validationRegex": "^[A-Z1-9]{16,128}$"
+                },
+                {
+                    "type": "PasswordField",
+                    "name": ")json" + kSecretKeyPasswordFieldId +
+                                               R"json(",
+                    "caption": "Secret Key",
+                    "description": "Cloud bucket secret key",
+                    "defaultValue": "",
+                    "validationErrorMessage": "Secret key must be 32 or 40 alphanumeric-plus-slash characters",
+                    "validationRegex": "^[A-Za-z0-9\/+=]{32,128}$"
+                }
+            ]
+        })json";
+
+// advanced
+static const std::string kEndpointUrlTextFieldId = "endpointUrl";
+static const std::string kDefaultEndpoint = "https://s3.us-east-1.lyvecloud.seagate.com";
+static const std::string kBucketNameTextFieldId = "bucketName";
+static const std::string kAdvancedGroupBox = R"json(
+        {
+            "type": "GroupBox",
+            "caption": ")json" + kAdvancedSettingsGroupBoxCaption +
+                                             R"json(",
+            "items":
+            [
+                {
+                    "type": "TextField",
+                    "name": ")json" + kEndpointUrlTextFieldId +
+                                             R"json(",
+                    "caption": "Endpoint URL",
+                    "description": "Set a different endpoint (different region or service)",
+                    "defaultValue": ")json" + kDefaultEndpoint +
+                                             R"json(",
+                    "validationErrorMessage": "Endpoint must be a URL (begin with 'http[s]://').",
+                    "validationRegex": "(^$)|(^https?:\/\/.+$)",
+                    "validationRegexFlags": "i"
+                },
+                {
+                    "type": "TextField",
+                    "name": ")json" + kBucketNameTextFieldId +
+                                             R"json(",
+                    "caption": "Bucket Name",
+                    "description": "Specify a bucket name (leave empty to let the system automatically detect your bucket)",
+                    "defaultValue": "",
+                    "validationErrorMessage": "Bucket name can only contain lowercase letters, numbers, dashes, and dots.",
+                    "validationRegex": "^[-.a-z0-9]*$"
+                }
+            ]
+        })json";
+
+static const std::string kPluginWebsiteLink = R"json(
+        {
+            "type": "Link",
+            "caption": "Plugin Website",
+            "url": "https://github.com/Seagate/nx-lyve-cloud-plugin"
+        })json";
+
+// gather settings items together
+static const std::string kSettingsItems =
+    kCredentialGroupBox + (credentialsOnly ? "" : ("," + kAdvancedGroupBox + "," + kPluginWebsiteLink));
+
+// top-level settings model
+static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
+{
+    "type": "Settings",
+    "items":
+    [)json" + kSettingsItems + R"json(
+    ]
+}
+)json";
+
 // status
 static const std::string kStatusBannerId = "connectionStatus";
 static const std::string kStatusSuccess = R"json(
@@ -62,7 +157,6 @@ static const std::string kStatusSuccess = R"json(
             "text": "Cloud storage connected successfully!"
         }
 )json";
-
 static const std::string kStatusFailure = R"json(
         {
             "type": "Banner",
@@ -71,86 +165,6 @@ static const std::string kStatusFailure = R"json(
             "icon": "warning",
             "text": "Cloud storage connection failed!"
         }
-)json";
-
-// credentials
-static const std::string kKeyIdTextFieldId = "keyId";
-static const std::string kSecretKeyPasswordFieldId = "secretKey";
-static const std::string kCheckCredentialsButtonId = "checkCredentialsButton";
-// advanced
-static const std::string kEndpointUrlTextFieldId = "endpointUrl";
-static const std::string kDefaultEndpoint = "https://s3.us-east-1.lyvecloud.seagate.com";
-static const std::string kBucketNameTextFieldId = "bucketName";
-// top-level settings model
-static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
-{
-    "type": "Settings",
-    "items":
-    [
-        {
-            "type": "GroupBox",
-            "caption": "Credentials",
-            "items":
-            [
-                {
-                    "type": "TextField",
-                    "name": ")json" + kKeyIdTextFieldId +
-                                                R"json(",
-                    "caption": "Access Key ID",
-                    "description": "Cloud bucket access key ID",
-                    "defaultValue": "",
-                    "validationErrorMessage": "Access key ID must be >=16 alphanumeric characters (uppercase or 2-7).",
-                    "validationRegex": "^[A-Z1-9]{16,128}$"
-                },
-                {
-                    "type": "PasswordField",
-                    "name": ")json" + kSecretKeyPasswordFieldId +
-                                                R"json(",
-                    "caption": "Secret Key",
-                    "description": "Cloud bucket secret key",
-                    "defaultValue": "",
-                    "validationErrorMessage": "Secret key must be 32 or 40 alphanumeric-plus-slash characters",
-                    "validationRegex": "^[A-Za-z0-9\/+=]{32,128}$"
-                }
-            ]
-        },
-        {
-            "type": "GroupBox",
-            "caption": ")json" + kAdvancedSettingsGroupBoxCaption +
-                                                R"json(",
-            "items":
-            [
-                {
-                    "type": "TextField",
-                    "name": ")json" + kEndpointUrlTextFieldId +
-                                                R"json(",
-                    "caption": "Endpoint URL",
-                    "description": "Set a different endpoint (different region or service)",
-                    "defaultValue": ")json" + kDefaultEndpoint +
-                                                R"json(",
-                    "validationErrorMessage": "Endpoint must be a URL (begin with 'http[s]://').",
-                    "validationRegex": "(^$)|(^https?:\/\/.+$)",
-                    "validationRegexFlags": "i"
-                },
-                {
-                    "type": "TextField",
-                    "name": ")json" + kBucketNameTextFieldId +
-                                                R"json(",
-                    "caption": "Bucket Name",
-                    "description": "Specify a bucket name (leave empty to let the system automatically detect your bucket)",
-                    "defaultValue": "",
-                    "validationErrorMessage": "Bucket name can only contain lowercase letters, numbers, dashes, and dots.",
-                    "validationRegex": "^[-.a-z0-9]*$"
-                }
-            ]
-        },
-        {
-            "type": "Link",
-            "caption": "Plugin Website",
-            "url": "https://github.com/Seagate/nx-lyve-cloud-plugin"
-        }
-    ]
-}
 )json";
 
 } // namespace settings

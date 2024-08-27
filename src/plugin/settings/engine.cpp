@@ -200,23 +200,26 @@ bool Engine::settingsChanged()
     {
         return true;
     }
-    // endpoint
-    if (m_prevSettings[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
+    if (!credentialsOnly)
     {
-        // if they're different, but both amount to the same thing, then there is no effective change
-        bool prevIsDefault = m_prevSettings[kEndpointUrlTextFieldId] == kDefaultEndpoint ||
-                             m_prevSettings[kEndpointUrlTextFieldId] == "";
-        bool newIsDefault =
-            newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
-        if (!prevIsDefault || !newIsDefault)
+        // endpoint
+        if (m_prevSettings[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
+        {
+            // if they're different, but both amount to the same thing, then there is no effective change
+            bool prevIsDefault = m_prevSettings[kEndpointUrlTextFieldId] == kDefaultEndpoint ||
+                                 m_prevSettings[kEndpointUrlTextFieldId] == "";
+            bool newIsDefault =
+                newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
+            if (!prevIsDefault || !newIsDefault)
+            {
+                return true;
+            }
+        }
+        // bucket name
+        if (m_prevSettings[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
         {
             return true;
         }
-    }
-    // bucket name
-    if (m_prevSettings[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
-    {
-        return true;
     }
     // nothing we care about changed
     return false;
@@ -343,10 +346,15 @@ nx::sdk::Error Engine::validateMount()
     std::map<std::string, std::string> values = currentSettings();
     std::string keyId = values[kKeyIdTextFieldId];
     std::string secretKey = values[kSecretKeyPasswordFieldId];
-    std::string endpointUrl = values[kEndpointUrlTextFieldId];
     std::string endpointRegion = "us-east-1";
-    std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
-                                                             // to select first available bucket
+    std::string endpointUrl = kDefaultEndpoint;
+    std::string bucketName = "";
+    if (!credentialsOnly)
+    {
+        endpointUrl = values[kEndpointUrlTextFieldId];
+        bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
+                                                     // to select first available bucket
+    }
     std::string mountDir = m_cfManager.getMountDir();
     std::string fileCacheDir = m_cfManager.getFileCacheDir();
     // Unmount before mounting
