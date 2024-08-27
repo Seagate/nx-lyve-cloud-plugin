@@ -51,6 +51,29 @@ static const std::string kGermanCitiesSettingsModelPart = /*suppress newline*/ 1
 static const std::string kRegularSettingsModelPart2 = /*suppress newline*/ 1 + R"json(")json";
 // ------------------------------------------------------------------------------------------------
 
+// status
+static const std::string kStatusBannerId = "connectionStatus";
+static const std::string kStatusSuccess = R"json(
+        {
+            "type": "Banner",
+            "name": ")json" + kStatusBannerId +
+                                          R"json(",
+            "icon": "info",
+            "text": "Cloud storage connected successfully!"
+        }
+)json";
+
+static const std::string kStatusFailure = R"json(
+        {
+            "type": "Banner",
+            "name": ")json" + kStatusBannerId +
+                                          R"json(",
+            "icon": "warning",
+            "text": "Cloud storage connection failed!"
+        }
+)json";
+
+// credentials
 static const std::string kKeyIdTextFieldId = "keyId";
 static const std::string kSecretKeyPasswordFieldId = "secretKey";
 static const std::string kCheckCredentialsButtonId = "checkCredentialsButton";
@@ -58,9 +81,8 @@ static const std::string kCheckCredentialsButtonId = "checkCredentialsButton";
 static const std::string kEndpointUrlTextFieldId = "endpointUrl";
 static const std::string kDefaultEndpoint = "https://s3.us-east-1.lyvecloud.seagate.com";
 static const std::string kBucketNameTextFieldId = "bucketName";
-
-// ------------------------------------------------------------------------------------------------
-static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json("
+// top-level settings model
+static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
 {
     "type": "Settings",
     "items":

@@ -44,8 +44,7 @@ class Engine : public nx::sdk::analytics::Engine
         const nx::sdk::IActiveSettingChangedAction *activeSettingChangedAction) override;
 
   private:
-    bool processActiveSettings(nx::kit::Json::object *model, std::map<std::string, std::string> *values,
-                               const std::vector<std::string> &settingIdsToUpdate = {}) const;
+    bool updateModel(nx::kit::Json::object *model, bool mountSuccessful) const;
 
   private:
     nx::sdk::analytics::Plugin *const m_plugin;
