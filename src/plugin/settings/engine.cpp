@@ -525,15 +525,6 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
 
     std::map<std::string, std::string> values = toStdMap(shareToPtr(activeSettingChangedAction->settingsValues()));
 
-    // if (!updateModel(&model, &values, {settingId}))
-    // {
-    //     std::string errorMessage = "Unable to process the active settings section";
-    //     NX_PRINT << errorMessage;
-    //     *outResult = error(ErrorCode::internalError, errorMessage);
-
-    //     return;
-    // }
-
     const auto settingsResponse = makePtr<SettingsResponse>();
     settingsResponse->setValues(makePtr<StringMap>(values));
     settingsResponse->setModel(makePtr<String>(Json(model).dump()));
