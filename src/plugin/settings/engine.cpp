@@ -488,9 +488,7 @@ nx::sdk::Error Engine::spawnMount()
 #endif
     if (mountRet.errCode != 0)
     {
-        std::string errorMessage = "Unable to launch mount with error: " + mountRet.output;
-        NX_PRINT << errorMessage;
-        return error(ErrorCode::internalError, errorMessage);
+        return error(ErrorCode::internalError, "Unable to launch mount with error: " + mountRet.output);
     }
 
     // Mount might not show up immediately, so wait for mount to appear
@@ -505,9 +503,7 @@ nx::sdk::Error Engine::spawnMount()
 
     if (!m_cfManager.isMounted())
     {
-        std::string errorMessage = "Cloudfuse was not able to successfully mount";
-        NX_PRINT << errorMessage;
-        return error(ErrorCode::internalError, errorMessage);
+        return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
     }
 
     return Error(ErrorCode::noError, nullptr);
