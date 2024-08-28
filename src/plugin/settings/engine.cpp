@@ -22,6 +22,7 @@
 
 #include "cloudfuse_helper.h"
 
+// #define NX_PRINT_PREFIX (this->logUtils.printPrefix)
 #include <nx/kit/debug.h>
 #include <nx/kit/ini_config.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
