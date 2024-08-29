@@ -43,9 +43,11 @@ using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
 
-static int maxWaitSecondsAfterMount = 10;
+static std::string buildCapabilities();
+static std::string generatePassphrase();
+static void enableLogging(std::string iniDir);
 
-void enableLogging(std::string iniDir);
+static int maxWaitSecondsAfterMount = 10;
 
 Engine::Engine(Plugin *plugin)
     : nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()), m_plugin(plugin), m_cfManager()
@@ -85,23 +87,6 @@ void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDevic
     *outResult = new DeviceAgent(this, deviceInfo);
 }
 
-// functions are not "hoisted", so we need "prototypes"
-std::string generatePassphrase();
-
-static std::string buildCapabilities()
-{
-    std::string capabilities;
-
-    if (ini().deviceDependent)
-        capabilities += "|deviceDependent";
-
-    // Delete first '|', if any.
-    if (!capabilities.empty() && capabilities.at(0) == '|')
-        capabilities.erase(0, 1);
-
-    return capabilities;
-}
-
 std::string Engine::manifestString() const
 {
     NX_PRINT << "cloudfuse Engine::manifestString";
@@ -116,26 +101,6 @@ std::string Engine::manifestString() const
 )json";
 
     return result;
-}
-
-void enableLogging(std::string iniDir)
-{
-    // enable logging by touching stdout and stderr redirect files
-    if (!fs::is_directory(iniDir))
-    {
-        fs::create_directories(iniDir);
-    }
-    const std::string processName = utils::getProcessName();
-    const std::string stdoutFilename = iniDir + processName + "_stdout.log";
-    const std::string stderrFilename = iniDir + processName + "_stderr.log";
-    if (!fs::exists(stdoutFilename) || !fs::exists(stderrFilename))
-    {
-        NX_PRINT << "cloudfuse Engine::enableLogging - creating files";
-        std::ofstream stdoutFile(stdoutFilename);
-        std::ofstream stderrFile(stderrFilename);
-        // the service will need to be restarted for logging to actually begin
-    }
-    NX_PRINT << "cloudfuse Engine::enableLogging - plugin stderr logging file: " + stderrFilename;
 }
 
 bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
@@ -317,29 +282,6 @@ bool Engine::mount()
     }
 
     return true;
-}
-
-std::string generatePassphrase()
-{
-    // Generate passphrase for config file
-    unsigned char key[32]; // AES-256 key
-    if (!RAND_bytes(key, sizeof(key)))
-    {
-        return "";
-    }
-    // Need to encode passphrase to base64 to pass to cloudfuse
-    BIO *bmem, *b64;
-    BUF_MEM *bptr;
-
-    b64 = BIO_new(BIO_f_base64());
-    bmem = BIO_new(BIO_s_mem());
-    b64 = BIO_push(b64, bmem);
-    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-    BIO_write(b64, key, 32);
-    BIO_flush(b64);
-    BIO_get_mem_ptr(b64, &bptr);
-
-    return std::string(bptr->data, bptr->length);
 }
 
 nx::sdk::Error Engine::validateMount()
@@ -550,6 +492,65 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
     response->setActionResponse(actionResponse);
 
     *outResult = response.releasePtr();
+}
+
+// static helper functions
+
+void enableLogging(std::string iniDir)
+{
+    // enable logging by touching stdout and stderr redirect files
+    if (!fs::is_directory(iniDir))
+    {
+        fs::create_directories(iniDir);
+    }
+    const std::string processName = utils::getProcessName();
+    const std::string stdoutFilename = iniDir + processName + "_stdout.log";
+    const std::string stderrFilename = iniDir + processName + "_stderr.log";
+    if (!fs::exists(stdoutFilename) || !fs::exists(stderrFilename))
+    {
+        NX_PRINT << "cloudfuse Engine::enableLogging - creating files";
+        std::ofstream stdoutFile(stdoutFilename);
+        std::ofstream stderrFile(stderrFilename);
+        // the service will need to be restarted for logging to actually begin
+    }
+    NX_PRINT << "cloudfuse Engine::enableLogging - plugin stderr logging file: " + stderrFilename;
+}
+
+std::string buildCapabilities()
+{
+    std::string capabilities;
+
+    if (ini().deviceDependent)
+        capabilities += "|deviceDependent";
+
+    // Delete first '|', if any.
+    if (!capabilities.empty() && capabilities.at(0) == '|')
+        capabilities.erase(0, 1);
+
+    return capabilities;
+}
+
+std::string generatePassphrase()
+{
+    // Generate passphrase for config file
+    unsigned char key[32]; // AES-256 key
+    if (!RAND_bytes(key, sizeof(key)))
+    {
+        return "";
+    }
+    // Need to encode passphrase to base64 to pass to cloudfuse
+    BIO *bmem, *b64;
+    BUF_MEM *bptr;
+
+    b64 = BIO_new(BIO_f_base64());
+    bmem = BIO_new(BIO_s_mem());
+    b64 = BIO_push(b64, bmem);
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    BIO_write(b64, key, 32);
+    BIO_flush(b64);
+    BIO_get_mem_ptr(b64, &bptr);
+
+    return std::string(bptr->data, bptr->length);
 }
 
 } // namespace settings
