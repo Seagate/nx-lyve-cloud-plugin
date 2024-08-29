@@ -77,7 +77,6 @@ attr_cache:
 s3storage:
   bucket-name: { BUCKET_NAME }
   endpoint: { ENDPOINT }
-  region: { AWS_REGION }
   subdirectory: )" + systemName + "\n";
 
     std::string homeEnv;
@@ -173,8 +172,8 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
     }
 }
 
-processReturn CloudfuseMngr::genS3Config(const std::string region, const std::string endpoint,
-                                         const std::string bucketName, const std::string passphrase)
+processReturn CloudfuseMngr::genS3Config(const std::string endpoint, const std::string bucketName,
+                                         const std::string passphrase)
 {
     const std::string configArg = "--config-file=" + templateFile;
     const std::string outputArg = "--output-file=" + configFile;
@@ -190,9 +189,7 @@ processReturn CloudfuseMngr::genS3Config(const std::string region, const std::st
 
     const std::string bucketNameEnv = "BUCKET_NAME=" + bucketName;
     const std::string endpointEnv = "ENDPOINT=" + endpoint;
-    const std::string regionEnv = "AWS_REGION=" + region;
-    char *const envp[] = {const_cast<char *>(bucketNameEnv.c_str()), const_cast<char *>(endpointEnv.c_str()),
-                          const_cast<char *>(regionEnv.c_str()), NULL};
+    char *const envp[] = {const_cast<char *>(bucketNameEnv.c_str()), const_cast<char *>(endpointEnv.c_str()), NULL};
 
     return spawnProcess(argv, envp);
 }
