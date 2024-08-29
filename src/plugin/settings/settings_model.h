@@ -8,48 +8,8 @@
 namespace settings
 {
 
-static const std::string kCaption = "caption";
-static const std::string kSections = "sections";
 static const std::string kName = "name";
-static const std::string kRange = "range";
 static const std::string kItems = "items";
-static const std::string kIsActive = "isActive";
-static const std::string kMinValue = "minValue";
-static const std::string kMaxValue = "maxValue";
-
-// ------------------------------------------------------------------------------------------------
-// TODO: rip out these old stub settings model variables
-static const std::string kRegularSettingsModelOption = "regular";
-static const std::string kAlternativeSettingsModelOption = "alternative";
-static const std::string kSettingsModelSettings = "settingsModelComboBox";
-static const std::string kCitySelector = "languageSelectorSettings";
-static const std::string kEnglishOption = "English";
-static const std::string kGermanOption = "German";
-static const std::string kActiveSettingsSectionCaption = "Active settings section";
-static const std::string kAdvancedSettingsGroupBoxCaption = "Advanced Settings";
-static const std::string kActiveComboBoxId = "activeComboBox";
-static const std::string kAdditionalComboBoxId = "additionalComboBox";
-static const std::string kShowAdditionalComboBoxValue = "Show additional ComboBox";
-static const std::string kAdditionalComboBoxValue = "Value 1";
-static const std::string kActiveCheckBoxId = "activeCheckBox";
-static const std::string kAdditionalCheckBoxId = "additionalCheckBox";
-static const std::string kShowAdditionalCheckBoxValue = "true";
-static const std::string kAdditionalCheckBoxValue = "false";
-static const std::string kActiveRadioButtonGroupId = "activeRadioButtonGroup";
-static const std::string kShowAdditionalRadioButtonValue = "Show something";
-static const std::string kHideAdditionalRadioButtonValue = "Hide me";
-static const std::string kDefaultActiveRadioButtonGroupValue = "Some value";
-static const std::string kActiveMinValueId = "activeMinValue";
-static const std::string kActiveMaxValueId = "activeMaxValue";
-static const std::string kShowUrlButtonId = "showUrlButton";
-static const std::string kEnginePluginSideSetting = "testPluginSideSpinBox";
-static const std::string kEnginePluginSideSettingValue = "42";
-static const std::string kAlternativeSettingsModel = /*suppress newline*/ 1 + (const char *)R"json(")json";
-static const std::string kRegularSettingsModelPart1 = /*suppress newline*/ 1 + R"json()json";
-static const std::string kEnglishCitiesSettingsModelPart = /*suppress newline*/ 1 + R"json()json";
-static const std::string kGermanCitiesSettingsModelPart = /*suppress newline*/ 1 + R"json()json";
-static const std::string kRegularSettingsModelPart2 = /*suppress newline*/ 1 + R"json(")json";
-// ------------------------------------------------------------------------------------------------
 
 // Enable this flag hide all but the credentials section
 // NOTE: enabling this will prevent the user from changing the default endpoint (kDefaultEndpoint)
@@ -96,8 +56,7 @@ static const std::string kBucketNameTextFieldId = "bucketName";
 static const std::string kAdvancedGroupBox = R"json(
         {
             "type": "GroupBox",
-            "caption": ")json" + kAdvancedSettingsGroupBoxCaption +
-                                             R"json(",
+            "caption": "Advanced Settings",
             "items":
             [
                 {

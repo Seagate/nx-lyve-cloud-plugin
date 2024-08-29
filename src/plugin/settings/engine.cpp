@@ -183,8 +183,6 @@ void Engine::getPluginSideSettings(Result<const ISettingsResponse *> *outResult)
 {
     NX_PRINT << "cloudfuse Engine::getPluginSideSettings";
     auto settingsResponse = new SettingsResponse();
-    settingsResponse->setValue(kEnginePluginSideSetting, kEnginePluginSideSettingValue);
-
     *outResult = settingsResponse;
 }
 
