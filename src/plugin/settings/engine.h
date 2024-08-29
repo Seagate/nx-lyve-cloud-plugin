@@ -3,9 +3,9 @@
 
 #pragma once
 
+#include <nx/kit/json.h>
 #include <nx/sdk/analytics/helpers/engine.h>
 #include <nx/sdk/analytics/helpers/plugin.h>
-#include <nx/kit/json.h>
 
 #include <cloudfuse/child_process.h>
 
