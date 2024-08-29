@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include "active_settings_builder.h"
-
 #include <nx/sdk/analytics/helpers/engine.h>
 #include <nx/sdk/analytics/helpers/plugin.h>
+#include <nx/kit/json.h>
 
 #include <cloudfuse/child_process.h>
 
@@ -44,11 +43,10 @@ class Engine : public nx::sdk::analytics::Engine
     bool settingsChanged();
     nx::sdk::Error validateMount();
     nx::sdk::Error spawnMount();
-    bool updateModel(nx::kit::Json::object *model, bool mountSuccessful) const;
+    bool updateModel(nx::kit::detail::json11::Json::object *model, bool mountSuccessful) const;
 
   private:
     nx::sdk::analytics::Plugin *const m_plugin;
-    ActiveSettingsBuilder m_activeSettingsBuilder;
     CloudfuseMngr m_cfManager;
     std::map<std::string, std::string> m_prevSettings;
     std::string m_passphrase;

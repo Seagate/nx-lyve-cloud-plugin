@@ -14,8 +14,6 @@
 #include <string>
 #include <thread>
 
-#include "actions.h"
-#include "active_settings_rules.h"
 #include "device_agent.h"
 #include "settings_model.h"
 #include "stub_analytics_plugin_settings_ini.h"
@@ -40,6 +38,7 @@ namespace settings
 using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
+using namespace nx::kit::detail::json11;
 
 static std::string buildCapabilities();
 static std::string generatePassphrase();
@@ -51,23 +50,7 @@ static int maxWaitSecondsAfterMount = 10;
 Engine::Engine(Plugin *plugin)
     : nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()), m_plugin(plugin), m_cfManager()
 {
-    // logging will begin the _next_ time the mediaserver starts
-    enableLogging(IniConfig::iniFilesDir());
     NX_PRINT << "cloudfuse Engine::Engine";
-
-    for (const auto &entry : kActiveSettingsRules)
-    {
-        const ActiveSettingsBuilder::ActiveSettingKey key = entry.first;
-        m_activeSettingsBuilder.addRule(key.activeSettingName, key.activeSettingValue,
-                                        /*activeSettingHandler*/ entry.second);
-    }
-
-    for (const auto &entry : kDefaultActiveSettingsRules)
-    {
-        m_activeSettingsBuilder.addDefaultRule(
-            /*activeSettingName*/ entry.first,
-            /*activeSettingHandler*/ entry.second);
-    }
 }
 
 Engine::~Engine()
@@ -78,6 +61,8 @@ Engine::~Engine()
     {
         NX_PRINT << "cloudfuse Engine::~Engine failed to unmount cloudfuse with error: " + unmountRet.output;
     }
+    // enable logging for the _next_ time the mediaserver starts
+    enableLogging(IniConfig::iniFilesDir());
 }
 
 std::string Engine::manifestString() const
@@ -227,12 +212,8 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
     settingsResponse->setValues(makePtr<StringMap>(values));
     settingsResponse->setModel(makePtr<String>(Json(modelObject).dump()));
 
-    const nx::sdk::Ptr<nx::sdk::ActionResponse> actionResponse =
-        generateActionResponse(settingId, activeSettingChangedAction->params());
-
     auto response = makePtr<ActiveSettingChangedResponse>();
     response->setSettingsResponse(settingsResponse);
-    response->setActionResponse(actionResponse);
 
     *outResult = response.releasePtr();
 }

@@ -12,8 +12,6 @@
 #include <nx/sdk/helpers/error.h>
 #include <utils.h>
 
-#include "actions.h"
-#include "active_settings_rules.h"
 #include "settings_model.h"
 #include "stub_analytics_plugin_settings_ini.h"
 
@@ -27,19 +25,6 @@ using namespace nx::sdk::analytics;
 DeviceAgent::DeviceAgent(Engine *engine, const nx::sdk::IDeviceInfo *deviceInfo)
     : ConsumingDeviceAgent(deviceInfo, NX_DEBUG_ENABLE_OUTPUT, engine->plugin()->instanceId()), m_engine(engine)
 {
-    for (const auto &entry : kActiveSettingsRules)
-    {
-        const ActiveSettingsBuilder::ActiveSettingKey key = entry.first;
-        m_activeSettingsBuilder.addRule(key.activeSettingName, key.activeSettingValue,
-                                        /*activeSettingHandler*/ entry.second);
-    }
-
-    for (const auto &entry : kDefaultActiveSettingsRules)
-    {
-        m_activeSettingsBuilder.addDefaultRule(
-            /*activeSettingName*/ entry.first,
-            /*activeSettingHandler*/ entry.second);
-    }
 }
 
 DeviceAgent::~DeviceAgent()
@@ -143,8 +128,6 @@ void DeviceAgent::doGetSettingsOnActiveSettingChange(Result<const IActiveSetting
     Json activeSettingsItems = (*activeSettingsSectionIt)[kItems];
     std::map<std::string, std::string> values = toStdMap(shareToPtr(activeSettingChangedAction->settingsValues()));
 
-    m_activeSettingsBuilder.updateSettings(settingId, &activeSettingsItems, &values);
-
     Json::array updatedActiveSettingsItems = activeSettingsItems.array_items();
     Json::object updatedActiveSection = activeSettingsSectionIt->object_items();
     updatedActiveSection[kItems] = updatedActiveSettingsItems;
@@ -155,12 +138,8 @@ void DeviceAgent::doGetSettingsOnActiveSettingChange(Result<const IActiveSetting
     settingsResponse->setValues(makePtr<StringMap>(values));
     settingsResponse->setModel(makePtr<String>(Json(model).dump()));
 
-    const nx::sdk::Ptr<nx::sdk::ActionResponse> actionResponse =
-        generateActionResponse(settingId, activeSettingChangedAction->params());
-
     auto response = makePtr<ActiveSettingChangedResponse>();
     response->setSettingsResponse(settingsResponse);
-    response->setActionResponse(actionResponse);
 
     *outResult = response.releasePtr();
 }
@@ -182,11 +161,6 @@ void DeviceAgent::processActiveSettings(nx::kit::Json *inOutSettingsModel,
     {
         if (item[kIsActive].bool_value())
             activeSettingNames.push_back(item[kName].string_value());
-    }
-
-    for (const std::string &activeSettingName : activeSettingNames)
-    {
-        m_activeSettingsBuilder.updateSettings(activeSettingName, &activeSettingsItems, inOutSettingsValues);
     }
 
     Json::array updatedActiveSettingsItems = activeSettingsItems.array_items();
