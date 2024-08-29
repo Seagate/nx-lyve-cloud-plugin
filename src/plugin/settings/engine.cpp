@@ -220,6 +220,20 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
 
 bool Engine::settingsChanged()
 {
+    // have the settings changed?
+    std::map<std::string, std::string> newValues = currentSettings();
+    if (newValues == m_prevSettings)
+    {
+        return false;
+    }
+
+    // check if settings are empty
+    if (newValues[kKeyIdTextFieldId] == "" && newValues[kSecretKeyPasswordFieldId] == "")
+    {
+        NX_PRINT << "Settings are empty. Ignoring...";
+        return false;
+    }
+
     // If cloudfuse is not mounted and settings are the same, then return true so
     // it tries to mount again.
     if (!m_cfManager.isMounted())
@@ -227,11 +241,6 @@ bool Engine::settingsChanged()
         return true;
     }
 
-    std::map<std::string, std::string> newValues = currentSettings();
-    if (newValues == m_prevSettings)
-    {
-        return false;
-    }
     // we only really care about certain values
     // key ID
     if (m_prevSettings[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])

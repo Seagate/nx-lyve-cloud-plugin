@@ -34,11 +34,6 @@ class DeviceAgent : public nx::sdk::analytics::ConsumingDeviceAgent
         const nx::sdk::IActiveSettingChangedAction *activeSettingChangedAction) override;
 
   private:
-    void dumpStringMap(const char *prefix, const char *appendix, const nx::sdk::IStringMap *stringMap) const;
-
-    void dumpActiveSettingChangedAction(const nx::sdk::IActiveSettingChangedAction *activeSettingChangedAction) const;
-
-  private:
     void processActiveSettings(nx::kit::Json *inOutSettingModel, std::map<std::string, std::string> *inOutSettingValue);
 
   private:
