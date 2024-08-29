@@ -10,7 +10,6 @@
 #include <nx/kit/utils.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
 #include <nx/sdk/helpers/error.h>
-#include <utils.h>
 
 #include "settings_model.h"
 #include "stub_analytics_plugin_settings_ini.h"

@@ -24,7 +24,6 @@
 #include <nx/kit/ini_config.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
 #include <nx/sdk/helpers/error.h>
-#include <utils.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -190,30 +189,6 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
                                                 const IActiveSettingChangedAction *activeSettingChangedAction)
 {
     NX_PRINT << "cloudfuse Engine::doGetSettingsOnActiveSettingChange";
-    std::string parseError;
-    Json model = Json::parse(activeSettingChangedAction->settingsModel(), parseError);
-    if (parseError != "")
-    {
-        std::string errorMessage = "Failed to parse activeSettingChangedAction model JSON. Here's why: " + parseError;
-        NX_PRINT << errorMessage;
-        *outResult = error(ErrorCode::internalError, errorMessage);
-        return;
-    }
-
-    Json::object modelObject = model.object_items();
-
-    const std::string settingId(activeSettingChangedAction->activeSettingName());
-
-    std::map<std::string, std::string> values = toStdMap(shareToPtr(activeSettingChangedAction->settingsValues()));
-
-    const auto settingsResponse = makePtr<SettingsResponse>();
-    settingsResponse->setValues(makePtr<StringMap>(values));
-    settingsResponse->setModel(makePtr<String>(Json(modelObject).dump()));
-
-    auto response = makePtr<ActiveSettingChangedResponse>();
-    response->setSettingsResponse(settingsResponse);
-
-    *outResult = response.releasePtr();
 }
 
 bool Engine::settingsChanged()
