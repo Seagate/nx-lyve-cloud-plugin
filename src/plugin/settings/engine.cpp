@@ -22,6 +22,8 @@
 
 #include "cloudfuse_helper.h"
 
+// TODO: get NX_PRINT_PREFIX working with non-member helper functions
+// #define NX_PRINT_PREFIX (this->logUtils.printPrefix)
 #include <nx/kit/debug.h>
 #include <nx/kit/ini_config.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
@@ -200,23 +202,26 @@ bool Engine::settingsChanged()
     {
         return true;
     }
-    // endpoint
-    if (m_prevSettings[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
+    if (!credentialsOnly)
     {
-        // if they're different, but both amount to the same thing, then there is no effective change
-        bool prevIsDefault = m_prevSettings[kEndpointUrlTextFieldId] == kDefaultEndpoint ||
-                             m_prevSettings[kEndpointUrlTextFieldId] == "";
-        bool newIsDefault =
-            newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
-        if (!prevIsDefault || !newIsDefault)
+        // endpoint
+        if (m_prevSettings[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
+        {
+            // if they're different, but both amount to the same thing, then there is no effective change
+            bool prevIsDefault = m_prevSettings[kEndpointUrlTextFieldId] == kDefaultEndpoint ||
+                                 m_prevSettings[kEndpointUrlTextFieldId] == "";
+            bool newIsDefault =
+                newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
+            if (!prevIsDefault || !newIsDefault)
+            {
+                return true;
+            }
+        }
+        // bucket name
+        if (m_prevSettings[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
         {
             return true;
         }
-    }
-    // bucket name
-    if (m_prevSettings[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
-    {
-        return true;
     }
     // nothing we care about changed
     return false;
@@ -343,9 +348,14 @@ nx::sdk::Error Engine::validateMount()
     std::map<std::string, std::string> values = currentSettings();
     std::string keyId = values[kKeyIdTextFieldId];
     std::string secretKey = values[kSecretKeyPasswordFieldId];
-    std::string endpointUrl = values[kEndpointUrlTextFieldId];
-    std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
-                                                             // to select first available bucket
+    std::string endpointUrl = kDefaultEndpoint;
+    std::string bucketName = "";
+    if (!credentialsOnly)
+    {
+        endpointUrl = values[kEndpointUrlTextFieldId];
+        bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
+                                                     // to select first available bucket
+    }
     std::string mountDir = m_cfManager.getMountDir();
     std::string fileCacheDir = m_cfManager.getFileCacheDir();
     // Unmount before mounting
@@ -478,9 +488,7 @@ nx::sdk::Error Engine::spawnMount()
 #endif
     if (mountRet.errCode != 0)
     {
-        std::string errorMessage = "Unable to launch mount with error: " + mountRet.output;
-        NX_PRINT << errorMessage;
-        return error(ErrorCode::internalError, errorMessage);
+        return error(ErrorCode::internalError, "Unable to launch mount with error: " + mountRet.output);
     }
 
     // Mount might not show up immediately, so wait for mount to appear
@@ -495,9 +503,7 @@ nx::sdk::Error Engine::spawnMount()
 
     if (!m_cfManager.isMounted())
     {
-        std::string errorMessage = "Cloudfuse was not able to successfully mount";
-        NX_PRINT << errorMessage;
-        return error(ErrorCode::internalError, errorMessage);
+        return error(ErrorCode::internalError, "Cloudfuse was not able to successfully mount");
     }
 
     return Error(ErrorCode::noError, nullptr);
@@ -517,7 +523,16 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
 {
     NX_PRINT << "cloudfuse Engine::doGetSettingsOnActiveSettingChange";
     std::string parseError;
-    Json::object model = Json::parse(activeSettingChangedAction->settingsModel(), parseError).object_items();
+    Json model = Json::parse(activeSettingChangedAction->settingsModel(), parseError);
+    if (parseError != "")
+    {
+        std::string errorMessage = "Failed to parse activeSettingChangedAction model JSON. Here's why: " + parseError;
+        NX_PRINT << errorMessage;
+        *outResult = error(ErrorCode::internalError, errorMessage);
+        return;
+    }
+
+    Json::object modelObject = model.object_items();
 
     const std::string settingId(activeSettingChangedAction->activeSettingName());
 
@@ -525,7 +540,7 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
 
     const auto settingsResponse = makePtr<SettingsResponse>();
     settingsResponse->setValues(makePtr<StringMap>(values));
-    settingsResponse->setModel(makePtr<String>(Json(model).dump()));
+    settingsResponse->setModel(makePtr<String>(Json(modelObject).dump()));
 
     const nx::sdk::Ptr<nx::sdk::ActionResponse> actionResponse =
         generateActionResponse(settingId, activeSettingChangedAction->params());

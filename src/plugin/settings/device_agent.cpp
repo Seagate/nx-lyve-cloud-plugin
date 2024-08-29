@@ -5,6 +5,7 @@
 
 #include <algorithm>
 
+#define NX_PRINT_PREFIX (this->logUtils.printPrefix)
 #include <nx/kit/debug.h>
 #include <nx/kit/utils.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
