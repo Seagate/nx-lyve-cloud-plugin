@@ -11,8 +11,7 @@ This release includes all features planned for the 1.0.0 release of the nx-lyve-
 - [#47](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/47) Allow config template to be modified by user
 - [#52](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/52) Provide status feedback directly in settings UI
 - [#45](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/45) Write cloudfuse log output to a file (~/.cloudfuse/cloudfuse.log) instead of syslog
-- [#50](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/50) Write plugin log output to a
-    file (nx_ini/mediaserver_stderr.log)
+- [#50](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/50) Write plugin log output to a file (nx_ini/mediaserver_stderr.log)
 
 ### Bug Fixes ###
 
