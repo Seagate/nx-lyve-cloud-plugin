@@ -28,10 +28,7 @@ class Engine : public nx::sdk::analytics::Engine
     virtual std::string manifestString() const override;
 
     virtual nx::sdk::Result<const nx::sdk::ISettingsResponse *> settingsReceived() override;
-    bool settingsChanged();
     bool mount();
-    nx::sdk::Error validateMount();
-    nx::sdk::Error spawnMount();
 
   protected:
     virtual void doObtainDeviceAgent(nx::sdk::Result<nx::sdk::analytics::IDeviceAgent *> *outResult,
@@ -44,6 +41,9 @@ class Engine : public nx::sdk::analytics::Engine
         const nx::sdk::IActiveSettingChangedAction *activeSettingChangedAction) override;
 
   private:
+    bool settingsChanged();
+    nx::sdk::Error validateMount();
+    nx::sdk::Error spawnMount();
     bool updateModel(nx::kit::Json::object *model, bool mountSuccessful) const;
 
   private:

@@ -81,12 +81,6 @@ Engine::~Engine()
     }
 }
 
-void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDeviceInfo *deviceInfo)
-{
-    NX_PRINT << "cloudfuse Engine::doObtainDeviceAgent";
-    *outResult = new DeviceAgent(this, deviceInfo);
-}
-
 std::string Engine::manifestString() const
 {
     NX_PRINT << "cloudfuse Engine::manifestString";
@@ -101,95 +95,6 @@ std::string Engine::manifestString() const
 )json";
 
     return result;
-}
-
-bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
-{
-    NX_PRINT << "cloudfuse Engine::updateModel";
-
-    // prepare the new status item
-    auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
-    std::string error;
-    auto newStatus = Json::parse(statusJson, error);
-    if (error != "")
-    {
-        NX_PRINT << "Failed to parse status JSON with error: " << error;
-        return false;
-    }
-
-    // find where to put it
-    auto items = (*model)[kItems];
-    auto itemsArray = items.array_items();
-    // find the status banner, if it's already present
-    auto statusBannerIt = std::find_if(itemsArray.begin(), itemsArray.end(),
-                                       [](Json &item) { return item[kName].string_value() == kStatusBannerId; });
-    // if the banner is not there, add it
-    if (statusBannerIt == itemsArray.end())
-    {
-        // add the status banner to the beginning of the list of items
-        itemsArray.insert(itemsArray.begin(), newStatus);
-    }
-    else
-    {
-        // update the status
-        *statusBannerIt = newStatus;
-    }
-
-    // write the updated array back into the model Json
-    // TODO: why do we have to do this?
-    (*model)[kItems] = itemsArray;
-
-    return true;
-}
-
-bool Engine::settingsChanged()
-{
-    // If cloudfuse is not mounted and settings are the same, then return true so
-    // it tries to mount again.
-    if (!m_cfManager.isMounted())
-    {
-        return true;
-    }
-
-    std::map<std::string, std::string> newValues = currentSettings();
-    if (newValues == m_prevSettings)
-    {
-        return false;
-    }
-    // we only really care about certain values
-    // key ID
-    if (m_prevSettings[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])
-    {
-        return true;
-    }
-    // secret key
-    if (m_prevSettings[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId])
-    {
-        return true;
-    }
-    if (!credentialsOnly)
-    {
-        // endpoint
-        if (m_prevSettings[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
-        {
-            // if they're different, but both amount to the same thing, then there is no effective change
-            bool prevIsDefault = m_prevSettings[kEndpointUrlTextFieldId] == kDefaultEndpoint ||
-                                 m_prevSettings[kEndpointUrlTextFieldId] == "";
-            bool newIsDefault =
-                newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
-            if (!prevIsDefault || !newIsDefault)
-            {
-                return true;
-            }
-        }
-        // bucket name
-        if (m_prevSettings[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
-        {
-            return true;
-        }
-    }
-    // nothing we care about changed
-    return false;
 }
 
 Result<const ISettingsResponse *> Engine::settingsReceived()
@@ -282,6 +187,105 @@ bool Engine::mount()
     }
 
     return true;
+}
+
+void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDeviceInfo *deviceInfo)
+{
+    NX_PRINT << "cloudfuse Engine::doObtainDeviceAgent";
+    *outResult = new DeviceAgent(this, deviceInfo);
+}
+
+void Engine::getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const
+{
+    NX_PRINT << "cloudfuse Engine::getPluginSideSettings";
+    auto settingsResponse = new SettingsResponse();
+    settingsResponse->setValue(kEnginePluginSideSetting, kEnginePluginSideSettingValue);
+
+    *outResult = settingsResponse;
+}
+
+void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChangedResponse *> *outResult,
+                                                const IActiveSettingChangedAction *activeSettingChangedAction)
+{
+    NX_PRINT << "cloudfuse Engine::doGetSettingsOnActiveSettingChange";
+    std::string parseError;
+    Json model = Json::parse(activeSettingChangedAction->settingsModel(), parseError);
+    if (parseError != "")
+    {
+        std::string errorMessage = "Failed to parse activeSettingChangedAction model JSON. Here's why: " + parseError;
+        NX_PRINT << errorMessage;
+        *outResult = error(ErrorCode::internalError, errorMessage);
+        return;
+    }
+
+    Json::object modelObject = model.object_items();
+
+    const std::string settingId(activeSettingChangedAction->activeSettingName());
+
+    std::map<std::string, std::string> values = toStdMap(shareToPtr(activeSettingChangedAction->settingsValues()));
+
+    const auto settingsResponse = makePtr<SettingsResponse>();
+    settingsResponse->setValues(makePtr<StringMap>(values));
+    settingsResponse->setModel(makePtr<String>(Json(modelObject).dump()));
+
+    const nx::sdk::Ptr<nx::sdk::ActionResponse> actionResponse =
+        generateActionResponse(settingId, activeSettingChangedAction->params());
+
+    auto response = makePtr<ActiveSettingChangedResponse>();
+    response->setSettingsResponse(settingsResponse);
+    response->setActionResponse(actionResponse);
+
+    *outResult = response.releasePtr();
+}
+
+bool Engine::settingsChanged()
+{
+    // If cloudfuse is not mounted and settings are the same, then return true so
+    // it tries to mount again.
+    if (!m_cfManager.isMounted())
+    {
+        return true;
+    }
+
+    std::map<std::string, std::string> newValues = currentSettings();
+    if (newValues == m_prevSettings)
+    {
+        return false;
+    }
+    // we only really care about certain values
+    // key ID
+    if (m_prevSettings[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])
+    {
+        return true;
+    }
+    // secret key
+    if (m_prevSettings[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId])
+    {
+        return true;
+    }
+    if (!credentialsOnly)
+    {
+        // endpoint
+        if (m_prevSettings[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
+        {
+            // if they're different, but both amount to the same thing, then there is no effective change
+            bool prevIsDefault = m_prevSettings[kEndpointUrlTextFieldId] == kDefaultEndpoint ||
+                                 m_prevSettings[kEndpointUrlTextFieldId] == "";
+            bool newIsDefault =
+                newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
+            if (!prevIsDefault || !newIsDefault)
+            {
+                return true;
+            }
+        }
+        // bucket name
+        if (m_prevSettings[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
+        {
+            return true;
+        }
+    }
+    // nothing we care about changed
+    return false;
 }
 
 nx::sdk::Error Engine::validateMount()
@@ -451,47 +455,43 @@ nx::sdk::Error Engine::spawnMount()
     return Error(ErrorCode::noError, nullptr);
 }
 
-void Engine::getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const
+bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
 {
-    NX_PRINT << "cloudfuse Engine::getPluginSideSettings";
-    auto settingsResponse = new SettingsResponse();
-    settingsResponse->setValue(kEnginePluginSideSetting, kEnginePluginSideSettingValue);
+    NX_PRINT << "cloudfuse Engine::updateModel";
 
-    *outResult = settingsResponse;
-}
-
-void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChangedResponse *> *outResult,
-                                                const IActiveSettingChangedAction *activeSettingChangedAction)
-{
-    NX_PRINT << "cloudfuse Engine::doGetSettingsOnActiveSettingChange";
-    std::string parseError;
-    Json model = Json::parse(activeSettingChangedAction->settingsModel(), parseError);
-    if (parseError != "")
+    // prepare the new status item
+    auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
+    std::string error;
+    auto newStatus = Json::parse(statusJson, error);
+    if (error != "")
     {
-        std::string errorMessage = "Failed to parse activeSettingChangedAction model JSON. Here's why: " + parseError;
-        NX_PRINT << errorMessage;
-        *outResult = error(ErrorCode::internalError, errorMessage);
-        return;
+        NX_PRINT << "Failed to parse status JSON with error: " << error;
+        return false;
     }
 
-    Json::object modelObject = model.object_items();
+    // find where to put it
+    auto items = (*model)[kItems];
+    auto itemsArray = items.array_items();
+    // find the status banner, if it's already present
+    auto statusBannerIt = std::find_if(itemsArray.begin(), itemsArray.end(),
+                                       [](Json &item) { return item[kName].string_value() == kStatusBannerId; });
+    // if the banner is not there, add it
+    if (statusBannerIt == itemsArray.end())
+    {
+        // add the status banner to the beginning of the list of items
+        itemsArray.insert(itemsArray.begin(), newStatus);
+    }
+    else
+    {
+        // update the status
+        *statusBannerIt = newStatus;
+    }
 
-    const std::string settingId(activeSettingChangedAction->activeSettingName());
+    // write the updated array back into the model Json
+    // TODO: why do we have to do this?
+    (*model)[kItems] = itemsArray;
 
-    std::map<std::string, std::string> values = toStdMap(shareToPtr(activeSettingChangedAction->settingsValues()));
-
-    const auto settingsResponse = makePtr<SettingsResponse>();
-    settingsResponse->setValues(makePtr<StringMap>(values));
-    settingsResponse->setModel(makePtr<String>(Json(modelObject).dump()));
-
-    const nx::sdk::Ptr<nx::sdk::ActionResponse> actionResponse =
-        generateActionResponse(settingId, activeSettingChangedAction->params());
-
-    auto response = makePtr<ActiveSettingChangedResponse>();
-    response->setSettingsResponse(settingsResponse);
-    response->setActionResponse(actionResponse);
-
-    *outResult = response.releasePtr();
+    return true;
 }
 
 // static helper functions
