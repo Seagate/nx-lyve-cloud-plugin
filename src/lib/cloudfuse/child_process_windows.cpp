@@ -105,7 +105,6 @@ s3storage:
   secret-key: { AWS_SECRET_ACCESS_KEY }
   bucket-name: { BUCKET_NAME }
   endpoint: { ENDPOINT }
-  region: { AWS_REGION }
   subdirectory: )" + systemName + "\n";
 
     std::string appdataEnv;
@@ -262,18 +261,17 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t *argv, std::wstring envp)
 }
 
 processReturn CloudfuseMngr::genS3Config(const std::string accessKeyId, const std::string secretAccessKey,
-                                         const std::string region, const std::string endpoint,
-                                         const std::string bucketName, const std::string passphrase)
+                                         const std::string endpoint, const std::string bucketName,
+                                         const std::string passphrase)
 {
     const std::string argv = "cloudfuse gen-config --config-file=" + templateFile + " --output-file=" + configFile +
                              " --temp-path=" + fileCacheDir + " --passphrase=" + passphrase;
     const std::string aws_access_key_id_env = "AWS_ACCESS_KEY_ID=" + accessKeyId;
     const std::string aws_secret_access_key_env = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
-    const std::string aws_region_env = "AWS_REGION=" + region;
     const std::string endpoint_env = "ENDPOINT=" + endpoint;
     const std::string bucket_name_env = "BUCKET_NAME=" + bucketName;
-    const std::string envp = aws_access_key_id_env + '\0' + aws_secret_access_key_env + '\0' + aws_region_env + '\0' +
-                             endpoint_env + '\0' + bucket_name_env + '\0';
+    const std::string envp =
+        aws_access_key_id_env + '\0' + aws_secret_access_key_env + '\0' + endpoint_env + '\0' + bucket_name_env + '\0';
 
     const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
     const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);

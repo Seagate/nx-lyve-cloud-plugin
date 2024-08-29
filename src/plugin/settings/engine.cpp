@@ -344,7 +344,6 @@ nx::sdk::Error Engine::validateMount()
     std::string keyId = values[kKeyIdTextFieldId];
     std::string secretKey = values[kSecretKeyPasswordFieldId];
     std::string endpointUrl = values[kEndpointUrlTextFieldId];
-    std::string endpointRegion = "us-east-1";
     std::string bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
                                                              // to select first available bucket
     std::string mountDir = m_cfManager.getMountDir();
@@ -426,10 +425,9 @@ nx::sdk::Error Engine::validateMount()
     }
     NX_PRINT << "spawning process from genS3Config";
 #if defined(__linux__)
-    const processReturn dryGenConfig = m_cfManager.genS3Config(endpointRegion, endpointUrl, bucketName, m_passphrase);
+    const processReturn dryGenConfig = m_cfManager.genS3Config(endpointUrl, bucketName, m_passphrase);
 #elif defined(_WIN32)
-    const processReturn dryGenConfig =
-        m_cfManager.genS3Config(keyId, secretKey, endpointRegion, endpointUrl, bucketName, m_passphrase);
+    const processReturn dryGenConfig = m_cfManager.genS3Config(keyId, secretKey, endpointUrl, bucketName, m_passphrase);
 #endif
     if (dryGenConfig.errCode != 0)
     {
