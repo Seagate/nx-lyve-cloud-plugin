@@ -20,8 +20,6 @@
 #include "settings_model.h"
 #include "stub_analytics_plugin_settings_ini.h"
 
-#include "cloudfuse_helper.h"
-
 // TODO: get NX_PRINT_PREFIX working with non-member helper functions
 // #define NX_PRINT_PREFIX (this->logUtils.printPrefix)
 #include <nx/kit/debug.h>
@@ -46,6 +44,7 @@ using namespace nx::kit;
 static std::string buildCapabilities();
 static std::string generatePassphrase();
 static void enableLogging(std::string iniDir);
+static std::string parseCloudfuseError(std::string error);
 
 static int maxWaitSecondsAfterMount = 10;
 
@@ -551,6 +550,25 @@ std::string generatePassphrase()
     BIO_get_mem_ptr(b64, &bptr);
 
     return std::string(bptr->data, bptr->length);
+}
+
+// parseCloudfuseError takes in an error and trims the error down to it's most essential
+// error, which from cloudfuse is the error returned between braces []
+std::string parseCloudfuseError(std::string error)
+{
+    std::size_t start = error.find_last_of('[');
+    if (start == std::string::npos)
+    {
+        return error;
+    }
+
+    std::size_t end = error.find_last_of(']');
+    if (end == std::string::npos)
+    {
+        return error;
+    }
+
+    return error.substr(start, end);
 }
 
 } // namespace settings
