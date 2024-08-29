@@ -525,24 +525,24 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
 {
     NX_PRINT << "cloudfuse Engine::doGetSettingsOnActiveSettingChange";
     std::string parseError;
-    Json::object model = Json::parse(activeSettingChangedAction->settingsModel(), parseError).object_items();
+    Json model = Json::parse(activeSettingChangedAction->settingsModel(), parseError);
+    if (parseError != "")
+    {
+        std::string errorMessage = "Failed to parse activeSettingChangedAction model JSON. Here's why: " + parseError;
+        NX_PRINT << errorMessage;
+        *outResult = error(ErrorCode::internalError, errorMessage);
+        return;
+    }
+
+    Json::object modelObject = model.object_items();
 
     const std::string settingId(activeSettingChangedAction->activeSettingName());
 
     std::map<std::string, std::string> values = toStdMap(shareToPtr(activeSettingChangedAction->settingsValues()));
 
-    // if (!updateModel(&model, &values, {settingId}))
-    // {
-    //     std::string errorMessage = "Unable to process the active settings section";
-    //     NX_PRINT << errorMessage;
-    //     *outResult = error(ErrorCode::internalError, errorMessage);
-
-    //     return;
-    // }
-
     const auto settingsResponse = makePtr<SettingsResponse>();
     settingsResponse->setValues(makePtr<StringMap>(values));
-    settingsResponse->setModel(makePtr<String>(Json(model).dump()));
+    settingsResponse->setModel(makePtr<String>(Json(modelObject).dump()));
 
     const nx::sdk::Ptr<nx::sdk::ActionResponse> actionResponse =
         generateActionResponse(settingId, activeSettingChangedAction->params());
