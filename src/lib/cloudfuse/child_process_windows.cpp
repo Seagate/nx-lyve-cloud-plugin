@@ -72,7 +72,7 @@ CloudfuseMngr::CloudfuseMngr()
 {
     std::string systemName = getSystemName();
     // NOTE: increment the version number when the config template changes
-    templateVersionString = "template-version: 0.1";
+    templateVersionString = "template-version: 0.2";
     std::string config_template = templateVersionString + R"(
 allow-other: true
 logging:
@@ -271,7 +271,7 @@ processReturn CloudfuseMngr::genS3Config(const std::string accessKeyId, const st
     const std::string aws_secret_access_key_env = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
     const std::string endpoint_env = "ENDPOINT=" + endpoint;
     const std::string bucket_name_env = "BUCKET_NAME=" + bucketName;
-    const std::string bucket_size_env = "DISPLAY_CAPACITY=" + bucketSizeMb;
+    const std::string bucket_size_env = "DISPLAY_CAPACITY=" + std::to_string(bucketSizeMb);
     const std::string envp = aws_access_key_id_env + '\0' + aws_secret_access_key_env + '\0' + endpoint_env + '\0' +
                              bucket_name_env + '\0' + bucket_size_env + '\0';
 
