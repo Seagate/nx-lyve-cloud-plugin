@@ -38,12 +38,14 @@ class CloudfuseMngr
     processReturn dryRun(const std::string passphrase);
     processReturn mount(const std::string passphrase);
     processReturn genS3Config(const std::string accessKeyId, const std::string secretAccessKey,
-                              const std::string endpoint, const std::string bucketName, const std::string passphrase);
+                              const std::string endpoint, const std::string bucketName, const uint64_t bucketSizeMb,
+                              const std::string passphrase);
 #elif defined(__linux__) || defined(__APPLE__)
     processReturn dryRun(const std::string accessKeyId, const std::string secretAccessKey,
                          const std::string passphrase);
     processReturn mount(const std::string accessKeyId, const std::string secretAccessKey, const std::string passphrase);
-    processReturn genS3Config(const std::string endpoint, const std::string bucketName, const std::string passphrase);
+    processReturn genS3Config(const std::string endpoint, const std::string bucketName, const uint64_t bucketSizeMb,
+                              const std::string passphrase);
 #endif
     std::string getMountDir();
     std::string getFileCacheDir();

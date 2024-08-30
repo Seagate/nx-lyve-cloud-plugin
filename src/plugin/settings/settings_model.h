@@ -53,6 +53,8 @@ static const std::string kCredentialGroupBox = R"json(
 static const std::string kEndpointUrlTextFieldId = "endpointUrl";
 static const std::string kDefaultEndpoint = "https://s3.us-east-1.lyvecloud.seagate.com";
 static const std::string kBucketNameTextFieldId = "bucketName";
+static const std::string kBucketSizeTextFieldId = "bucketCapacity";
+static const uint64_t kDefaultBucketSizeGb = 1024;
 static const std::string kAdvancedGroupBox = R"json(
         {
             "type": "GroupBox",
@@ -80,6 +82,19 @@ static const std::string kAdvancedGroupBox = R"json(
                     "defaultValue": "",
                     "validationErrorMessage": "Bucket name can only contain lowercase letters, numbers, dashes, and dots.",
                     "validationRegex": "^[-.a-z0-9]*$"
+                },
+                {
+                    "type": "SpinBox",
+                    "name": ")json" + kBucketSizeTextFieldId +
+                                             R"json(",
+                    "caption": "Backup Storage Limit (in GB)",
+                    "description": "Maximum data this server should back up - default is )json" +
+                                             std::to_string(kDefaultBucketSizeGb) +
+                                             R"json(GB",
+                    "defaultValue": )json" + std::to_string(kDefaultBucketSizeGb) +
+                                             R"json(,
+                    "minValue": 1,
+                    "maxValue": 1000000000
                 }
             ]
         })json";

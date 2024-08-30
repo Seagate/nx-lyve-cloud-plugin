@@ -64,6 +64,7 @@ libfuse:
   negative-entry-expiration-sec: 1800
   ignore-open-flags: true
   network-share: true
+  display-capacity-mb: { DISPLAY_CAPACITY }
 
 file_cache:
   path: { 0 }
@@ -173,7 +174,7 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
 }
 
 processReturn CloudfuseMngr::genS3Config(const std::string endpoint, const std::string bucketName,
-                                         const std::string passphrase)
+                                         const uint64_t bucketSizeMb, const std::string passphrase)
 {
     const std::string configArg = "--config-file=" + templateFile;
     const std::string outputArg = "--output-file=" + configFile;
@@ -189,7 +190,9 @@ processReturn CloudfuseMngr::genS3Config(const std::string endpoint, const std::
 
     const std::string bucketNameEnv = "BUCKET_NAME=" + bucketName;
     const std::string endpointEnv = "ENDPOINT=" + endpoint;
-    char *const envp[] = {const_cast<char *>(bucketNameEnv.c_str()), const_cast<char *>(endpointEnv.c_str()), NULL};
+    const std::string bucketSizeEnv = "DISPLAY_CAPACITY=" + std::to_string(bucketSizeMb);
+    char *const envp[] = {const_cast<char *>(bucketNameEnv.c_str()), const_cast<char *>(endpointEnv.c_str()),
+                          const_cast<char *>(bucketSizeEnv.c_str()), NULL};
 
     return spawnProcess(argv, envp);
 }
