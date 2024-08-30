@@ -22,6 +22,7 @@
    SOFTWARE
 */
 
+#include <cstdint>
 #include <string>
 
 struct processReturn
