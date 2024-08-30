@@ -14,13 +14,9 @@
 #include <string>
 #include <thread>
 
-#include "actions.h"
-#include "active_settings_rules.h"
 #include "device_agent.h"
 #include "settings_model.h"
 #include "stub_analytics_plugin_settings_ini.h"
-
-#include "cloudfuse_helper.h"
 
 // TODO: get NX_PRINT_PREFIX working with non-member helper functions
 // #define NX_PRINT_PREFIX (this->logUtils.printPrefix)
@@ -28,7 +24,6 @@
 #include <nx/kit/ini_config.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
 #include <nx/sdk/helpers/error.h>
-#include <utils.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -43,30 +38,17 @@ using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
 
-static int maxWaitSecondsAfterMount = 10;
+static std::string buildCapabilities();
+static std::string generatePassphrase();
+static void enableLogging(std::string iniDir);
+static std::string parseCloudfuseError(std::string error);
 
-void enableLogging(std::string iniDir);
+static int maxWaitSecondsAfterMount = 10;
 
 Engine::Engine(Plugin *plugin)
     : nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()), m_plugin(plugin), m_cfManager()
 {
-    // logging will begin the _next_ time the mediaserver starts
-    enableLogging(IniConfig::iniFilesDir());
     NX_PRINT << "cloudfuse Engine::Engine";
-
-    for (const auto &entry : kActiveSettingsRules)
-    {
-        const ActiveSettingsBuilder::ActiveSettingKey key = entry.first;
-        m_activeSettingsBuilder.addRule(key.activeSettingName, key.activeSettingValue,
-                                        /*activeSettingHandler*/ entry.second);
-    }
-
-    for (const auto &entry : kDefaultActiveSettingsRules)
-    {
-        m_activeSettingsBuilder.addDefaultRule(
-            /*activeSettingName*/ entry.first,
-            /*activeSettingHandler*/ entry.second);
-    }
 }
 
 Engine::~Engine()
@@ -77,29 +59,8 @@ Engine::~Engine()
     {
         NX_PRINT << "cloudfuse Engine::~Engine failed to unmount cloudfuse with error: " + unmountRet.output;
     }
-}
-
-void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDeviceInfo *deviceInfo)
-{
-    NX_PRINT << "cloudfuse Engine::doObtainDeviceAgent";
-    *outResult = new DeviceAgent(this, deviceInfo);
-}
-
-// functions are not "hoisted", so we need "prototypes"
-std::string generatePassphrase();
-
-static std::string buildCapabilities()
-{
-    std::string capabilities;
-
-    if (ini().deviceDependent)
-        capabilities += "|deviceDependent";
-
-    // Delete first '|', if any.
-    if (!capabilities.empty() && capabilities.at(0) == '|')
-        capabilities.erase(0, 1);
-
-    return capabilities;
+    // enable logging for the _next_ time the mediaserver starts
+    enableLogging(IniConfig::iniFilesDir());
 }
 
 std::string Engine::manifestString() const
@@ -116,115 +77,6 @@ std::string Engine::manifestString() const
 )json";
 
     return result;
-}
-
-void enableLogging(std::string iniDir)
-{
-    // enable logging by touching stdout and stderr redirect files
-    if (!fs::is_directory(iniDir))
-    {
-        fs::create_directories(iniDir);
-    }
-    const std::string processName = utils::getProcessName();
-    const std::string stdoutFilename = iniDir + processName + "_stdout.log";
-    const std::string stderrFilename = iniDir + processName + "_stderr.log";
-    if (!fs::exists(stdoutFilename) || !fs::exists(stderrFilename))
-    {
-        NX_PRINT << "cloudfuse Engine::enableLogging - creating files";
-        std::ofstream stdoutFile(stdoutFilename);
-        std::ofstream stderrFile(stderrFilename);
-        // the service will need to be restarted for logging to actually begin
-    }
-    NX_PRINT << "cloudfuse Engine::enableLogging - plugin stderr logging file: " + stderrFilename;
-}
-
-bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
-{
-    NX_PRINT << "cloudfuse Engine::updateModel";
-
-    // prepare the new status item
-    auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
-    std::string error;
-    auto newStatus = Json::parse(statusJson, error);
-    if (error != "")
-    {
-        NX_PRINT << "Failed to parse status JSON with error: " << error;
-        return false;
-    }
-
-    // find where to put it
-    auto items = (*model)[kItems];
-    auto itemsArray = items.array_items();
-    // find the status banner, if it's already present
-    auto statusBannerIt = std::find_if(itemsArray.begin(), itemsArray.end(),
-                                       [](Json &item) { return item[kName].string_value() == kStatusBannerId; });
-    // if the banner is not there, add it
-    if (statusBannerIt == itemsArray.end())
-    {
-        // add the status banner to the beginning of the list of items
-        itemsArray.insert(itemsArray.begin(), newStatus);
-    }
-    else
-    {
-        // update the status
-        *statusBannerIt = newStatus;
-    }
-
-    // write the updated array back into the model Json
-    // TODO: why do we have to do this?
-    (*model)[kItems] = itemsArray;
-
-    return true;
-}
-
-bool Engine::settingsChanged()
-{
-    // If cloudfuse is not mounted and settings are the same, then return true so
-    // it tries to mount again.
-    if (!m_cfManager.isMounted())
-    {
-        return true;
-    }
-
-    std::map<std::string, std::string> newValues = currentSettings();
-    if (newValues == m_prevSettings)
-    {
-        return false;
-    }
-    // we only really care about certain values
-    // key ID
-    if (m_prevSettings[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])
-    {
-        return true;
-    }
-    // secret key
-    if (m_prevSettings[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId])
-    {
-        return true;
-    }
-    if (!credentialsOnly)
-    {
-        // endpoint
-        if (m_prevSettings[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
-        {
-            // if they're different, but both amount to the same thing, then there is no effective change
-            bool prevIsDefault = m_prevSettings[kEndpointUrlTextFieldId] == kDefaultEndpoint ||
-                                 m_prevSettings[kEndpointUrlTextFieldId] == "";
-            bool newIsDefault =
-                newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
-            if (!prevIsDefault || !newIsDefault)
-            {
-                return true;
-            }
-        }
-        // bucket name
-        if (m_prevSettings[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
-        {
-            return true;
-        }
-    }
-    // nothing we care about changed
-    return false;
 }
 
 Result<const ISettingsResponse *> Engine::settingsReceived()
@@ -319,27 +171,82 @@ bool Engine::mount()
     return true;
 }
 
-std::string generatePassphrase()
+void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDeviceInfo *deviceInfo)
 {
-    // Generate passphrase for config file
-    unsigned char key[32]; // AES-256 key
-    if (!RAND_bytes(key, sizeof(key)))
+    NX_PRINT << "cloudfuse Engine::doObtainDeviceAgent";
+    *outResult = new DeviceAgent(this, deviceInfo);
+}
+
+void Engine::getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const
+{
+    NX_PRINT << "cloudfuse Engine::getPluginSideSettings";
+    auto settingsResponse = new SettingsResponse();
+    *outResult = settingsResponse;
+}
+
+void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChangedResponse *> *outResult,
+                                                const IActiveSettingChangedAction *activeSettingChangedAction)
+{
+    NX_PRINT << "cloudfuse Engine::doGetSettingsOnActiveSettingChange";
+}
+
+bool Engine::settingsChanged()
+{
+    // have the settings changed?
+    std::map<std::string, std::string> newValues = currentSettings();
+    if (newValues == m_prevSettings)
     {
-        return "";
+        return false;
     }
-    // Need to encode passphrase to base64 to pass to cloudfuse
-    BIO *bmem, *b64;
-    BUF_MEM *bptr;
 
-    b64 = BIO_new(BIO_f_base64());
-    bmem = BIO_new(BIO_s_mem());
-    b64 = BIO_push(b64, bmem);
-    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-    BIO_write(b64, key, 32);
-    BIO_flush(b64);
-    BIO_get_mem_ptr(b64, &bptr);
+    // check if settings are empty
+    if (newValues[kKeyIdTextFieldId] == "" && newValues[kSecretKeyPasswordFieldId] == "")
+    {
+        NX_PRINT << "Settings are empty. Ignoring...";
+        return false;
+    }
 
-    return std::string(bptr->data, bptr->length);
+    // If cloudfuse is not mounted and settings are the same, then return true so
+    // it tries to mount again.
+    if (!m_cfManager.isMounted())
+    {
+        return true;
+    }
+
+    // we only really care about certain values
+    // key ID
+    if (m_prevSettings[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])
+    {
+        return true;
+    }
+    // secret key
+    if (m_prevSettings[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId])
+    {
+        return true;
+    }
+    if (!credentialsOnly)
+    {
+        // endpoint
+        if (m_prevSettings[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
+        {
+            // if they're different, but both amount to the same thing, then there is no effective change
+            bool prevIsDefault = m_prevSettings[kEndpointUrlTextFieldId] == kDefaultEndpoint ||
+                                 m_prevSettings[kEndpointUrlTextFieldId] == "";
+            bool newIsDefault =
+                newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
+            if (!prevIsDefault || !newIsDefault)
+            {
+                return true;
+            }
+        }
+        // bucket name
+        if (m_prevSettings[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
+        {
+            return true;
+        }
+    }
+    // nothing we care about changed
+    return false;
 }
 
 nx::sdk::Error Engine::validateMount()
@@ -509,47 +416,121 @@ nx::sdk::Error Engine::spawnMount()
     return Error(ErrorCode::noError, nullptr);
 }
 
-void Engine::getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const
+bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
 {
-    NX_PRINT << "cloudfuse Engine::getPluginSideSettings";
-    auto settingsResponse = new SettingsResponse();
-    settingsResponse->setValue(kEnginePluginSideSetting, kEnginePluginSideSettingValue);
+    NX_PRINT << "cloudfuse Engine::updateModel";
 
-    *outResult = settingsResponse;
-}
-
-void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChangedResponse *> *outResult,
-                                                const IActiveSettingChangedAction *activeSettingChangedAction)
-{
-    NX_PRINT << "cloudfuse Engine::doGetSettingsOnActiveSettingChange";
-    std::string parseError;
-    Json model = Json::parse(activeSettingChangedAction->settingsModel(), parseError);
-    if (parseError != "")
+    // prepare the new status item
+    auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
+    std::string error;
+    auto newStatus = Json::parse(statusJson, error);
+    if (error != "")
     {
-        std::string errorMessage = "Failed to parse activeSettingChangedAction model JSON. Here's why: " + parseError;
-        NX_PRINT << errorMessage;
-        *outResult = error(ErrorCode::internalError, errorMessage);
-        return;
+        NX_PRINT << "Failed to parse status JSON with error: " << error;
+        return false;
     }
 
-    Json::object modelObject = model.object_items();
+    // find where to put it
+    auto items = (*model)[kItems];
+    auto itemsArray = items.array_items();
+    // find the status banner, if it's already present
+    auto statusBannerIt = std::find_if(itemsArray.begin(), itemsArray.end(),
+                                       [](Json &item) { return item[kName].string_value() == kStatusBannerId; });
+    // if the banner is not there, add it
+    if (statusBannerIt == itemsArray.end())
+    {
+        // add the status banner to the beginning of the list of items
+        itemsArray.insert(itemsArray.begin(), newStatus);
+    }
+    else
+    {
+        // update the status
+        *statusBannerIt = newStatus;
+    }
 
-    const std::string settingId(activeSettingChangedAction->activeSettingName());
+    // write the updated array back into the model Json
+    // TODO: why do we have to do this?
+    (*model)[kItems] = itemsArray;
 
-    std::map<std::string, std::string> values = toStdMap(shareToPtr(activeSettingChangedAction->settingsValues()));
+    return true;
+}
 
-    const auto settingsResponse = makePtr<SettingsResponse>();
-    settingsResponse->setValues(makePtr<StringMap>(values));
-    settingsResponse->setModel(makePtr<String>(Json(modelObject).dump()));
+// static helper functions
 
-    const nx::sdk::Ptr<nx::sdk::ActionResponse> actionResponse =
-        generateActionResponse(settingId, activeSettingChangedAction->params());
+void enableLogging(std::string iniDir)
+{
+    // enable logging by touching stdout and stderr redirect files
+    if (!fs::is_directory(iniDir))
+    {
+        fs::create_directories(iniDir);
+    }
+    const std::string processName = utils::getProcessName();
+    const std::string stdoutFilename = iniDir + processName + "_stdout.log";
+    const std::string stderrFilename = iniDir + processName + "_stderr.log";
+    if (!fs::exists(stdoutFilename) || !fs::exists(stderrFilename))
+    {
+        NX_PRINT << "cloudfuse Engine::enableLogging - creating files";
+        std::ofstream stdoutFile(stdoutFilename);
+        std::ofstream stderrFile(stderrFilename);
+        // the service will need to be restarted for logging to actually begin
+    }
+    NX_PRINT << "cloudfuse Engine::enableLogging - plugin stderr logging file: " + stderrFilename;
+}
 
-    auto response = makePtr<ActiveSettingChangedResponse>();
-    response->setSettingsResponse(settingsResponse);
-    response->setActionResponse(actionResponse);
+std::string buildCapabilities()
+{
+    std::string capabilities;
 
-    *outResult = response.releasePtr();
+    if (ini().deviceDependent)
+        capabilities += "|deviceDependent";
+
+    // Delete first '|', if any.
+    if (!capabilities.empty() && capabilities.at(0) == '|')
+        capabilities.erase(0, 1);
+
+    return capabilities;
+}
+
+std::string generatePassphrase()
+{
+    // Generate passphrase for config file
+    unsigned char key[32]; // AES-256 key
+    if (!RAND_bytes(key, sizeof(key)))
+    {
+        return "";
+    }
+    // Need to encode passphrase to base64 to pass to cloudfuse
+    BIO *bmem, *b64;
+    BUF_MEM *bptr;
+
+    b64 = BIO_new(BIO_f_base64());
+    bmem = BIO_new(BIO_s_mem());
+    b64 = BIO_push(b64, bmem);
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    BIO_write(b64, key, 32);
+    BIO_flush(b64);
+    BIO_get_mem_ptr(b64, &bptr);
+
+    return std::string(bptr->data, bptr->length);
+}
+
+// parseCloudfuseError takes in an error and trims the error down to it's most essential
+// error, which from cloudfuse is the error returned between braces []
+std::string parseCloudfuseError(std::string error)
+{
+    std::size_t start = error.find_last_of('[');
+    if (start == std::string::npos)
+    {
+        return error;
+    }
+
+    std::size_t end = error.find_last_of(']');
+    if (end == std::string::npos)
+    {
+        return error;
+    }
+
+    return error.substr(start, end);
 }
 
 } // namespace settings

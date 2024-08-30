@@ -7,7 +7,6 @@
 
 #include <nx/kit/json.h>
 
-#include "active_settings_builder.h"
 #include "engine.h"
 #include "stub_analytics_plugin_settings_ini.h"
 
@@ -35,16 +34,10 @@ class DeviceAgent : public nx::sdk::analytics::ConsumingDeviceAgent
         const nx::sdk::IActiveSettingChangedAction *activeSettingChangedAction) override;
 
   private:
-    void dumpStringMap(const char *prefix, const char *appendix, const nx::sdk::IStringMap *stringMap) const;
-
-    void dumpActiveSettingChangedAction(const nx::sdk::IActiveSettingChangedAction *activeSettingChangedAction) const;
-
-  private:
     void processActiveSettings(nx::kit::Json *inOutSettingModel, std::map<std::string, std::string> *inOutSettingValue);
 
   private:
     Engine *const m_engine;
-    ActiveSettingsBuilder m_activeSettingsBuilder;
 };
 
 } // namespace settings
