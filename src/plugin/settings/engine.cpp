@@ -37,7 +37,6 @@ namespace settings
 using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
-using namespace nx::kit::detail::json11;
 
 static std::string buildCapabilities();
 static std::string generatePassphrase();
