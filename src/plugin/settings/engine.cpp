@@ -244,6 +244,11 @@ bool Engine::settingsChanged()
         {
             return true;
         }
+        // bucket capacity
+        if (m_prevSettings[kBucketSizeTextFieldId] != newValues[kBucketSizeTextFieldId])
+        {
+            return true;
+        }
     }
     // nothing we care about changed
     return false;
@@ -257,11 +262,22 @@ nx::sdk::Error Engine::validateMount()
     std::string secretKey = values[kSecretKeyPasswordFieldId];
     std::string endpointUrl = kDefaultEndpoint;
     std::string bucketName = "";
+    uint64_t bucketCapacityGB = kDefaultBucketSizeGb;
     if (!credentialsOnly)
     {
         endpointUrl = values[kEndpointUrlTextFieldId];
         bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
                                                      // to select first available bucket
+        try
+        {
+            bucketCapacityGB = std::stoi(values[kBucketSizeTextFieldId]);
+        }
+        catch (std::invalid_argument &e)
+        {
+            NX_PRINT << "Bad input for bucket capacity: " << values[kBucketSizeTextFieldId];
+            // revert to default - write back to settings so user can see value reset
+            values[kBucketSizeTextFieldId] = std::to_string(kDefaultBucketSizeGb);
+        }
     }
     std::string mountDir = m_cfManager.getMountDir();
     std::string fileCacheDir = m_cfManager.getFileCacheDir();
@@ -342,9 +358,11 @@ nx::sdk::Error Engine::validateMount()
     }
     NX_PRINT << "spawning process from genS3Config";
 #if defined(__linux__)
-    const processReturn dryGenConfig = m_cfManager.genS3Config(endpointUrl, bucketName, m_passphrase);
+    const processReturn dryGenConfig =
+        m_cfManager.genS3Config(endpointUrl, bucketName, bucketCapacityGB * 1024, m_passphrase);
 #elif defined(_WIN32)
-    const processReturn dryGenConfig = m_cfManager.genS3Config(keyId, secretKey, endpointUrl, bucketName, m_passphrase);
+    const processReturn dryGenConfig =
+        m_cfManager.genS3Config(keyId, secretKey, endpointUrl, bucketName, bucketCapacityGB * 1024, m_passphrase);
 #endif
     if (dryGenConfig.errCode != 0)
     {

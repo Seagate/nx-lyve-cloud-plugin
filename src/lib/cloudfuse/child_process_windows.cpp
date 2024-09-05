@@ -72,7 +72,7 @@ CloudfuseMngr::CloudfuseMngr()
 {
     std::string systemName = getSystemName();
     // NOTE: increment the version number when the config template changes
-    templateVersionString = "template-version: 0.1";
+    templateVersionString = "template-version: 0.2";
     std::string config_template = templateVersionString + R"(
 allow-other: true
 logging:
@@ -90,6 +90,7 @@ libfuse:
   negative-entry-expiration-sec: 1800
   ignore-open-flags: true
   network-share: true
+  display-capacity-mb: { DISPLAY_CAPACITY }
 
 file_cache:
   path: { 0 }
@@ -262,7 +263,7 @@ processReturn CloudfuseMngr::spawnProcess(wchar_t *argv, std::wstring envp)
 
 processReturn CloudfuseMngr::genS3Config(const std::string accessKeyId, const std::string secretAccessKey,
                                          const std::string endpoint, const std::string bucketName,
-                                         const std::string passphrase)
+                                         const uint64_t bucketSizeMb, const std::string passphrase)
 {
     const std::string argv = "cloudfuse gen-config --config-file=" + templateFile + " --output-file=" + configFile +
                              " --temp-path=" + fileCacheDir + " --passphrase=" + passphrase;
@@ -270,8 +271,9 @@ processReturn CloudfuseMngr::genS3Config(const std::string accessKeyId, const st
     const std::string aws_secret_access_key_env = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
     const std::string endpoint_env = "ENDPOINT=" + endpoint;
     const std::string bucket_name_env = "BUCKET_NAME=" + bucketName;
-    const std::string envp =
-        aws_access_key_id_env + '\0' + aws_secret_access_key_env + '\0' + endpoint_env + '\0' + bucket_name_env + '\0';
+    const std::string bucket_size_env = "DISPLAY_CAPACITY=" + std::to_string(bucketSizeMb);
+    const std::string envp = aws_access_key_id_env + '\0' + aws_secret_access_key_env + '\0' + endpoint_env + '\0' +
+                             bucket_name_env + '\0' + bucket_size_env + '\0';
 
     const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
     const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
