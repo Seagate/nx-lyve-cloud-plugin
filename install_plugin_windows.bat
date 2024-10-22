@@ -4,11 +4,11 @@
 :: Check / get privileges 
 net file 1>NUL 2>NUL
 if not '%errorlevel%' == '0' (
-    powershell Start-Process -FilePath "%0" -ArgumentList "%cd%" -verb runas >NUL 2>&1
+    powershell Start-Process -FilePath "%0" -verb runas >NUL 2>&1
     exit /b
 ) else (
     :: If we just got privileges, drill back into the directory where the script is
-    cd /d %1
+    cd /d %~dp0
 )
 
 :: Find the installer file
