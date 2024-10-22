@@ -1,5 +1,15 @@
 # Nx-Lyve-Cloud-Plugin Changelog #
 
+## **0.2.2** ##
+
+October 22 2024  
+This release is packaged with Cloudfuse [v1.6.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.6.0).  
+This release includes all features planned for the 1.0.0 release of the nx-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
+
+### Changes ###
+
+- [#57](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/57) Add advanced option to set bucket capacity
+
 ## **0.2.1** ##
 
 August 29 2024  
@@ -11,8 +21,7 @@ This release includes all features planned for the 1.0.0 release of the nx-lyve-
 - [#47](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/47) Allow config template to be modified by user
 - [#52](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/52) Provide status feedback directly in settings UI
 - [#45](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/45) Write cloudfuse log output to a file (~/.cloudfuse/cloudfuse.log) instead of syslog
-- [#50](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/50) Write plugin log output to a
-    file (nx_ini/mediaserver_stderr.log)
+- [#50](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/50) Write plugin log output to a file (nx_ini/mediaserver_stderr.log)
 
 ### Bug Fixes ###
 
