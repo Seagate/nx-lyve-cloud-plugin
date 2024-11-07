@@ -1,5 +1,11 @@
 # Nx-Lyve-Cloud-Plugin Changelog #
 
+## **0.3.0** ##
+
+November 6th 2024  
+This release is packaged with Cloudfuse [v1.7.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.7.0).  
+This release includes all features planned for the 1.0.0 release of the nx-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
+
 ## **0.2.2** ##
 
 October 22 2024  
