@@ -149,7 +149,7 @@ jobs:
         if-no-files-found: error
 
   release:
-    needs: build
+    needs: build-release
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
