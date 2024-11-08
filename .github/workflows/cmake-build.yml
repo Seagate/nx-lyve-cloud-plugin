@@ -26,9 +26,7 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ubuntu-24.04, ubuntu-22.04, ubuntu-20.04]
         build_type: [Release]
-        c_compiler: [gcc, clang]
         include:
           - os: ubuntu-24.04
             c_compiler: gcc-12
