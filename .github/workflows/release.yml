@@ -6,14 +6,14 @@ on:
       - 'v*'
 
 jobs:
-  build:
+  build-release:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: ubuntu-24.04
-            c_compiler: gcc
-            cpp_compiler: g++
+            c_compiler: gcc-12
+            cpp_compiler: g++-12
             arm_c_compiler: aarch64-linux-gnu-gcc
             arm_cpp_compiler: aarch64-linux-gnu-g++
           - os: ubuntu-22.04
@@ -32,10 +32,16 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install cross compiler
-      if: ${{ Contains(matrix.os, 'ubuntu') }}
+      if: ${{ Contains(matrix.os, 'ubuntu-22.04') ||  Contains(matrix.os, 'ubuntu-20.04')}}
       run: |
         sudo apt-get update
         sudo apt-get install -y g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
+
+    - name: Install gcc-12
+      if: ${{ Contains(matrix.os, 'ubuntu-24.04') }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y g++-12-aarch64-linux-gnu gcc-12-aarch64-linux-gnu gcc-12 g++-12 g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
