@@ -4,11 +4,10 @@
 
 #include <stdint.h>
 
-#include <nx/sdk/interface.h>
-
-#include <nx/sdk/uuid.h>
-#include <nx/sdk/i_string_map.h>
 #include <nx/sdk/analytics/i_object_track_info.h>
+#include <nx/sdk/i_string_map.h>
+#include <nx/sdk/interface.h>
+#include <nx/sdk/uuid.h>
 
 namespace nx::sdk::analytics {
 
@@ -65,6 +64,16 @@ public:
          * actionUrl must be null or empty.
          */
         Ptr<IString> messageToUser;
+
+        /**
+         * Whether proxying through the connected server should be used for actionUrl.
+         */
+        bool useProxy = false;
+
+        /**
+         * Whether device authentication should be used for actionUrl.
+         */
+        bool useDeviceCredentials = false;
     };
 };
 using IAction0 = IAction;

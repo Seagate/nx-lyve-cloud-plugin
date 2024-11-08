@@ -108,7 +108,7 @@ void assertionFailed(
 {
     printFunc((std::string("\n")
         + ">>> ASSERTION FAILED: "
-        + srcFileRelativePath(file) + ":" + toString(line)
+        + file + ":" + toString(line)
         + " (" + conditionStr + ") " + message
     ).c_str());
 
@@ -168,7 +168,7 @@ void printHexDump(
         return;
     }
 
-    s += "\n{\n";
+    s += "\n{";
     int count = size;
     const char* p = bytes;
     while (count > 0)

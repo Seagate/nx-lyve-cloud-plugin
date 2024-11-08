@@ -45,7 +45,7 @@ endif()
 add_library(nx_kit ${nxKitLibraryType} ${nx_kit_files})
 
 if(APPLE)
-    find_library(Foundation_LIBRARY Foundation REQUIRED)
+    find_library(Foundation_LIBRARY Foundation REQIRED)
     target_link_libraries(nx_kit ${Foundation_LIBRARY})
 endif()
 
@@ -76,10 +76,12 @@ if(MSVC)
 endif()
 
 # Set the maximum warning level.
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+if(MSVC)
+    # This block covers not only Visual Studio compiler but also clang-cl, which expands /W4 to
+    # the -Wall flag, while -Wall itself, if passed directly, will be expanded to -Weverything.
+    add_compile_options(/W4 /WX /utf-8)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    add_compile_options(/W4 /WX)
 endif()
 
 set(nxKitWithTests "YES" CACHE STRING "Whether to build unit tests")
