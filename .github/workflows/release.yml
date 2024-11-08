@@ -41,7 +41,7 @@ jobs:
       if: ${{ Contains(matrix.os, 'ubuntu-24.04') }}
       run: |
         sudo apt-get update
-        sudo apt-get install -y g++-12-aarch64-linux-gnu gcc-12-aarch64-linux-gnu gcc-12 g++-12
+        sudo apt-get install -y g++-12-aarch64-linux-gnu gcc-12-aarch64-linux-gnu gcc-12 g++-12 g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
