@@ -67,7 +67,7 @@ bool CloudfuseMngr::writeTemplate()
     if (!out.is_open())
     {
         // failed to open template file for writing
-        printf("Failed to open config template (%s).\n", templateFile);
+        printf("Failed to open config template (%s).\n", templateFile.c_str());
         return false;
     }
     out << config_template;
@@ -75,7 +75,7 @@ bool CloudfuseMngr::writeTemplate()
     if (out.fail())
     {
         // failed to write template file
-        printf("Failed to write config template (%s).\n", templateFile);
+        printf("Failed to write config template (%s).\n", templateFile.c_str());
         return false;
     }
     return true;
