@@ -35,19 +35,27 @@ std::string CloudfuseMngr::getFileCacheDir()
     return fileCacheDir;
 }
 
+// check the first line of the template file for a matching version
 bool CloudfuseMngr::templateOutdated(std::string templateFilePath)
 {
-    // check the first line of the template file for a matching version
     std::string firstLine;
-    // read the first line of the template file
+    bool readFailed = false;
+    // open the template file
     std::ifstream templateFileStream(templateFilePath);
-    // if the file doesn't exist (or can't be opened), we need to write it
-    if (templateFileStream.fail())
+    // check if the file doesn't exist (or failed to open)
+    if (!templateFileStream.is_open())
     {
+        // we need to write the file
         return true;
     }
-    getline(templateFileStream, firstLine);
+    // read the first line and close the file
+    readFailed = !getline(templateFileStream, firstLine);
     templateFileStream.close();
+    if (readFailed)
+    {
+        // reading the line failed, so we need to overwrite the file
+        return true;
+    }
     // if the versions don't match, we need to overwrite the template
     return templateVersionString.compare(firstLine) != 0;
 }
