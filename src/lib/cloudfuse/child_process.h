@@ -53,8 +53,6 @@ class CloudfuseMngr
     processReturn unmount();
     bool isInstalled();
     bool isMounted();
-    bool templateValid();
-    bool writeTemplate();
 
   private:
     std::string mountDir;
@@ -63,6 +61,8 @@ class CloudfuseMngr
     std::string templateFile;
     std::string templateVersionString;
     std::string config_template;
+    bool templateValid();
+    bool writeTemplate();
 #ifdef _WIN32
     processReturn spawnProcess(wchar_t *argv, std::wstring envp);
     processReturn encryptConfig(const std::string passphrase);
