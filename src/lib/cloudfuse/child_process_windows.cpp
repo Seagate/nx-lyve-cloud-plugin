@@ -70,10 +70,11 @@ std::string getSystemName()
 
 CloudfuseMngr::CloudfuseMngr()
 {
+    // generate template contents
     std::string systemName = getSystemName();
     // NOTE: increment the version number when the config template changes
     templateVersionString = "template-version: 0.2";
-    std::string config_template = templateVersionString + R"(
+    config_template = templateVersionString + R"(
 allow-other: true
 logging:
   type: base
@@ -106,7 +107,8 @@ s3storage:
   secret-key: { AWS_SECRET_ACCESS_KEY }
   bucket-name: { BUCKET_NAME }
   endpoint: { ENDPOINT }
-  subdirectory: )" + systemName + "\n";
+  subdirectory: )" + systemName +
+                      "\n";
 
     std::string appdataEnv;
     char *buf = nullptr;
@@ -131,11 +133,9 @@ s3storage:
     configFile = configFilePath.generic_string();
     templateFile = templateFilePath.generic_string();
 
-    if (templateOutdated(templateFile))
+    if (!templateValid())
     {
-        std::ofstream out(templateFile, std::ios::trunc);
-        out << config_template;
-        out.close();
+        writeTemplate();
     }
 }
 

@@ -36,17 +36,17 @@ std::string CloudfuseMngr::getFileCacheDir()
 }
 
 // check the first line of the template file for a matching version
-bool CloudfuseMngr::templateOutdated(std::string templateFilePath)
+bool CloudfuseMngr::templateValid()
 {
     std::string firstLine;
     bool readFailed = false;
     // open the template file
-    std::ifstream templateFileStream(templateFilePath);
+    std::ifstream templateFileStream(templateFile);
     // check if the file doesn't exist (or failed to open)
     if (!templateFileStream.is_open())
     {
         // we need to write the file
-        return true;
+        return false;
     }
     // read the first line and close the file
     readFailed = !getline(templateFileStream, firstLine);
@@ -54,8 +54,29 @@ bool CloudfuseMngr::templateOutdated(std::string templateFilePath)
     if (readFailed)
     {
         // reading the line failed, so we need to overwrite the file
-        return true;
+        return false;
     }
     // if the versions don't match, we need to overwrite the template
-    return templateVersionString.compare(firstLine) != 0;
+    return templateVersionString.compare(firstLine) == 0;
+}
+
+bool CloudfuseMngr::writeTemplate()
+{
+    // write the template file
+    std::ofstream out(templateFile, std::ios::trunc);
+    if (!out.is_open())
+    {
+        // failed to open template file for writing
+        printf("Failed to open config template (%s).\n", templateFile);
+        return false;
+    }
+    out << config_template;
+    out.close();
+    if (out.fail())
+    {
+        // failed to write template file
+        printf("Failed to write config template (%s).\n", templateFile);
+        return false;
+    }
+    return true;
 }
