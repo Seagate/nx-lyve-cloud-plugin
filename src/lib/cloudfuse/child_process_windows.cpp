@@ -265,6 +265,10 @@ processReturn CloudfuseMngr::genS3Config(const std::string accessKeyId, const st
                                          const std::string endpoint, const std::string bucketName,
                                          const uint64_t bucketSizeMb, const std::string passphrase)
 {
+    if (!templateValid() && !writeTemplate())
+    {
+        return processReturn{1, "Failed to overwrite invalid template file: " + templateFile};
+    }
     const std::string argv = "cloudfuse gen-config --config-file=" + templateFile + " --output-file=" + configFile +
                              " --temp-path=" + fileCacheDir + " --passphrase=" + passphrase;
     const std::string aws_access_key_id_env = "AWS_ACCESS_KEY_ID=" + accessKeyId;

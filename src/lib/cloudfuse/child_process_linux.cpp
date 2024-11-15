@@ -176,6 +176,10 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
 processReturn CloudfuseMngr::genS3Config(const std::string endpoint, const std::string bucketName,
                                          const uint64_t bucketSizeMb, const std::string passphrase)
 {
+    if (!templateValid() && !writeTemplate())
+    {
+        return processReturn{1, "Failed to overwrite invalid template file: " + templateFile};
+    }
     const std::string configArg = "--config-file=" + templateFile;
     const std::string outputArg = "--output-file=" + configFile;
     const std::string fileCachePathArg = "--temp-path=" + fileCacheDir;
