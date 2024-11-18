@@ -70,10 +70,11 @@ std::string getSystemName()
 
 CloudfuseMngr::CloudfuseMngr()
 {
+    // generate template contents
     std::string systemName = getSystemName();
     // NOTE: increment the version number when the config template changes
     templateVersionString = "template-version: 0.2";
-    std::string config_template = templateVersionString + R"(
+    config_template = templateVersionString + R"(
 allow-other: true
 logging:
   type: base
@@ -106,7 +107,8 @@ s3storage:
   secret-key: { AWS_SECRET_ACCESS_KEY }
   bucket-name: { BUCKET_NAME }
   endpoint: { ENDPOINT }
-  subdirectory: )" + systemName + "\n";
+  subdirectory: )" + systemName +
+                      "\n";
 
     std::string appdataEnv;
     char *buf = nullptr;
@@ -131,11 +133,9 @@ s3storage:
     configFile = configFilePath.generic_string();
     templateFile = templateFilePath.generic_string();
 
-    if (templateOutdated(templateFile))
+    if (!templateValid())
     {
-        std::ofstream out(templateFile, std::ios::trunc);
-        out << config_template;
-        out.close();
+        writeTemplate();
     }
 }
 
@@ -265,6 +265,10 @@ processReturn CloudfuseMngr::genS3Config(const std::string accessKeyId, const st
                                          const std::string endpoint, const std::string bucketName,
                                          const uint64_t bucketSizeMb, const std::string passphrase)
 {
+    if (!templateValid() && !writeTemplate())
+    {
+        return processReturn{1, "Failed to overwrite invalid template file: " + templateFile};
+    }
     const std::string argv = "cloudfuse gen-config --config-file=" + templateFile + " --output-file=" + configFile +
                              " --temp-path=" + fileCacheDir + " --passphrase=" + passphrase;
     const std::string aws_access_key_id_env = "AWS_ACCESS_KEY_ID=" + accessKeyId;
