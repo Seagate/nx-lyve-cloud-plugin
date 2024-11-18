@@ -45,7 +45,7 @@ endif()
 add_library(nx_kit ${nxKitLibraryType} ${nx_kit_files})
 
 if(APPLE)
-    find_library(Foundation_LIBRARY Foundation REQIRED)
+    find_library(Foundation_LIBRARY Foundation REQUIRED)
     target_link_libraries(nx_kit ${Foundation_LIBRARY})
 endif()
 
