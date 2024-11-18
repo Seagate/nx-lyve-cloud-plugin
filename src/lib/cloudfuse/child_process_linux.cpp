@@ -44,10 +44,11 @@ std::string getSystemName()
 
 CloudfuseMngr::CloudfuseMngr()
 {
+    // generate template contents
     std::string systemName = getSystemName();
     // NOTE: increment the version number when the config template changes
     templateVersionString = "template-version: 0.2";
-    std::string config_template = templateVersionString + R"(
+    config_template = templateVersionString + R"(
 allow-other: true
 logging:
   type: base
@@ -78,7 +79,8 @@ attr_cache:
 s3storage:
   bucket-name: { BUCKET_NAME }
   endpoint: { ENDPOINT }
-  subdirectory: )" + systemName + "\n";
+  subdirectory: )" + systemName +
+                      "\n";
 
     std::string homeEnv;
     const char *home = std::getenv("HOME");
@@ -95,11 +97,9 @@ s3storage:
     configFile = homeEnv + "/nx_plugin_config.aes";
     templateFile = homeEnv + "/nx_plugin_config.yaml";
 
-    if (templateOutdated(templateFile))
+    if (!templateValid())
     {
-        std::ofstream out(templateFile, std::ios::trunc);
-        out << config_template;
-        out.close();
+        writeTemplate();
     }
 }
 
@@ -176,6 +176,10 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
 processReturn CloudfuseMngr::genS3Config(const std::string endpoint, const std::string bucketName,
                                          const uint64_t bucketSizeMb, const std::string passphrase)
 {
+    if (!templateValid() && !writeTemplate())
+    {
+        return processReturn{1, "Failed to overwrite invalid template file: " + templateFile};
+    }
     const std::string configArg = "--config-file=" + templateFile;
     const std::string outputArg = "--output-file=" + configFile;
     const std::string fileCachePathArg = "--temp-path=" + fileCacheDir;

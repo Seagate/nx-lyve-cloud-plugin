@@ -60,7 +60,9 @@ class CloudfuseMngr
     std::string fileCacheDir;
     std::string templateFile;
     std::string templateVersionString;
-    bool templateOutdated(std::string templateFilePath);
+    std::string config_template;
+    bool templateValid();
+    bool writeTemplate();
 #ifdef _WIN32
     processReturn spawnProcess(wchar_t *argv, std::wstring envp);
     processReturn encryptConfig(const std::string passphrase);
