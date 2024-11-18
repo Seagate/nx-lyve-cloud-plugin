@@ -211,10 +211,9 @@ class DeviceAgentHandler : public nx::sdk::RefCountable<IDeviceAgent::IHandler>
     {
         ASSERT_TRUE(event);
 
-        NX_PRINT << "DeviceAgentHandler: Received a plugin diagnostic event: "
-                 << "level " << (int)event->level() << ", "
-                 << "caption " << nx::kit::utils::toString(event->caption()) << ", "
-                 << "description " << nx::kit::utils::toString(event->description());
+        NX_PRINT << "DeviceAgentHandler: Received a plugin diagnostic event: " << "level " << (int)event->level()
+                 << ", " << "caption " << nx::kit::utils::toString(event->caption()) << ", " << "description "
+                 << nx::kit::utils::toString(event->description());
     }
 
     virtual void pushManifest(const IString *manifest) override
@@ -233,10 +232,9 @@ class EngineHandler : public nx::sdk::RefCountable<IEngine::IHandler>
     {
         ASSERT_TRUE(event);
 
-        NX_PRINT << "EngineHandler: Received a plugin diagnostic event: "
-                 << "level " << (int)event->level() << ", "
-                 << "caption " << nx::kit::utils::toString(event->caption()) << ", "
-                 << "description " << nx::kit::utils::toString(event->description());
+        NX_PRINT << "EngineHandler: Received a plugin diagnostic event: " << "level " << (int)event->level() << ", "
+                 << "caption " << nx::kit::utils::toString(event->caption()) << ", " << "description "
+                 << nx::kit::utils::toString(event->description());
     }
 };
 
