@@ -112,6 +112,6 @@ bundles this library with the Plugin. It will not work as expected - when the Pl
 code will be tuned by the Linux library loader to use functions from the `libssl.so.1.0.0` used by
 the Server (and already loaded into the process), and the modified library will not be loaded.
 This takes place regardless of whether the modified SSL library is called `libssl.so.1.0.0` or
-differently - only the symbols (funciton names) matter.
+differently - only the symbols (function names) matter.
 
 SOLUTION: The Plugin should be linked to public libraries statically.

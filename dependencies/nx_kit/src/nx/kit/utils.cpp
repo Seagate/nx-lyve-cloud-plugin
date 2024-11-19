@@ -145,7 +145,7 @@ const std::vector<std::string>& getProcessCmdLineArgs()
             if (utf8Length > 0)
             {
                 std::string utf8Arg;
-                // Exclued null-terminator
+                // Exclude null-terminator
                 utf8Arg.resize(utf8Length - 1);
                 WideCharToMultiByte(
                     CP_UTF8, 0, argv[i], -1, &utf8Arg[0], utf8Length, nullptr, nullptr);

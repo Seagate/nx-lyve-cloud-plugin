@@ -4,7 +4,7 @@
 
 This document describes the SDK's "hidden" (working automatically) mechanism called LibContext.
 
-Each dynamic library which encorporates nx/sdk/helpers/lib_context.cpp, such as a Plugin's dynamic
+Each dynamic library which incorporates nx/sdk/helpers/lib_context.cpp, such as a Plugin's dynamic
 library and the main dynamic library of the Server, owns its instance of nx::sdk::ILibContext
 (`src/nx/sdk/lib_context.h`). This instance is owned in a static variable in a local (non-exported)
 function `libContext()` defined in `src/nx/sdk/lib_context.cpp`.

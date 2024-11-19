@@ -369,7 +369,7 @@ Attributes that are inherited from the base type can be "re-defined" as follows:
     respectively, provided that this overriding Enum/Color is in turn inherited from the
     Enum/Color of the base Attribute.
 
-### Overriden Attributes
+### Overridden Attributes
 
 The following behavior is observed in the GUI when several types inherited from the same base type
 override the same Attribute and declare it as a supported one.

@@ -82,7 +82,7 @@ Plugin Manifest is a JSON Object containing the following fields:
 
 - `"description"`: String
 
-    A short text in English describing the purpose of the plugin, typically a single sentense.
+    A short text in English describing the purpose of the plugin, typically a single sentence.
 
     Mandatory.
 
