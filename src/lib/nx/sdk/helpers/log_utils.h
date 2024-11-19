@@ -5,9 +5,9 @@
 #include <map>
 #include <string>
 
-namespace nx { namespace sdk { class IStringMap; } }
-
 namespace nx::sdk {
+
+class IStringMap;
 
 /**
  * Plugin utils providing convenience for using NX_PRINT/NX_OUTPUT with their settings
@@ -17,7 +17,9 @@ namespace nx::sdk {
  * To use this tool in a class, make a field "const nx::sdk::LogUtils logUtils", and add
  * the following lines:
  * <pre><code>
+ *     #undef NX_PRINT_PREFIX
  *     #define NX_PRINT_PREFIX (this->logUtils.printPrefix)
+ *     #undef NX_DEBUG_ENABLE_OUTPUT
  *     #define NX_DEBUG_ENABLE_OUTPUT (this->logUtils.enableOutput)
  *     #include <nx/kit/debug.h>
  * </code></pre>

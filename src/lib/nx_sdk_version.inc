@@ -8,4 +8,4 @@
 // version is available via IUtilityProvider::getServerSdkVersion().
 
 
-"5.1.4 R1"
+"6.0.0 R7"

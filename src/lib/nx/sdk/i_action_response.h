@@ -10,7 +10,7 @@ namespace nx::sdk {
  * Defines how the Client must interact with the user after the plugin executes some action
  * triggered by the user.
  */
-class IActionResponse: public Interface<IActionResponse>
+class IActionResponse0: public Interface<IActionResponse0>
 {
 public:
     static auto interfaceId() { return makeId("nx::sdk::IActionResponse"); }
@@ -27,6 +27,22 @@ public:
      */
     virtual const char* messageToUser() const = 0;
 };
-using IActionResponse0 = IActionResponse;
+
+class IActionResponse: public Interface<IActionResponse, IActionResponse0>
+{
+public:
+    static auto interfaceId() { return makeId("nx::sdk::IActionResponse1"); }
+
+    /**
+     * @return Whether proxying through the connected server should be used for actionUrl().
+     */
+    virtual bool useProxy() const = 0;
+
+    /**
+     * @return Whether device authentication should be used for actionUrl().
+     */
+    virtual bool useDeviceCredentials() const = 0;
+};
+using IActionResponse1 = IActionResponse;
 
 } // namespace nx::sdk

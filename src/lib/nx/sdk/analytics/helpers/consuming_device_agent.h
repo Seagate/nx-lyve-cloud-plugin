@@ -11,22 +11,21 @@
 #endif
 #endif
 
-#include <string>
 #include <map>
-#include <vector>
 #include <mutex>
+#include <string>
+#include <vector>
 
-#include <nx/sdk/helpers/ref_countable.h>
-#include <nx/sdk/helpers/log_utils.h>
-#include <nx/sdk/ptr.h>
-
-#include <nx/sdk/analytics/i_engine.h>
-#include <nx/sdk/analytics/i_consuming_device_agent.h>
 #include <nx/sdk/analytics/i_compound_metadata_packet.h>
-#include <nx/sdk/analytics/i_metadata_types.h>
 #include <nx/sdk/analytics/i_compressed_video_packet.h>
-#include <nx/sdk/analytics/i_uncompressed_video_frame.h>
+#include <nx/sdk/analytics/i_consuming_device_agent.h>
 #include <nx/sdk/analytics/i_custom_metadata_packet.h>
+#include <nx/sdk/analytics/i_engine.h>
+#include <nx/sdk/analytics/i_metadata_types.h>
+#include <nx/sdk/analytics/i_uncompressed_video_frame.h>
+#include <nx/sdk/helpers/log_utils.h>
+#include <nx/sdk/helpers/ref_countable.h>
+#include <nx/sdk/ptr.h>
 
 namespace nx::sdk::analytics {
 
@@ -38,6 +37,7 @@ namespace nx::sdk::analytics {
  * To use NX_PRINT/NX_OUTPUT in a derived class with the prefix defined by this class, add the
  * following to the derived class .cpp:
  * <pre><code>
+ *     #undef NX_PRINT_PREFIX
  *     #define NX_PRINT_PREFIX (this->logUtils.printPrefix)
  *     #include <nx/kit/debug.h>
  * </code></pre>

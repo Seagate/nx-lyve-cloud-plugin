@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <nx/sdk/interface.h>
-
 #include <nx/sdk/i_string.h>
 #include <nx/sdk/i_string_map.h>
+#include <nx/sdk/interface.h>
 
 namespace nx::sdk {
 
@@ -34,7 +33,7 @@ public:
 
 /**
  * The data to be returned from the plugin describing the desired settings.
- * 
+ *
  * A combination of optional individual setting errors, optional new setting values in case they
  * were adjusted, and an optional new Settings Model.
  */

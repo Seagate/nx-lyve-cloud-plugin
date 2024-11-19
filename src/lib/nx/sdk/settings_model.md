@@ -26,15 +26,17 @@ Certain fields are supported by some of the controls.
     value in the GUI immediately (or with some delay in the case of TextField-like fields) triggers
     sending a request to the Server, without waiting for the confirmation with the "Apply" button.
     The request executes the code of the Active Setting handler of the entity being set up by these
-    Settings. The setting values sent in such a request are not meant to be "applied" (stored in a
-    database) - they are intended only for preparing a proper reply to the user, which may include
-    an adjusted Settings Model, adjusted values of the GUI controls, and a message to be shown to
-    the user or a URL to be opened in the web browser. The main purpose of Active settings is to
-    give the entities being set up a way to change the Settings Model and values on-the-fly,
-    providing a better user experience. An example could be an Active combo-box which lists the
-    supported measurement units, and the handler code which converts the entered value into the
-    selected unit.
-    
+    Settings. Note that if the Settings dialog is shown before the entity is created, no Active
+    Setting requests will be fired before the user clicks "Apply" and the entity is created. The
+    setting values sent in such a request are not meant to be "applied" (stored in a database) -
+    they are intended only for preparing a proper reply to the user, which may include an adjusted
+    Settings Model, adjusted values of the GUI controls, and a message to be shown to the user or a
+    URL to be opened in the web browser. The main purpose of Active settings is to give the
+    entities being set up a way to change the Settings Model and values on-the-fly, providing a
+    better user experience. An example could be an Active combo-box which lists the supported
+    measurement units, and the handler code which converts the entered value into the selected
+    unit.
+
     ATTENTION: The "Active Setting" feature requires the reaction with the entity that the settings
     are intended for, like an Analytics Engine or a Device Agent. In certain scenarios, this entity
     may not exist yet - for example, when an Engine is going to be turned on for a camera for the
@@ -44,7 +46,7 @@ Certain fields are supported by some of the controls.
     may be found useful to present the initial Settings Model that does not count on `isActive`,
     and after the settings are applied and the entity (e.g. Device Agent) is created, it may
     present a more advanced Settings Model which makes use of `isActive`.
-    
+
 - `"parametersModel"` - Settings Model JSON object. Applies only for controls with the `"isActive"`
     property set to `true`. Additional parameters are requested when the active control is triggered.
     NOTE: The `"parametersModel"` model does not support items with the `"isActive"` property set
@@ -574,13 +576,21 @@ Property "name" must be unique, will be used as a caption if caption is not spec
 ---------------------------------------------------------------------------------------------------
 ## GroupBox
 
-Grouping panel with a caption. Top-level groupboxes visually distinguished from the nested.
+Grouping panel with a caption. Top-level groupboxes visually distinguished from the nested if the
+style is not specified or set to `"default"`.
+
+The `"style"` field is optional and accepts the following values:
+- `"default"` (top-level groupboxes will have style `"panel"` and nested will have style `"group"`)
+- `"panel"`
+- `"group"`
+- `"label"`
 
 ### Setting Model
 
     {
         "type": "GroupBox",
         "caption": "Top-level groupbox",
+        "style": "default",
         "items": [
             { "type": "CheckBox", "caption": "CheckBox", "description": "Hint" },
             { "type": "SpinBox", "caption": "SpinBox",  "description": "Hint" },

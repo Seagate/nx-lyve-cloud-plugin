@@ -1,6 +1,6 @@
 # Analytics Taxonomy
 
-// Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: <www.mozilla.org/MPL/2.0/>
+// Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
 This document describes the mechanism for defining Event and Object types and their Attributes.
 Such definitions are made in `"typeLibrary"` field in the Engine or DeviceAgent JSON manifest; for
@@ -17,47 +17,46 @@ Analytics Plugin, "Taxonomy features" sub-plugin, located in this SDK:
 samples/stub_analytics_plugin/src/nx/vms_server_plugins/analytics/stub/taxonomy_features/device_agent_manifest.h
 
 ---------------------------------------------------------------------------------------------------
-
 ## General information
 
 - Error processing:
-  - When a Library is parsed by the Server, it may produce errors, but the Server recovers in the
+    - When a Library is parsed by the Server, it may produce errors, but the Server recovers in the
         most obvious way (e.g. ignoring a faulty entity) and continues parsing. The errors are
         logged in the regular Server log.
 
 - Attribute values:
-  - The pack of Attributes is represented as a string-to-string multi-map.
-    - Any Attribute of a scalar type can hold more than one value, so actually every type is a
+    - The pack of Attributes is represented as a string-to-string multi-map.
+        - Any Attribute of a scalar type can hold more than one value, so actually every type is a
             set.
-      - Empty set is equivalent to the omitted value.
-      - Set with a single value is equivalent to a scalar value.
-      - Set with more than one value is called an underdetermined value - semantically, it
+            - Empty set is equivalent to the omitted value.
+            - Set with a single value is equivalent to a scalar value.
+            - Set with more than one value is called an underdetermined value - semantically, it
                 may stand for an ambiguously or simultaneously detected properties.
-  - Attribute value is technically always a string: for String type, it's the value string as is,
+    - Attribute value is technically always a string: for String type, it's the value string as is,
         for other types it's a JSON value.
-  - Any Attribute value can be omitted; there is no concept of a default value of an Attribute.
-  - Empty string, `null` (for Attributes which values are JSON objects) and `[]` (for Attributes
+    - Any Attribute value can be omitted; there is no concept of a default value of an Attribute.
+    - Empty string, `null` (for Attributes which values are JSON objects) and `[]` (for Attributes
         which values are JSON lists) are equivalent to the omitted value.
 
 - Identifiers:
-  - Used as ids of Enums (not their names, nor their items), Object types, Event types.
-  - Contain only Latin letters, digits, minuses, underscores, and braces; must start with a
+    - Used as ids of Enums (not their names, nor their items), Object types, Event types.
+    - Contain only Latin letters, digits, minuses, underscores, and braces; must start with a
         letter, digit or an underscore.
-  - The period is used to form a domain-style notation, with the recommendation to drop the
+    - The period is used to form a domain-style notation, with the recommendation to drop the
         prefix `com.`.
-  - If this syntax is broken (including leading/trailing/multiple periods), it is an error; as a
+    - If this syntax is broken (including leading/trailing/multiple periods), it is an error; as a
         recovery, the incorrect identifier is accepted as is.
-  - If some entity with an identifier is defined more than once in the particular Library being
+    - If some entity with an identifier is defined more than once in the particular Library being
         parsed, all these definitions yield entities with the identical internal representation
         (thus, only syntactical JSON differences are allowed), and then they are treated as the
         same entity (thus, all definitions except one are ignored). If some definitions with the
         same id in the same library differ in the internal representation, it is an error.
 
 - Names:
-  - Used for names of Attributes, Object types, Event types, Enums, Enum items.
-  - Contain only ASCII chars 33..126, Unicode chars >=128 (non-printables are discouraged but not
+    - Used for names of Attributes, Object types, Event types, Enums, Enum items.
+    - Contain only ASCII chars 33..126, Unicode chars >=128 (non-printables are discouraged but not
         checked), spaces can occur only inside and no more than one in a row.
-  - If this syntax is broken, it is an error; as a recovery, illegal chars (including spaces) are
+    - If this syntax is broken, it is an error; as a recovery, illegal chars (including spaces) are
         stripped away.
 
 - If an Attribute value is sent from the Plugin which violates some restriction (e.g. a Number type
@@ -68,7 +67,6 @@ samples/stub_analytics_plugin/src/nx/vms_server_plugins/analytics/stub/taxonomy_
     by icon id.
 
 ---------------------------------------------------------------------------------------------------
-
 ## JSON structure
 
 A Type Library is a JSON object which contain the following lists of entities (in any order):
@@ -80,7 +78,8 @@ A Type Library is a JSON object which contain the following lists of entities (i
     "colorTypes": [ ... ],
     "objectTypes": [ ... ],
     "eventTypes": [ ... ],
-    "eventGroups": [ ... ]
+    "groups": [ ... ],
+    "extendedObjectTypes": [ ... ]
 }
 ```
 
@@ -129,12 +128,12 @@ following fields:
 
     List of color values. Each item is a JSON object with the following fields:
 
-  - `"name"`: Name (String)
+    - `"name"`: Name (String)
 
         Full name of the color value, in English. Will be shown to the user. May look like
         `"dark"`.
 
-  - `"rgb"`: RGB in HEX format (String)
+    - `"rgb"`: RGB in HEX format (String)
 
         The associated RGB value used for this color representation in the UI, for example, when
         the user is presented a palette to choose from when searching. This RGB value is not
@@ -174,9 +173,9 @@ This JSON object describes an Object type. It has the following fields:
     Identifier of an icon from the icon library built into the VMS. The icons are taken from the
     open-source icon collection "IconPark", v1.1.1. The icon identifier has the form
     `bytedance.iconpark.<name>`. For example, `"bytedance.iconpark.palace"`. The icons can be
-    browsed on the official website of the icon collection: <http://iconpark.bytedance.com/>. The
+    browsed on the official website of the icon collection: http://iconpark.bytedance.com/. The
     icon files can be downloaded from the official open-source repository of the icon collection:
-    <https://github.com/bytedance/IconPark/>.
+    https://github.com/bytedance/IconPark/.
 
     NOTE: The icons from the above mentioned icon collection that refer to various brands are not
     available for the VMS Taxonomy.
@@ -185,37 +184,37 @@ This JSON object describes an Object type. It has the following fields:
 
     Optional. Defines the color of a bounding box used to show such Objects on the video. Can be
     one of the following fixed values:
-  - `"Magenta"`
-  - `"Blue"`
-  - `"Green"`
-  - `"Yellow"`
-  - `"Cyan"`
-  - `"Purple"`
-  - `"Orange"`
-  - `"Red"`
-  - `"White"`
+    - `"Magenta"`
+    - `"Blue"`
+    - `"Green"`
+    - `"Yellow"`
+    - `"Cyan"`
+    - `"Purple"`
+    - `"Orange"`
+    - `"Red"`
+    - `"White"`
 
     NOTE: This concept of color has no relation to the one used as an Attribute type.
 
 - `"base"`: String
-  
+
     Optional name of an Object Type to inherit the Attributes from.
 
 - `"flags"`: Flag set (String)
 
     A combination of zero or more of the following flags, separated with `|`:
 
-  - `hiddenDerivedType` - this Object type will not be offered to the user in the Search GUI, but
+    - `hiddenDerivedType` - this Object type will not be offered to the user in the Search GUI, but
         all its Attributes will be appended to the Attribute list of its base type. Can be applied
         to derived Object types only.
 
-  - `liveOnly` - Objects of such types will not be stored in the video archive - they will be
+    - `liveOnly` - Objects of such types will not be stored in the video archive - they will be
         only visible when watching live video from the camera (and only when the Objects do not
         come too late from the Analytics Plugin), but they will not be visible when playing back
         the archive, and will not appear in the Search results. This can improve performance when a
         lot of Objects are generated by a Plugin.
 
-  - `nonIndexable` - Objects of such types will be stored in the video archive as usual, but will
+    - `nonIndexable` - Objects of such types will be stored in the video archive as usual, but will
         not be added to the Search index and thus will not appear in the Search results, though
         they will be visible when watching live video from the camera (and only when the Objects do
         not come too late from the Analytics Plugin), and when playing back the archive. This can
@@ -254,9 +253,9 @@ This JSON object describes an Event type. It has the following fields:
 
     A combination of zero or more of the following flags, separated with `|`:
 
-  - `stateDependent` - Prolonged event with active and non-active states.
-  - `regionDependent` - Event has reference to a region on a video frame.
-  - `hidden` - Event type is hidden in the Client.
+    - `stateDependent` - Prolonged event with active and non-active states.
+    - `regionDependent` - Event has reference to a region on a video frame.
+    - `hidden` - Event type is hidden in the Client.
 
     Optional; default value is empty.
 
@@ -278,7 +277,7 @@ This JSON object describes an Event type. It has the following fields:
 
     Similar to the same-name fields of an Object type.
 
-### Event groups
+### Groups
 
 This JSON object describes a Group for Event types. The particular Group is referenced from an
 Event Type via its `"groupId"` field. The Group definition has the following fields:
@@ -298,8 +297,39 @@ Event Type via its `"groupId"` field. The Group definition has the following fie
 
     Mandatory.
 
----------------------------------------------------------------------------------------------------
+### Extended Object Types
 
+This section provides an alternative simplified syntax of defining "hidden" derived Object Types.
+Each entity in the `"extendedObjectTypes"` array is technically a definition of a "hidden" derived
+Object Type with an auto-generated id using the template `"<pluginId>$<baseObjectTypeId>"`. The `"id"`
+field of an Extended Object Type is an id of the base Object Type. The name of the derived Type must
+be empty. The Extended Object Type definition has the following fields:
+
+- `"id"`: Id (String)
+
+    Identifier of the base Object Type that is being extended.
+
+- `"attributes"`: Array<Object>
+
+    List of Attributes of the newly defined "hidden" descendant.
+
+### Attribute Lists
+
+Describes a list of Type Attributes, which can be used in the Type definition. Each List must have
+an id, and a list of Attributes which uses that same syntax as used in specifying Attributes in
+Object and Event Types. Semantically an Attribute List is like a macro - it can be used instead of
+an Attribute definition in any Object Type or Event Type definition; its contents simply substitute
+the invocation. The Attribute List definition has the following fields:
+
+- `"id"`: Id (String)
+
+    Identifier of the Attribute List.
+
+- `"attributes"`: Array<Object>
+
+    List of Attributes.
+
+---------------------------------------------------------------------------------------------------
 ## Attributes
 
 Objects and Events can have a list of Attributes, each Attribute being defined with a JSON object
@@ -313,14 +343,26 @@ containing the following fields:
 
     Must have one of the values listed below in the "Attribute types" section.
 
+- `"subtype"`: String
+
+    User-defined id of the particular type. Valid only for user-defined types like `"Enum"`,
+    `"Color"`, `"Object"`.
+
+- `"attributeList"`: String
+    Id of an Attribute List. If present, all other fields are ignored.
+
+- `"condition"`: String
+    Condition string that defines whether this Attribute makes sense for the Object or Event Type
+    depending on values of the other Attributes. Uses the same syntax as in the Object Search panel.
+
 Other fields depend on the particular attribute type.
 
 Attributes that are inherited from the base type can be "re-defined" as follows:
 
-- "subtype" and "unit" can be specified if not specified in the base type (or had exactly the
+- `"subtype"` and `"unit"` can be specified if not specified in the base type (or had exactly the
     same value);
 
-- "minValue" and "maxValue" can be specified if and only if the inherited range rather than
+- `"minValue"` and `"maxValue"` can be specified if and only if the inherited range rather than
     extend it.
 
 - For Enums and Colors, the Attribute can be re-defined to use another Enum/Color
@@ -333,67 +375,68 @@ The following behavior is observed in the GUI when several types inherited from 
 override the same Attribute and declare it as a supported one.
 
 - For Numeric attributes:
-  - The widest possible range is applied.
-  - If units don't have the same value, the resulting unit is set to an empty string.
-  - If at least one Attribute has the `"float"` subtype, the resulting Attribute will be float as
+    - The widest possible range is applied.
+    - If units don't have the same value, the resulting unit is set to an empty string.
+    - If at least one Attribute has the `"float"` subtype, the resulting Attribute will be float as
         well.
 
 - For Enum and Color Attributes:
-  - The resulting Attribute will contain all the values from the initial Attributes.
+    - The resulting Attribute will contain all the values from the initial Attributes.
 
 - For Object Attributes (aggregated Objects):
-  - The resulting Attribute will contain all the sub-attributes that are declared as supported in
+    - The resulting Attribute will contain all the sub-attributes that are declared as supported in
         all the types that override the Attribute.
-  - All collisions are resolved recursively according to the rules described in this section.
+    - All collisions are resolved recursively according to the rules described in this section.
 
 - Boolean and String Attributes stay intact.
 
 - For other type combinations:
-  - All such Attributes (though with the same name) are shown in the Search filter GUI, treating
+    - All such Attributes (though with the same name) are shown in the Search filter GUI, treating
         all the values entered by the user as required criteria, so it makes sense for the user to
         fill only one of them as a filter.
 
 ### Attribute types
 
 - `"Number"`:
-  - Can hold both integer and floating-point values, as in JSON.
-  - Hints: `"minValue"`, `"maxValue"`, `"unit"` (for GUI only).
-  - `"subtype"` is treated like a hint: can be `"integer"` or `"float"` (default).
+    - Can hold both integer and floating-point values, as in JSON.
+    - Hints: `"minValue"`, `"maxValue"`, `"unit"` (for GUI only).
+    - `"subtype"` is treated like a hint: can be `"integer"` or `"float"` (default).
 
 - `"Boolean"`:
-  - Can be either True, False, or omitted (which is a distinct case).
-  - Case-insensitive `"true"`, `"false"` is accepted by the Server from a Plugin, as well as
+    - Can be either True, False, or omitted (which is a distinct case).
+    - Case-insensitive `"true"`, `"false"` is accepted by the Server from a Plugin, as well as
         `"0"` and `"1"`.
 
 - `"String"`:
-  - An empty string is equivalent to the omitted attribute.
-  - Cannot be restricted to be non-empty.
-  - May contain any Unicode chars, including '\n', '\0' and other control chars.
+    - An empty string is equivalent to the omitted attribute.
+    - Cannot be restricted to be non-empty.
+    - May contain any Unicode chars, including '\n', '\0' and other control chars.
 
 - `"Enum"`:
-  - Set of Enum items can be empty ­- it makes sense for extending Enums.
-  - `"subtype"` in the attribute definition refers to a Enum id.
-  - Item names are not Identifiers - they are Names.
-  - Enums can be inherited and extended via `"base"` and `"baseItems"` fields.
+    - The set of Enum items can be empty - it makes sense for extending Enums.
+    - `"subtype"` in the attribute definition refers to a user-defined Enum type id.
+    - Item names are not Identifiers - they are Names.
+    - Enums can be inherited and extended via `"base"` and `"baseItems"` fields.
 
 - `"Color"`:
-  - Similar to an Enum, but each item has an associated RGB value used for this color
+    - Similar to an Enum, but each item has an associated RGB value used for this color
         representation in the UI.
-  - The color Name is what appears as the Attbiture value.
-  - Like Enums, Colors can be inherited and extended via `"base"` and `"baseItems"` fields.
+    - `"subtype"` in the attribute definition refers to a user-defined Color type id.
+    - The color Name is what appears as the Attbiture value.
+    - Like Enums, Colors can be inherited and extended via `"base"` and `"baseItems"` fields.
 
 - `"Object"`:
-  - A nested (aggregated) Object of the specified `"subtype"` Object type, or of any type (if
+    - A nested (aggregated) Object of the specified `"subtype"` Object type, or of any type (if
         `"subtype"` is omitted).
-  - Can be null, which is equivalent to the omitted attribute.
-  - The following rules are used to represent a nested Object in the Attribute values of a
+    - Can be null, which is equivalent to the omitted attribute.
+    - The following rules are used to represent a nested Object in the Attribute values of a
         particular instance of the owner (outer) Object:
-    - For each Attribute of an inner Object, an Attribute with the required type and the name
+        - For each Attribute of an inner Object, an Attribute with the required type and the name
             `<ownerAttributeName>.<innerAttributeName>` defines its value.
-    - Additionally, there may be a boolean Attribute with the name `<ownerAttributeName>`.
-      - If it equals `true`, the nested Object is considered present.
-      - If it equals `false`, the nested Object is considered omitted (null).
-      - If it is omitted, the presence of the nested Object is deduced by the presence of any
+        - Additionally, there may be a boolean Attribute with the name `<ownerAttributeName>`.
+            - If it equals `true`, the nested Object is considered present.
+            - If it equals `false`, the nested Object is considered omitted (null).
+            - If it is omitted, the presence of the nested Object is deduced by the presence of any
                 of its individual Attributes.
-    - NOTE: This scheme allows for an instance that contains a nested Object which has no
+        - NOTE: This scheme allows for an instance that contains a nested Object which has no
             Attribute values, but the Object itself is considered to be present.

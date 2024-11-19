@@ -211,7 +211,7 @@ class DeviceAgentHandler : public nx::sdk::RefCountable<IDeviceAgent::IHandler>
     {
         ASSERT_TRUE(event);
 
-        NX_PRINT << "DeviceAgentHandler: Received a plugin diagnostic event: "
+        NX_PRINT << "EngineHandler: Received a plugin diagnostic event: "
                  << "level " << (int)event->level() << ", "
                  << "caption " << nx::kit::utils::toString(event->caption()) << ", "
                  << "description " << nx::kit::utils::toString(event->description());

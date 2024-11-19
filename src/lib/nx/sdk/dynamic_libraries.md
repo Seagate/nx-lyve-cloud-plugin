@@ -1,6 +1,6 @@
 # Using dynamic libraries in Plugins
 
-// Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: <www.mozilla.org/MPL/2.0/>
+// Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
 This document describes issues which may arise when a Plugin dynamic library depends on any other
 dynamic libraries, either taken from the OS (Windows or Linux), or coming with the Plugin in its
@@ -11,14 +11,13 @@ to VMS Server crashes. And even if the Plugin works well with the particular VMS
 particular OS version, the failures may appear when VMS or OS is upgraded.
 
 The root cause of these issues is the fundamental deficiency of the OS mechanisms which resolve the
-symbols after loading a dynamic library.  
+symbols after loading a dynamic library.
 
 Note that if a plugin is statically linked to certain libraries, it does not guarantee that symbols
 from that libraries are not present in the imported/exported symbol table in the plugin dynamic
 library.
 
 ---------------------------------------------------------------------------------------------------
-
 ## Depending on libraries bundled with the VMS
 
 A properly written Plugin is expected to remain compatible with any future version of the VMS,
@@ -31,7 +30,6 @@ code, or is a third-party library which the VMS depends on.
 SOLUTION: The Plugin should never depend on any dynamic library bundled with the VMS installation.
 
 ---------------------------------------------------------------------------------------------------
-
 ## Depending on system libraries
 
 Using any dynamic library from the OS by a Plugin is unsafe. The reason for that is the limitation
@@ -59,7 +57,6 @@ SOLUTION: The Plugin should be linked to system libraries statically, except for
 backwards-compatible, and will not be patched for the need of a certain project.
 
 ---------------------------------------------------------------------------------------------------
-
 ## Depending on libstdc++ on Linux
 
 `libstdc++` - the GCC C++ standard library implementation - should be linked dynamically. There is
@@ -80,7 +77,23 @@ link to `libc++` statically to make sure that the plugin will function properly 
 will start using `libc++` at some point in the future.
 
 ---------------------------------------------------------------------------------------------------
+## Depending on Visual C++ runtime on Windows
 
+When using Visual Studio to compile a plugin on Windows, and choosing to use dynamic linking with
+the Visual C++ Runtime Redistributable (msvcp140.dll), the resulting plugin may be not compatible
+with the VMS built using the toolsets (compilers) that use an older runtime version. The newer
+runtime version will do fine.
+
+For example, as of 2024-07-19, the std::mutex ABI has undergone a breaking change in the toolset
+version 14.40 as opposed to 14.38, which did not happen for years before that. And now if a plugin
+uses std::mutex, is compiled with 14.40, and is used in VMS compiled with 14.38, it will crash.
+More details on this issue can be found here:
+[Visual Studio forum](https://developercommunity.visualstudio.com/t/Access-violation-with-std::mutex::lock-a/10664660)
+
+Currently, the recommendation is either to use the toolset version not newer than 14.38, or to link
+the plugin with the C++ runtime statically.
+
+---------------------------------------------------------------------------------------------------
 ## Bundling public libraries with the Plugin
 
 NOTE: Here we discuss bundling the Plugin with publicly available dynamic libraries; bundling the

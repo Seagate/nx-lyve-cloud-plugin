@@ -15,8 +15,8 @@
 #if defined(_WIN32)
     #define NOMINMAX //< Needed to prevent windows.h define macros min() and max().
     #include <windows.h>
+    #include <Windows.h>
     #include <shellapi.h>
-    #include <codecvt>
 #elif defined(__APPLE__)
     #include <nx/kit/apple_utils.h>
 #else
@@ -133,14 +133,24 @@ const std::vector<std::string>& getProcessCmdLineArgs()
         LPWSTR* const argv = CommandLineToArgvW(GetCommandLineW(), &argc);
         if (!argv || argc == 0)
         {
+            LocalFree(argv);
             args = std::vector<std::string>{""};
             return args;
         }
 
         for (int i = 0; i < argc; ++i)
         {
-            args.push_back(
-                std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().to_bytes(argv[i]));
+            int utf8Length = WideCharToMultiByte(
+                CP_UTF8, 0, argv[i], -1, nullptr, 0, nullptr, nullptr);
+            if (utf8Length > 0)
+            {
+                std::string utf8Arg;
+                // Exclude null-terminator
+                utf8Arg.resize(utf8Length - 1);
+                WideCharToMultiByte(
+                    CP_UTF8, 0, argv[i], -1, &utf8Arg[0], utf8Length, nullptr, nullptr);
+                args.push_back(utf8Arg);
+            }
         }
         LocalFree(argv);
     #elif defined(__APPLE__)
@@ -587,20 +597,14 @@ std::string trimString(const std::string& s)
     return s.substr(start, end - start + 1);
 }
 
-namespace {
-
 //-------------------------------------------------------------------------------------------------
 // Parsing utils.
 
-static bool isWhitespace(char c)
-{
-    // NOTE: Chars 128..255 should be treated as non-whitespace, thus, isprint() will not do.
-    return (((unsigned char) c) <= 32) || (c == 127);
-}
+namespace {
 
 static void skipWhitespace(const char** const pp)
 {
-    while (**pp != '\0' && isWhitespace(**pp))
+    while (**pp != '\0' && isSpaceOrControlChar(**pp))
         ++(*pp);
 }
 
@@ -620,7 +624,7 @@ static ParsedNameValue parseNameValue(const std::string& lineStr)
     skipWhitespace(&p);
     if (*p == '\0' || *p == '#') //< Empty or comment line.
         return result;
-    while (*p != '\0' && *p != '=' && !isWhitespace(*p))
+    while (*p != '\0' && *p != '=' && !isSpaceOrControlChar(*p))
         result.name += *(p++);
     if (result.name.empty())
     {
@@ -631,7 +635,7 @@ static ParsedNameValue parseNameValue(const std::string& lineStr)
 
     if (*(p++) != '=')
     {
-        result.error = "Missing \"=\" after the name " + result.name + ".";
+        result.error = "Missing \"=\" after the name " + toString(result.name) + ".";
         return result;
     }
     skipWhitespace(&p);
@@ -641,7 +645,7 @@ static ParsedNameValue parseNameValue(const std::string& lineStr)
 
     // Trim trailing whitespace in the value.
     int i = (int) result.value.size() - 1;
-    while (i >= 0 && isWhitespace(result.value[i]))
+    while (i >= 0 && isSpaceOrControlChar(result.value[i]))
         --i;
     result.value = result.value.substr(0, i + 1);
 
@@ -670,6 +674,11 @@ bool parseNameValueFile(
     while (std::getline(file, lineStr))
     {
         ++line;
+
+        static constexpr char kBom[] = "\xEF\xBB\xBF";
+        if (line == 1 && stringStartsWith(lineStr, kBom))
+            lineStr.erase(0, sizeof(kBom) - /* Terminating NUL */ 1);
+        
         const ParsedNameValue parsed = parseNameValue(lineStr);
         if (!parsed.error.empty())
         {

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <nx/sdk/i_string.h>
 #include <nx/sdk/interface.h>
 #include <nx/sdk/result.h>
 
@@ -101,7 +102,7 @@ public:
     /** Called by sendHttpRequest() */
     protected: virtual void doSendHttpRequest(
         HttpDomainName requestDomainName,
-        const char* path,
+        const char* url,
         const char* httpMethod,
         const char* mimeType,
         const char* requestBody,
@@ -114,14 +115,14 @@ public:
      */
     public: void sendHttpRequest(
         HttpDomainName requestDomainName,
-        const char* path,
+        const char* url,
         const char* httpMethod,
         const char* mimeType,
         const char* requestBody,
         Ptr<IHttpRequestCompletionHandler> callback) const
     {
         doSendHttpRequest(
-            requestDomainName, path, httpMethod, mimeType, requestBody, callback.get());
+            requestDomainName, url, httpMethod, mimeType, requestBody, callback.get());
     }
 };
 using IUtilityProvider4 = IUtilityProvider;
