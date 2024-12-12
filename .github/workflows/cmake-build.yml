@@ -94,7 +94,7 @@ jobs:
     - name: Cleanup Build
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
-        rm -r ../nx-lyve-cloud-plugin-build/
+        rm -r ../dw-lyve-cloud-plugin-build/
 
     - name: Build using CMake on Linux for arm64
       if: ${{ Contains(matrix.os, 'ubuntu') }}

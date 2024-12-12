@@ -92,7 +92,12 @@ s3storage:
     {
         homeEnv = home;
     }
+#ifdef EDGE_BUILD
+    // Custom location for DW edge cameras. The cameras can only see in the /sdcard folder.
+    mountDir = "/sdcard/cloudfuse";
+#else
     mountDir = homeEnv + "/cloudfuse";
+#endif
     fileCacheDir = homeEnv + "/cloudfuse_cache";
     configFile = homeEnv + "/nx_plugin_config.aes";
     templateFile = homeEnv + "/nx_plugin_config.yaml";
@@ -243,7 +248,7 @@ processReturn CloudfuseMngr::unmount()
 {
     char *const argv[] = {const_cast<char *>("/bin/cloudfuse"), const_cast<char *>("unmount"),
                           const_cast<char *>(mountDir.c_str()), const_cast<char *>("-z"), NULL};
-    char *const envp[] = {const_cast<char *>("PATH=/bin"), NULL};
+    char *const envp[] = {const_cast<char *>("PATH=/bin:/usr/bin"), NULL};
 
     return spawnProcess(argv, envp);
 }

@@ -26,10 +26,10 @@ std::string Plugin::manifestString() const
 {
     "id": ")json" +
            instanceId() + R"json(",
-    "name": "Lyve Cloud Backup Storage",
-    "description": "Connect a cloud storage container as a backup location.",
+    "name": "DW Cumulus Cloud Storage",
+    "description": "Connect to DW Cumulus Cloud as a backup location.",
     "version": "0.3.2",
-    "vendor": "Seagate Technology",
+    "vendor": "Digital Watchdog",
     "engineSettingsModel": )json" +
            kEngineSettingsModel + R"json(
 }

@@ -100,16 +100,8 @@ static const std::string kAdvancedGroupBox = R"json(
             ]
         })json";
 
-static const std::string kPluginWebsiteLink = R"json(
-        {
-            "type": "Link",
-            "caption": "Plugin Website",
-            "url": "https://github.com/Seagate/nx-lyve-cloud-plugin"
-        })json";
-
 // gather settings items together
-static const std::string kSettingsItems =
-    kCredentialGroupBox + (credentialsOnly ? "" : ("," + kAdvancedGroupBox + "," + kPluginWebsiteLink));
+static const std::string kSettingsItems = kCredentialGroupBox + (credentialsOnly ? "" : ("," + kAdvancedGroupBox));
 
 // top-level settings model
 static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(

@@ -1,5 +1,5 @@
 {
-  "name": "nx-lyve-cloud-plugin",
+  "name": "dw-lyve-cloud-plugin",
   "dependencies": [
     { "name": "openssl", "version>=": "3.3.1" }
   ],

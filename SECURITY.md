@@ -1,6 +1,6 @@
-# Nx-Lyve-Cloud-Plugin Security Policy
+# Dw-lyve-cloud-Plugin Security Policy
 
-We take security seriously. If you find any security vulnerabilities in any of the Nx-Lyve-Cloud-Plugin source code, or
+We take security seriously. If you find any security vulnerabilities in any of the Dw-lyve-cloud-Plugin source code, or
 other binary tools, please report it to us as described below.
 
 ## Reporting Security Issues

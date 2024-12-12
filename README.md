@@ -1,11 +1,11 @@
-# Nx-Lyve-Cloud-Plugin
+# Dw-lyve-cloud-Plugin
 
-Nx-Lyve-Cloud-Plugin is a cloud storage plugin for Network Optix VMS's including Nx Witness and Digital Watchdog
+Dw-lyve-cloud-Plugin is a cloud storage plugin for Network Optix VMS's including Nx Witness and Digital Watchdog
 Spectrum. This plugin allows the user to easily configure their cloud and create a local mount of their cloud on their
 system. This mount can then be used as a backup location for video recordings in the VMS. The plugins utilizes
 [cloudfuse](https://github.com/Seagate/cloudfuse) to create and manage the local mount.
 
-## Building the Nx-Lyve-Cloud-Plugin
+## Building the Dw-lyve-cloud-Plugin
 
 The following are instructions to build our plugin from source.
 
@@ -21,8 +21,8 @@ You should have a modern version of GCC or Clang and cmake installed on your sys
 #### 1. Clone GitHub repository
 
 ```bash
-git clone https://github.com/Seagate/nx-lyve-cloud-plugin
-cd nx-lyve-cloud-plugin
+git clone https://github.com/Seagate/dw-lyve-cloud-plugin
+cd dw-lyve-cloud-plugin
 ```
 
 #### 2. Run the build script
@@ -42,7 +42,7 @@ The following will use gcc. You may also replace gcc/g++ with clang/clang++.
 ```
 
 After running the script the resulting .so file can be found at
-`../nx-lyve-cloud-plugin-build/cloudfuse_plugin/libcloudfuse_plugin.so`.
+`../dw-lyve-cloud-plugin-build/cloudfuse_plugin/libcloudfuse_plugin.so`.
 
 ### Windows
 
@@ -51,8 +51,8 @@ You should have a modern version of MSVC from Microsoft Visual Studio, cmake, an
 #### 1. Clone GitHub repository
 
 ```powershell
-git clone https://github.com/Seagate/nx-lyve-cloud-plugin
-cd nx-lyve-cloud-plugin
+git clone https://github.com/Seagate/dw-lyve-cloud-plugin
+cd dw-lyve-cloud-plugin
 git checkout -b main origin/main
 ```
 
@@ -73,9 +73,9 @@ Run the following to build the plugin.
 ```
 
 After running the script the resulting `.so` file can be found at
-`..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Debug\cloudfuse_plugin.dll`.
+`..\dw-lyve-cloud-plugin-build\cloudfuse_plugin\Debug\cloudfuse_plugin.dll`.
 
-## Installing the Nx-Lyve-Cloud-Plugin
+## Installing the Dw-lyve-cloud-Plugin
 
 To install the plugin, copy the `.dll` or `.so` file to the plugins folder of the VMS.
 

@@ -26,11 +26,11 @@ fi
 ### Install Cloudfuse
 echo "Installing Cloudfuse"
 apt-get install libssl-dev
-apt-get install ./cloudfuse*.deb
+apt-get install ./cloudfuse*.rpm
 
 ### Install plugin
 echo "Installing DW Cumulus Cloud plugin"
-cp cloudfuse_plugin.so /opt/digitalwatchdog/mediaserver/bin/plugins/
-systemctl restart digitalwatchdog-mediaserver.service
+cp cloudfuse_plugin.so /mnt/plugin/dwspectrum/mediaserver/bin/plugins/
+sh /mnt/plugin/dwspectrum/script --restart
 
 echo "Finished installing DW Cumulus Cloud plugin"

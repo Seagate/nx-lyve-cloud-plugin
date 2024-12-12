@@ -49,7 +49,7 @@ jobs:
       with:
         # The vcpkg.json file, which will be part of cache key computation.
         vcpkgJsonGlob: '**/src/vcpkg.json'
-    
+
     - name: Download cloudfuse for Windows
       if: ${{ Contains(matrix.os, 'windows') }}
       shell: pwsh
@@ -58,13 +58,13 @@ jobs:
         $file_name = $download_url.Split('/')[-1]
         Invoke-WebRequest -Uri $download_url -OutFile $file_name
 
-    - name: Download cloudfuse for Linux amd64 (no_gui)
+    - name: Download cloudfuse for Ubuntu amd64 (no_gui)
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: |
         download_url=$(curl -s https://api.github.com/repos/Seagate/cloudfuse/releases/latest | jq -r '.assets[] | select(.name | (contains("no_gui") and contains("linux_amd64.deb"))) | .browser_download_url')
         curl -LO $download_url
-    
-    - name: Download cloudfuse for Linux arm64 (no_gui)
+
+    - name: Download cloudfuse for Ubuntu arm64 (no_gui)
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: |
         download_url=$(curl -s https://api.github.com/repos/Seagate/cloudfuse/releases/latest | jq -r '.assets[] | select(.name | (contains("no_gui") and contains("linux_arm64.deb"))) | .browser_download_url')
@@ -80,16 +80,16 @@ jobs:
     - name: Package Artifacts Linux x64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: |
-        mkdir nx-lyve-cloud-plugin-${{ matrix.os }}_x64
-        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}_x64/cloudfuse_plugin.so
-        mv ./cloudfuse*_linux_amd64.deb nx-lyve-cloud-plugin-${{ matrix.os }}_x64/
-        cp ./install_plugin_linux.sh nx-lyve-cloud-plugin-${{ matrix.os }}_x64/
-        zip -r nx-lyve-cloud-plugin-${{ matrix.os }}_x64.zip nx-lyve-cloud-plugin-${{ matrix.os }}_x64
-     
+        mkdir dw-cumulus-cloud-plugin-${{ matrix.os }}_x64
+        mv ../dw-lyve-cloud-plugin-build/cloudfuse_plugin/*.so dw-cumulus-cloud-plugin-${{ matrix.os }}_x64/cloudfuse_plugin.so
+        mv ./cloudfuse*_linux_amd64.deb dw-cumulus-cloud-plugin-${{ matrix.os }}_x64/
+        cp ./install_plugin_linux.sh dw-cumulus-cloud-plugin-${{ matrix.os }}_x64/
+        zip -r dw-cumulus-cloud-plugin-${{ matrix.os }}_x64.zip dw-cumulus-cloud-plugin-${{ matrix.os }}_x64
+
     - name: Cleanup Build
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: >
-        rm -r ../nx-lyve-cloud-plugin-build/
+        rm -r ../dw-lyve-cloud-plugin-build/
 
     - name: Run build script for Linux arm64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
@@ -101,12 +101,12 @@ jobs:
     - name: Package Artifacts Linux arm64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       run: |
-        mkdir nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
-        mv ../nx-lyve-cloud-plugin-build/cloudfuse_plugin/*.so nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/cloudfuse_plugin.so
-        mv ./cloudfuse*_linux_arm64.deb nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/
-        cp ./install_plugin_linux.sh nx-lyve-cloud-plugin-${{ matrix.os }}_arm64/
-        zip -r nx-lyve-cloud-plugin-${{ matrix.os }}_arm64.zip nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
-    
+        mkdir dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64
+        mv ../dw-lyve-cloud-plugin-build/cloudfuse_plugin/*.so dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64/cloudfuse_plugin.so
+        mv ./cloudfuse*_linux_arm64.deb dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64/
+        cp ./install_plugin_linux.sh dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64/
+        zip -r dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64.zip dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64
+
     - name: Run build script for Windows
       shell: powershell
       if: ${{ Contains(matrix.os, 'windows') }}
@@ -118,38 +118,83 @@ jobs:
       shell: powershell
       if: ${{ Contains(matrix.os, 'windows') }}
       run: |
-        mkdir nx-lyve-cloud-plugin-windows
-        mv ..\nx-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll nx-lyve-cloud-plugin-windows\cloudfuse_plugin.dll
-        mv .\install_plugin_windows.bat nx-lyve-cloud-plugin-windows\
-        mv .\cloudfuse*_windows_amd64.exe nx-lyve-cloud-plugin-windows\
-        Compress-Archive nx-lyve-cloud-plugin-windows nx-lyve-cloud-plugin-windows.zip
+        mkdir dw-cumulus-cloud-plugin-windows
+        mv ..\dw-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll dw-cumulus-cloud-plugin-windows\cloudfuse_plugin.dll
+        mv .\install_plugin_windows.bat dw-cumulus-cloud-plugin-windows\
+        mv .\cloudfuse*_windows_amd64.exe dw-cumulus-cloud-plugin-windows\
+        Compress-Archive dw-cumulus-cloud-plugin-windows dw-cumulus-cloud-plugin-windows.zip
 
     - name: Archive production artifacts from Ubuntu x64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       uses: actions/upload-artifact@v4
       with:
-        name: nx-lyve-cloud-plugin-${{ matrix.os }}_x64
-        path: nx-lyve-cloud-plugin-${{ matrix.os }}_x64.zip
+        name: dw-cumulus-cloud-plugin-${{ matrix.os }}_x64
+        path: dw-cumulus-cloud-plugin-${{ matrix.os }}_x64.zip
         if-no-files-found: error
-  
+
     - name: Archive production artifacts from Ubuntu arm64
       if: ${{ Contains(matrix.os, 'ubuntu') }}
       uses: actions/upload-artifact@v4
       with:
-        name: nx-lyve-cloud-plugin-${{ matrix.os }}_arm64
-        path: nx-lyve-cloud-plugin-${{ matrix.os }}_arm64.zip
+        name: dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64
+        path: dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64.zip
         if-no-files-found: error
-    
+
     - name: Archive production artifacts from Windows
       if: ${{ Contains(matrix.os, 'windows') }}
       uses: actions/upload-artifact@v4
       with:
-        name: nx-lyve-cloud-plugin-windows
-        path: nx-lyve-cloud-plugin-windows.zip
+        name: dw-cumulus-cloud-plugin-windows
+        path: dw-cumulus-cloud-plugin-windows.zip
+        if-no-files-found: error
+
+  build-rhel-release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            c_compiler: gcc
+            cpp_compiler: g++
+            arm_c_compiler: aarch64-linux-gnu-gcc
+            arm_cpp_compiler: aarch64-linux-gnu-g++
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install cross compiler
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      id: runvcpkg
+      with:
+        # The vcpkg.json file, which will be part of cache key computation.
+        vcpkgJsonGlob: '**/src/vcpkg.json'
+
+    - name: Run build script for RHEL arm64
+      run: >
+        ./build_plugin_arm64_edge_camera.sh
+
+    - name: Package Artifacts Linux arm64
+      run: |
+        mkdir dw-cumulus-cloud-plugin-edge_edge_arm64
+        mv ../dw-lyve-cloud-plugin-build/cloudfuse_plugin/*.so dw-cumulus-cloud-plugin-edge_edge_arm64/cloudfuse_plugin.so
+        mv ./cloudfuse*_linux_arm64.deb dw-cumulus-cloud-plugin-edge_edge_arm64/
+        cp ./install_plugin_edge_linux.sh dw-cumulus-cloud-plugin-edge_edge_arm64
+        zip -r dw-cumulus-cloud-plugin_edge_arm64.zip dw-cumulus-cloud-plugin-edge_edge_arm64
+
+    - name: Archive production artifacts from RHEL arm64
+      uses: actions/upload-artifact@v4
+      with:
+        name: dw-cumulus-cloud-plugin-edge_edge_arm64
+        path: dw-cumulus-cloud-plugin-edge_edge_arm64.zip
         if-no-files-found: error
 
   release:
-    needs: build-release
+    needs: ["build-release", "build-rhel-release"]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -162,10 +207,11 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          nx-lyve-cloud-plugin-ubuntu-24.04_x64/*
-          nx-lyve-cloud-plugin-ubuntu-22.04_x64/*
-          nx-lyve-cloud-plugin-ubuntu-20.04_x64/*
-          nx-lyve-cloud-plugin-ubuntu-24.04_arm64/*
-          nx-lyve-cloud-plugin-ubuntu-22.04_arm64/*
-          nx-lyve-cloud-plugin-ubuntu-20.04_arm64/*
-          nx-lyve-cloud-plugin-windows/*
+          dw-cumulus-cloud-plugin-ubuntu-24.04_x64/*
+          dw-cumulus-cloud-plugin-ubuntu-22.04_x64/*
+          dw-cumulus-cloud-plugin-ubuntu-20.04_x64/*
+          dw-cumulus-cloud-plugin-ubuntu-24.04_arm64/*
+          dw-cumulus-cloud-plugin-ubuntu-22.04_arm64/*
+          dw-cumulus-cloud-plugin-ubuntu-20.04_arm64/*
+          dw-cumulus-cloud-plugin-edge_edge_arm64/*
+          dw-cumulus-cloud-plugin-windows/*

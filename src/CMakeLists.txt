@@ -10,8 +10,7 @@ endif()
 project(
     cloudfuse_plugin
     VERSION 0.3.2
-    DESCRIPTION "VMS Plugin for Lyve Cloud"
-    HOMEPAGE_URL "https://github.com/Seagate/nx-lyve-cloud-plugin"
+    DESCRIPTION "VMS Plugin for DW Cumulus Cloud"
     LANGUAGES CXX
 )
 
@@ -25,6 +24,11 @@ endif()
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+option(EDGE_BUILD "Enable edge build" OFF)
+
+if(EDGE_BUILD)
+add_compile_definitions(EDGE_BUILD)
+endif()
 
 if(UNIX)
     # In Linux, for the plugin .so library, set `rpath` to "$ORIGIN" and do not set `runpath`, thus

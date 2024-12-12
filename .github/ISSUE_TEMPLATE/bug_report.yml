@@ -1,5 +1,5 @@
 name: Bug report
-description: Report problems and issues with Nx-Lyve-Cloud-Plugin.
+description: Report problems and issues with Dw-lyve-cloud-Plugin.
 labels: [bug]
 
 body:
@@ -40,7 +40,7 @@ body:
     attributes:
       label: Logs
       description: |
-        Please share a log file if you can. By default Nx-Lyve-Cloud-Plugin logs to syslog on Linux or the Event Viewer on Windows.
+        Please share a log file if you can. By default Dw-lyve-cloud-Plugin logs to syslog on Linux or the Event Viewer on Windows.
       placeholder: Click here, then click the paperclip to attach your log file.
 
   - type: markdown
@@ -52,7 +52,7 @@ body:
     attributes:
       label: Deployment information
       description: |
-        Please tell us about your setup, including operating system, Nx-Lyve-Cloud-Plugin version, etc.
+        Please tell us about your setup, including operating system, Dw-lyve-cloud-Plugin version, etc.
     validations:
       required: true
 

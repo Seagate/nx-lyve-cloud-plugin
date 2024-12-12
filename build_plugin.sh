@@ -8,7 +8,7 @@ set -u #< Prohibit undefined variables.
 
 if [[ $# > 0 && ($1 == "/?" || $1 == "-h" || $1 == "--help") ]]
 then
-    echo "Usage: $(basename "$0") [--no-tests] [--debug] [<cmake-generation-args>...]"
+    echo "Usage: $(basename "$0") [--no-tests] [--debug] [--edge-build] [<cmake-generation-args>...]"
     echo " --debug Compile using Debug configuration (without optimizations) instead of Release."
     exit
 fi
@@ -31,6 +31,14 @@ then
     BUILD_TYPE=Debug
 else
     BUILD_TYPE=Release
+fi
+
+if [[ $# > 0 && $1 == "--edge-build" ]]
+then
+    shift
+    EDGE_BUILD=1
+else
+    EDGE_BUILD=0
 fi
 
 case "$(uname -s)" in #< Check if running in Windows from Cygwin/MinGW.
@@ -70,7 +78,13 @@ PLUGIN_NAME="cloudfuse_plugin"
     mkdir -p "$BUILD_DIR/$PLUGIN_NAME"
     cd "$BUILD_DIR/$PLUGIN_NAME"
 
-    cmake "$SOURCE_DIR" `# allow empty array #` ${GEN_OPTIONS[@]+"${GEN_OPTIONS[@]}"} "$@"
+    if [[ $EDGE_BUILD == 1 ]]
+    then
+        cmake "$SOURCE_DIR" ${GEN_OPTIONS[@]+"${GEN_OPTIONS[@]}"} -DEDGE_BUILD=ON "$@"
+    else
+        cmake "$SOURCE_DIR" ${GEN_OPTIONS[@]+"${GEN_OPTIONS[@]}"} "$@"
+    fi
+
     cmake --build . `# allow empty array #` ${BUILD_OPTIONS[@]+"${BUILD_OPTIONS[@]}"}
 )
 
