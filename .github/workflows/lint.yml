@@ -2,20 +2,22 @@ name: Linting with Clang-format
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   code-format:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-    - name: Run clang-format
-      run: |
-        find ./src/lib/cloudfuse/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
-        find ./src/plugin/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
-        find ./src/unit_tests/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
-        find ./unit_tests/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
+      - name: Run clang-format
+        run: |
+          find ./src/lib/cloudfuse/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
+          find ./src/plugin/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
+          find ./src/unit_tests/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
+          find ./unit_tests/ -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i --dry-run --Werror
