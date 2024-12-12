@@ -4,9 +4,9 @@ name: CMake on multiple platforms
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
@@ -61,51 +61,53 @@ jobs:
             arm_c_compiler: aarch64-linux-gnu-gcc
             arm_cpp_compiler: aarch64-linux-gnu-g++
           - os: windows-latest
-  
+
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-    - name: Install cross compiler
-      if: ${{ Contains(matrix.os, 'ubuntu-22.04') ||  Contains(matrix.os, 'ubuntu-20.04')}}
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y g++-aarch64-linux-gnu gcc-aarch64-linux-gnu libstdc++6-arm64-cross linux-libc-dev-arm64-cross
+      - name: Install cross compiler
+        if: ${{ Contains(matrix.os, 'ubuntu-22.04') ||  Contains(matrix.os, 'ubuntu-20.04')}}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-aarch64-linux-gnu gcc-aarch64-linux-gnu libstdc++6-arm64-cross linux-libc-dev-arm64-cross
 
-    - name: Install gcc-12
-      if: ${{ Contains(matrix.os, 'ubuntu-24.04') }}
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y g++-12-aarch64-linux-gnu gcc-12-aarch64-linux-gnu gcc-12 g++-12 g++-aarch64-linux-gnu gcc-aarch64-linux-gnu libstdc++6-arm64-cross linux-libc-dev-arm64-cross
+      - name: Install gcc-12
+        if: ${{ Contains(matrix.os, 'ubuntu-24.04') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-12-aarch64-linux-gnu gcc-12-aarch64-linux-gnu gcc-12 g++-12 g++-aarch64-linux-gnu gcc-aarch64-linux-gnu libstdc++6-arm64-cross linux-libc-dev-arm64-cross
 
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      id: runvcpkg
-      with:
-        # The vcpkg.json file, which will be part of cache key computation.
-        vcpkgJsonGlob: '**/src/vcpkg.json'
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          # The vcpkg.json file, which will be part of cache key computation.
+          vcpkgJsonGlob: "**/src/vcpkg.json"
 
-    - name: Build using CMake on Linux for amd64
-      if: ${{ Contains(matrix.os, 'ubuntu') }}
-      run: >
-        ./build_plugin_x64.sh
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+      - name: Build using CMake on Linux for amd64
+        if: ${{ Contains(matrix.os, 'ubuntu') }}
+        run: >
+          ./build_plugin_x64.sh
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
 
-    - name: Cleanup Build
-      if: ${{ Contains(matrix.os, 'ubuntu') }}
-      run: >
-        rm -r ../dw-lyve-cloud-plugin-build/
+      - name: Cleanup Build
+        if: ${{ Contains(matrix.os, 'ubuntu') }}
+        run: >
+          rm -r ../dw-lyve-cloud-plugin-build/
 
-    - name: Build using CMake on Linux for arm64
-      if: ${{ Contains(matrix.os, 'ubuntu') }}
-      run: >
-        ./build_plugin_arm64.sh
-        -DCMAKE_CXX_COMPILER=${{ matrix.arm_cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.arm_c_compiler }}
+      - name: Build using CMake on Linux for arm64
+        if: ${{ Contains(matrix.os, 'ubuntu') }}
+        run: >
+          ./build_plugin_arm64.sh
+          -DCMAKE_CXX_COMPILER=${{ matrix.arm_cpp_compiler }}
+          -DCMAKE_C_COMPILER=${{ matrix.arm_c_compiler }}
 
-    - name: Build using CMake on Windows
-      shell: powershell
-      if: ${{ Contains(matrix.os, 'windows') }}
-      run: >
-        ./build_plugin.bat
-        --no-tests
+      - name: Build using CMake on Windows
+        shell: powershell
+        if: ${{ Contains(matrix.os, 'windows') }}
+        run: >
+          ./build_plugin.bat
+          --no-tests
