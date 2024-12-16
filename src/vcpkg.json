@@ -1,7 +1,7 @@
 {
   "name": "dw-lyve-cloud-plugin",
   "dependencies": [
-    { "name": "openssl", "version>=": "3.3.1" }
+    { "name": "openssl", "version>=": "3.3.2" }
   ],
-  "builtin-baseline": "4065f37d0a6628ef17cf6ee15385f9091f1075bc"
+  "builtin-baseline": "b2cb0da531c2f1f740045bfe7c4dac59f0b2b69c"
 }

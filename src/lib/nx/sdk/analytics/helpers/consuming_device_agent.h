@@ -2,15 +2,6 @@
 
 #pragma once
 
-// Temporary fix to prevent crashes on startup of Network Optix Server
-// Issue causes by compiling with MSVC 14.40 which has a code change incompatible
-// with MSVC 14.38 which the Network Optix server is compiled with.
-#if defined(_WIN32)
-#ifndef _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR
-#define _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR
-#endif
-#endif
-
 #include <map>
 #include <mutex>
 #include <string>
