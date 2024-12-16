@@ -80,6 +80,11 @@ if(MSVC)
     # This block covers not only Visual Studio compiler but also clang-cl, which expands /W4 to
     # the -Wall flag, while -Wall itself, if passed directly, will be expanded to -Weverything.
     add_compile_options(/W4 /WX /utf-8)
+
+    # Temporary fix to prevent crashes on startup of Network Optix Server
+    # Issue causes by compiling with MSVC 14.40 which has a code change incompatible
+    # with MSVC 14.38 which the Network Optix server is compiled with.
+    add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror)
 endif()
