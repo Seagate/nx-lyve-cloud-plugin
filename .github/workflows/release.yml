@@ -72,13 +72,14 @@ jobs:
           download_url=$(curl -s https://api.github.com/repos/Seagate/cloudfuse/releases/latest | jq -r '.assets[] | select(.name | (contains("no_gui") and contains("linux_arm64.deb"))) | .browser_download_url')
           curl -LO $download_url
 
-      - name: Download cloudfuse for Linux amd64 (no_gui)
+      - name: Run build script for Ubuntu x64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
-        run: |
-          download_url=$(curl -s https://api.github.com/repos/Seagate/cloudfuse/releases/latest | jq -r '.assets[] | select(.name | (contains("no_gui") and contains("linux_amd64.deb"))) | .browser_download_url')
-          curl -LO $download_url
+        run: >
+          ./build_plugin_x64.sh
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
 
-      - name: Package Artifacts Linux x64
+      - name: Package Artifacts Ubuntu x64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
         run: |
           mkdir dw-cumulus-cloud-plugin-${{ matrix.os }}_x64
@@ -92,14 +93,14 @@ jobs:
         run: >
           rm -r ../dw-lyve-cloud-plugin-build/
 
-      - name: Run build script for Linux x64
+      - name: Run build script for Ubuntu arm64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
         run: >
-          ./build_plugin_x64.sh
-          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+          ./build_plugin_arm64.sh
+          -DCMAKE_CXX_COMPILER=${{ matrix.arm_cpp_compiler }}
+          -DCMAKE_C_COMPILER=${{ matrix.arm_c_compiler }}
 
-      - name: Package Artifacts Linux arm64
+      - name: Package Artifacts Ubuntu arm64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
         run: |
           mkdir dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64
@@ -177,6 +178,11 @@ jobs:
           # The vcpkg.json file, which will be part of cache key computation.
           vcpkgJsonGlob: "**/src/vcpkg.json"
 
+      - name: Download cloudfuse for RHEL arm64 (no_gui)
+        run: |
+          download_url=$(curl -s https://api.github.com/repos/Seagate/cloudfuse/releases/latest | jq -r '.assets[] | select(.name | (contains("no_gui") and contains("linux_arm64.rpm"))) | .browser_download_url')
+          curl -LO $download_url
+
       - name: Run build script for RHEL arm64
         run: >
           ./build_plugin_arm64_edge_camera.sh
@@ -185,7 +191,7 @@ jobs:
         run: |
           mkdir dw-cumulus-cloud-plugin-edge_edge_arm64
           mv ../dw-lyve-cloud-plugin-build/cloudfuse_plugin/*.so dw-cumulus-cloud-plugin-edge_edge_arm64/cloudfuse_plugin.so
-          mv ./cloudfuse*_linux_arm64.deb dw-cumulus-cloud-plugin-edge_edge_arm64/
+          mv ./cloudfuse*_linux_arm64.rpm dw-cumulus-cloud-plugin-edge_edge_arm64/
           cp ./install_plugin_edge_linux.sh dw-cumulus-cloud-plugin-edge_edge_arm64
           zip -r dw-cumulus-cloud-plugin_edge_arm64.zip dw-cumulus-cloud-plugin-edge_edge_arm64
 
