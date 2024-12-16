@@ -9,7 +9,7 @@ endif()
 
 project(
     cloudfuse_plugin
-    VERSION 0.3.2
+    VERSION 0.4.0
     DESCRIPTION "VMS Plugin for Lyve Cloud"
     HOMEPAGE_URL "https://github.com/Seagate/nx-lyve-cloud-plugin"
     LANGUAGES CXX
@@ -87,7 +87,7 @@ target_compile_definitions(cloudfuse_plugin
 )
 
 target_compile_features(cloudfuse_plugin PRIVATE cxx_std_17)
-set_target_properties(cloudfuse_plugin PROPERTIES 
+set_target_properties(cloudfuse_plugin PROPERTIES
     CXX_EXTENSIONS OFF
     NTERPROCEDURAL_OPTIMIZATION TRUE
 )
