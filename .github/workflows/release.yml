@@ -189,17 +189,17 @@ jobs:
 
       - name: Package Artifacts Linux arm64
         run: |
-          mkdir dw-cumulus-cloud-plugin-edge_edge_arm64
-          mv ../dw-lyve-cloud-plugin-build/cloudfuse_plugin/*.so dw-cumulus-cloud-plugin-edge_edge_arm64/cloudfuse_plugin.so
-          mv ./cloudfuse*_linux_arm64.rpm dw-cumulus-cloud-plugin-edge_edge_arm64/
-          cp ./install_plugin_edge_linux.sh dw-cumulus-cloud-plugin-edge_edge_arm64
-          zip -r dw-cumulus-cloud-plugin_edge_arm64.zip dw-cumulus-cloud-plugin-edge_edge_arm64
+          mkdir dw-cumulus-cloud-plugin_edge_arm64
+          mv ../dw-lyve-cloud-plugin-build/cloudfuse_plugin/*.so dw-cumulus-cloud-plugin_edge_arm64/cloudfuse_plugin.so
+          mv ./cloudfuse*_linux_arm64.rpm dw-cumulus-cloud-plugin_edge_arm64/
+          cp ./install_plugin_edge_linux.sh dw-cumulus-cloud-plugin_edge_arm64
+          zip -r dw-cumulus-cloud-plugin_edge_arm64.zip dw-cumulus-cloud-plugin_edge_arm64
 
       - name: Archive production artifacts from RHEL arm64
         uses: actions/upload-artifact@v4
         with:
-          name: dw-cumulus-cloud-plugin-edge_edge_arm64
-          path: dw-cumulus-cloud-plugin-edge_edge_arm64.zip
+          name: dw-cumulus-cloud-plugin_edge_arm64
+          path: dw-cumulus-cloud-plugin_edge_arm64.zip
           if-no-files-found: error
 
   release:
@@ -219,5 +219,5 @@ jobs:
             dw-cumulus-cloud-plugin-ubuntu-24.04_arm64/*
             dw-cumulus-cloud-plugin-ubuntu-22.04_arm64/*
             dw-cumulus-cloud-plugin-ubuntu-20.04_arm64/*
-            dw-cumulus-cloud-plugin-edge_edge_arm64/*
+            dw-cumulus-cloud-plugin_edge_arm64/*
             dw-cumulus-cloud-plugin-windows/*
