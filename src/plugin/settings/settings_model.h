@@ -33,9 +33,7 @@ static const std::string kCredentialGroupBox = R"json(
                                                R"json(",
                     "caption": "Access Key ID",
                     "description": "Cloud bucket access key ID",
-                    "defaultValue": "",
-                    "validationErrorMessage": "Access key ID must be >=16 alphanumeric characters (uppercase or 2-7).",
-                    "validationRegex": "^[A-Z1-9]{16,128}$"
+                    "defaultValue": ""
                 },
                 {
                     "type": "PasswordField",
@@ -43,9 +41,7 @@ static const std::string kCredentialGroupBox = R"json(
                                                R"json(",
                     "caption": "Secret Key",
                     "description": "Cloud bucket secret key",
-                    "defaultValue": "",
-                    "validationErrorMessage": "Secret key must be 32 or 40 alphanumeric-plus-slash characters",
-                    "validationRegex": "^[A-Za-z0-9\/+=]{32,128}$"
+                    "defaultValue": ""
                 }
             ]
         })json";
@@ -69,10 +65,7 @@ static const std::string kAdvancedGroupBox = R"json(
                     "caption": "Endpoint URL",
                     "description": "Set a different endpoint (different region or service)",
                     "defaultValue": ")json" + kDefaultEndpoint +
-                                             R"json(",
-                    "validationErrorMessage": "Endpoint must be a URL (begin with 'http[s]://').",
-                    "validationRegex": "(^$)|(^https?:\/\/.+$)",
-                    "validationRegexFlags": "i"
+                                             R"json("
                 },
                 {
                     "type": "TextField",
@@ -80,9 +73,7 @@ static const std::string kAdvancedGroupBox = R"json(
                                              R"json(",
                     "caption": "Bucket Name",
                     "description": "Specify a bucket name (leave empty to let the system automatically detect your bucket)",
-                    "defaultValue": "",
-                    "validationErrorMessage": "Bucket name can only contain lowercase letters, numbers, dashes, and dots.",
-                    "validationRegex": "^[-.a-z0-9]*$"
+                    "defaultValue": ""
                 },
                 {
                     "type": "SpinBox",
