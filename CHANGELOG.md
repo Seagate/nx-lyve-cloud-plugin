@@ -1,5 +1,11 @@
 # Dw-lyve-cloud-Plugin Changelog #
 
+## **0.4.2** ##
+
+January 16th 2025
+This release is packaged with Cloudfuse [v1.7.4](https://github.com/Seagate/cloudfuse/releases/tag/v1.7.4).
+This release includes all features planned for the 1.0.0 release of the dw-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
+
 ## **0.4.1** ##
 
 January 13th 2025
@@ -14,7 +20,7 @@ This release includes all features planned for the 1.0.0 release of the dw-lyve-
 
 December 12th 2024
 This release is packaged with Cloudfuse [v1.7.2](https://github.com/Seagate/cloudfuse/releases/tag/v1.7.2).
-This release includes all features planned for the 1.0.0 release of the nx-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of the dw-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
 
 ### Changes ###
 
