@@ -376,11 +376,11 @@ nx::sdk::Error Engine::validateMount()
     }
     NX_PRINT << "spawning process from genS3Config";
 #if defined(__linux__)
-    const processReturn dryGenConfig =
-        m_cfManager.genS3Config(endpointUrl, bucketName, bucketCapacityGB * 1024 / numServersSharingBucket, m_passphrase);
+    const processReturn dryGenConfig = m_cfManager.genS3Config(
+        endpointUrl, bucketName, bucketCapacityGB * 1024 / numServersSharingBucket, m_passphrase);
 #elif defined(_WIN32)
-    const processReturn dryGenConfig =
-        m_cfManager.genS3Config(keyId, secretKey, endpointUrl, bucketName, bucketCapacityGB * 1024 / numServersSharingBucket, m_passphrase);
+    const processReturn dryGenConfig = m_cfManager.genS3Config(
+        keyId, secretKey, endpointUrl, bucketName, bucketCapacityGB * 1024 / numServersSharingBucket, m_passphrase);
 #endif
     if (dryGenConfig.errCode != 0)
     {
