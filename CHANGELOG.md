@@ -8,7 +8,7 @@ This release includes all features planned for the 1.0.0 release of the nx-lyve-
 
 ### Changes ###
 
-- [#57](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/57) Add advanced option to set bucket capacity
+- [#74](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/74) Add ability for cloud storage to correctly present the servers stored capacity in the cloud
 
 ## **0.4.2** ##
 
