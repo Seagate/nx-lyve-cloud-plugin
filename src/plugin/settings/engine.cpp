@@ -268,7 +268,7 @@ nx::sdk::Error Engine::validateMount()
     std::string endpointUrl = kDefaultEndpoint;
     std::string bucketName = "";
     uint64_t bucketCapacityGB = kDefaultBucketSizeGb;
-    uint numServersSharingBucket = 1;
+    uint64_t numServersSharingBucket = 1;
     if (!credentialsOnly)
     {
         endpointUrl = values[kEndpointUrlTextFieldId];
