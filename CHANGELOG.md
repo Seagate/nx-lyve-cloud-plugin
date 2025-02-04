@@ -1,5 +1,15 @@
 # Dw-lyve-cloud-Plugin Changelog #
 
+## **0.5.0** ##
+
+February 4th 2025
+This release is packaged with Cloudfuse [v1.8.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.8.0).
+This release includes all features planned for the 1.0.0 release of the nx-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
+
+### Changes ###
+
+- [#57](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/57) Add advanced option to set bucket capacity
+
 ## **0.4.2** ##
 
 January 16th 2025

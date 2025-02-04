@@ -28,7 +28,7 @@ std::string Plugin::manifestString() const
            instanceId() + R"json(",
     "name": "DW Cumulus Cloud Storage",
     "description": "Connect to DW Cumulus Cloud as a backup location.",
-    "version": "0.4.2",
+    "version": "0.5.0",
     "vendor": "Digital Watchdog",
     "engineSettingsModel": )json" +
            kEngineSettingsModel + R"json(
