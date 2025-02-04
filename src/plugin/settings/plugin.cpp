@@ -28,7 +28,7 @@ std::string Plugin::manifestString() const
            instanceId() + R"json(",
     "name": "Lyve Cloud Backup Storage",
     "description": "Connect a cloud storage container as a backup location.",
-    "version": "0.4.2",
+    "version": "0.5.0",
     "vendor": "Seagate Technology",
     "engineSettingsModel": )json" +
            kEngineSettingsModel + R"json(
