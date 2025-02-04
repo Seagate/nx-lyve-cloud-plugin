@@ -1,7 +1,7 @@
 :: Copyright © 2024 Seagate Technology LLC and/or its Affiliates
 @echo off
 
-:: Check / get privileges 
+:: Check / get privileges
 net file 1>NUL 2>NUL
 if not '%errorlevel%' == '0' (
     powershell Start-Process -FilePath "%0" -verb runas >NUL 2>&1

@@ -102,7 +102,7 @@ else()
     # Issue causes by compiling with MSVC 14.40 which has a code change incompatible
     # with MSVC 14.38 which the Network Optix server is compiled with.
     add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
-    
+
     add_compile_definitions(_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
     target_compile_options(cloudfuse_plugin PRIVATE
         -W4 -GS -sdl

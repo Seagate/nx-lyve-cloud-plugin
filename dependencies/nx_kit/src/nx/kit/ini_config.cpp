@@ -59,7 +59,7 @@ static std::string getEnv(const char* envVar)
 static std::string determineIniFilesDir()
 {
     using nx::kit::utils::kPathSeparator;
-    
+
     #if defined(ANDROID) || defined(__ANDROID__)
         // On Android, tmpnam() returns "/tmp", which does not exist.
         return "/sdcard/";

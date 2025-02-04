@@ -673,4 +673,3 @@ a list of items which should be considered to decide whether the group is filled
             ]
         }
     }
-

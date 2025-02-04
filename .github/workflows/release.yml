@@ -1,4 +1,5 @@
 name: Build and Release
+permissions: {}
 
 on:
   push:
