@@ -82,16 +82,16 @@ jobs:
       - name: Package Artifacts Ubuntu x64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
         run: |
-          mkdir dw-cumulus-cloud-plugin-${{ matrix.os }}_x64
-          mv ../dw-lyve-cloud-plugin-build/cloudfuse_plugin/*.so dw-cumulus-cloud-plugin-${{ matrix.os }}_x64/cloudfuse_plugin.so
-          mv ./cloudfuse*_linux_amd64.deb dw-cumulus-cloud-plugin-${{ matrix.os }}_x64/
-          cp ./install_plugin_linux.sh dw-cumulus-cloud-plugin-${{ matrix.os }}_x64/
-          zip -r dw-cumulus-cloud-plugin-${{ matrix.os }}_x64.zip dw-cumulus-cloud-plugin-${{ matrix.os }}_x64
+          mkdir DW-Cumulus-${{ matrix.os }}_x64
+          mv ../DW-Cumulus-build/cloudfuse_plugin/*.so DW-Cumulus-${{ matrix.os }}_x64/cloudfuse_plugin.so
+          mv ./cloudfuse*_linux_amd64.deb DW-Cumulus-${{ matrix.os }}_x64/
+          cp ./install_plugin_linux.sh DW-Cumulus-${{ matrix.os }}_x64/
+          zip -r DW-Cumulus-${{ matrix.os }}_x64.zip DW-Cumulus-${{ matrix.os }}_x64
 
       - name: Cleanup Build
         if: ${{ Contains(matrix.os, 'ubuntu') }}
         run: >
-          rm -r ../dw-lyve-cloud-plugin-build/
+          rm -r ../DW-Cumulus-build/
 
       - name: Run build script for Ubuntu arm64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
@@ -103,11 +103,11 @@ jobs:
       - name: Package Artifacts Ubuntu arm64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
         run: |
-          mkdir dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64
-          mv ../dw-lyve-cloud-plugin-build/cloudfuse_plugin/*.so dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64/cloudfuse_plugin.so
-          mv ./cloudfuse*_linux_arm64.deb dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64/
-          cp ./install_plugin_linux.sh dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64/
-          zip -r dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64.zip dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64
+          mkdir DW-Cumulus-${{ matrix.os }}_arm64
+          mv ../DW-Cumulus-build/cloudfuse_plugin/*.so DW-Cumulus-${{ matrix.os }}_arm64/cloudfuse_plugin.so
+          mv ./cloudfuse*_linux_arm64.deb DW-Cumulus-${{ matrix.os }}_arm64/
+          cp ./install_plugin_linux.sh DW-Cumulus-${{ matrix.os }}_arm64/
+          zip -r DW-Cumulus-${{ matrix.os }}_arm64.zip DW-Cumulus-${{ matrix.os }}_arm64
 
       - name: Run build script for Windows
         shell: powershell
@@ -120,34 +120,34 @@ jobs:
         shell: powershell
         if: ${{ Contains(matrix.os, 'windows') }}
         run: |
-          mkdir dw-cumulus-cloud-plugin-windows
-          mv ..\dw-lyve-cloud-plugin-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll dw-cumulus-cloud-plugin-windows\cloudfuse_plugin.dll
-          mv .\install_plugin_windows.bat dw-cumulus-cloud-plugin-windows\
-          mv .\cloudfuse*_windows_amd64.exe dw-cumulus-cloud-plugin-windows\
-          Compress-Archive dw-cumulus-cloud-plugin-windows dw-cumulus-cloud-plugin-windows.zip
+          mkdir DW-Cumulus-windows
+          mv ..\DW-Cumulus-build\cloudfuse_plugin\Release\cloudfuse_plugin.dll DW-Cumulus-windows\cloudfuse_plugin.dll
+          mv .\install_plugin_windows.bat DW-Cumulus-windows\
+          mv .\cloudfuse*_windows_amd64.exe DW-Cumulus-windows\
+          Compress-Archive DW-Cumulus-windows DW-Cumulus-windows.zip
 
       - name: Archive production artifacts from Ubuntu x64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
         uses: actions/upload-artifact@v4
         with:
-          name: dw-cumulus-cloud-plugin-${{ matrix.os }}_x64
-          path: dw-cumulus-cloud-plugin-${{ matrix.os }}_x64.zip
+          name: DW-Cumulus-${{ matrix.os }}_x64
+          path: DW-Cumulus-${{ matrix.os }}_x64.zip
           if-no-files-found: error
 
       - name: Archive production artifacts from Ubuntu arm64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
         uses: actions/upload-artifact@v4
         with:
-          name: dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64
-          path: dw-cumulus-cloud-plugin-${{ matrix.os }}_arm64.zip
+          name: DW-Cumulus-${{ matrix.os }}_arm64
+          path: DW-Cumulus-${{ matrix.os }}_arm64.zip
           if-no-files-found: error
 
       - name: Archive production artifacts from Windows
         if: ${{ Contains(matrix.os, 'windows') }}
         uses: actions/upload-artifact@v4
         with:
-          name: dw-cumulus-cloud-plugin-windows
-          path: dw-cumulus-cloud-plugin-windows.zip
+          name: DW-Cumulus-windows
+          path: DW-Cumulus-windows.zip
           if-no-files-found: error
 
   build-rhel-release:
@@ -189,17 +189,17 @@ jobs:
 
       - name: Package Artifacts Linux arm64
         run: |
-          mkdir dw-cumulus-cloud-plugin_edge_arm64
-          mv ../dw-lyve-cloud-plugin-build/cloudfuse_plugin/*.so dw-cumulus-cloud-plugin_edge_arm64/cloudfuse_plugin.so
-          mv ./cloudfuse*_linux_arm64.rpm dw-cumulus-cloud-plugin_edge_arm64/
-          cp ./install_plugin_edge_linux.sh dw-cumulus-cloud-plugin_edge_arm64
-          zip -r dw-cumulus-cloud-plugin_edge_arm64.zip dw-cumulus-cloud-plugin_edge_arm64
+          mkdir DW-Cumulus_edge_arm64
+          mv ../DW-Cumulus-build/cloudfuse_plugin/*.so DW-Cumulus_edge_arm64/cloudfuse_plugin.so
+          mv ./cloudfuse*_linux_arm64.rpm DW-Cumulus_edge_arm64/
+          cp ./install_plugin_edge_linux.sh DW-Cumulus_edge_arm64
+          zip -r DW-Cumulus_edge_arm64.zip DW-Cumulus_edge_arm64
 
       - name: Archive production artifacts from RHEL arm64
         uses: actions/upload-artifact@v4
         with:
-          name: dw-cumulus-cloud-plugin_edge_arm64
-          path: dw-cumulus-cloud-plugin_edge_arm64.zip
+          name: DW-Cumulus_edge_arm64
+          path: DW-Cumulus_edge_arm64.zip
           if-no-files-found: error
 
   release:
@@ -213,11 +213,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dw-cumulus-cloud-plugin-ubuntu-24.04_x64/*
-            dw-cumulus-cloud-plugin-ubuntu-22.04_x64/*
-            dw-cumulus-cloud-plugin-ubuntu-20.04_x64/*
-            dw-cumulus-cloud-plugin-ubuntu-24.04_arm64/*
-            dw-cumulus-cloud-plugin-ubuntu-22.04_arm64/*
-            dw-cumulus-cloud-plugin-ubuntu-20.04_arm64/*
-            dw-cumulus-cloud-plugin_edge_arm64/*
-            dw-cumulus-cloud-plugin-windows/*
+            DW-Cumulus-ubuntu-24.04_x64/*
+            DW-Cumulus-ubuntu-22.04_x64/*
+            DW-Cumulus-ubuntu-20.04_x64/*
+            DW-Cumulus-ubuntu-24.04_arm64/*
+            DW-Cumulus-ubuntu-22.04_arm64/*
+            DW-Cumulus-ubuntu-20.04_arm64/*
+            DW-Cumulus_edge_arm64/*
+            DW-Cumulus-windows/*

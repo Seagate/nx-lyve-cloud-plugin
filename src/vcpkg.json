@@ -1,5 +1,5 @@
 {
-  "name": "dw-lyve-cloud-plugin",
+  "name": "dw-cumulus",
   "dependencies": [
     { "name": "openssl", "version>=": "3.3.2" }
   ],
