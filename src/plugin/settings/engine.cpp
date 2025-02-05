@@ -245,7 +245,12 @@ bool Engine::settingsChanged()
             return true;
         }
         // bucket capacity
-        if (m_prevSettings[kBucketSizeTextFieldId] != newValues[kBucketSizeTextFieldId])
+        if (m_prevSettings[kBucketSizeSpinBoxId] != newValues[kBucketSizeSpinBoxId])
+        {
+            return true;
+        }
+        // number of servers sharing the bucket
+        if (m_prevSettings[kNumServersPerBucketSpinBoxId] != newValues[kNumServersPerBucketSpinBoxId])
         {
             return true;
         }
@@ -263,20 +268,33 @@ nx::sdk::Error Engine::validateMount()
     std::string endpointUrl = kDefaultEndpoint;
     std::string bucketName = "";
     uint64_t bucketCapacityGB = kDefaultBucketSizeGb;
+    uint64_t numServersSharingBucket = 1;
     if (!credentialsOnly)
     {
         endpointUrl = values[kEndpointUrlTextFieldId];
         bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
                                                      // to select first available bucket
+        // bucket capacity
         try
         {
-            bucketCapacityGB = std::stoi(values[kBucketSizeTextFieldId]);
+            bucketCapacityGB = std::stoi(values[kBucketSizeSpinBoxId]);
         }
         catch (std::invalid_argument &e)
         {
-            NX_PRINT << "Bad input for bucket capacity: " << values[kBucketSizeTextFieldId];
+            NX_PRINT << "Bad input for bucket capacity: " << values[kBucketSizeSpinBoxId];
             // revert to default - write back to settings so user can see value reset
-            values[kBucketSizeTextFieldId] = std::to_string(kDefaultBucketSizeGb);
+            values[kBucketSizeSpinBoxId] = std::to_string(kDefaultBucketSizeGb);
+        }
+        // servers sharing bucket
+        try
+        {
+            numServersSharingBucket = std::stoi(values[kNumServersPerBucketSpinBoxId]);
+        }
+        catch (std::invalid_argument &e)
+        {
+            NX_PRINT << "Bad input for num servers: " << values[kNumServersPerBucketSpinBoxId];
+            // revert to default - write back to settings so user can see value reset
+            values[kNumServersPerBucketSpinBoxId] = std::to_string(1);
         }
     }
     std::string mountDir = m_cfManager.getMountDir();
@@ -358,11 +376,11 @@ nx::sdk::Error Engine::validateMount()
     }
     NX_PRINT << "spawning process from genS3Config";
 #if defined(__linux__)
-    const processReturn dryGenConfig =
-        m_cfManager.genS3Config(endpointUrl, bucketName, bucketCapacityGB * 1024, m_passphrase);
+    const processReturn dryGenConfig = m_cfManager.genS3Config(
+        endpointUrl, bucketName, bucketCapacityGB * 1024 / numServersSharingBucket, m_passphrase);
 #elif defined(_WIN32)
-    const processReturn dryGenConfig =
-        m_cfManager.genS3Config(keyId, secretKey, endpointUrl, bucketName, bucketCapacityGB * 1024, m_passphrase);
+    const processReturn dryGenConfig = m_cfManager.genS3Config(
+        keyId, secretKey, endpointUrl, bucketName, bucketCapacityGB * 1024 / numServersSharingBucket, m_passphrase);
 #endif
     if (dryGenConfig.errCode != 0)
     {
