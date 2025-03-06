@@ -1,19 +1,25 @@
 :: Copyright © 2024 Seagate Technology LLC and/or its Affiliates
 @echo off
 
-:: Check / get privileges 
+:: Check / get privileges
 net file 1>NUL 2>NUL
 if not '%errorlevel%' == '0' (
-    powershell Start-Process -FilePath "%0" -verb runas >NUL 2>&1
+    echo Installation failed: Need to run as administrator
+	pause
     exit /b
-) else (
-    :: If we just got privileges, drill back into the directory where the script is
-    cd /d %~dp0
 )
+
+cd /d "%~dp0"
+
+:: Stop the VMS server
+set serviceName="metavmsMediaServer"
+echo Attempting to stop %serviceName%
+net stop %serviceName% >NUL 2>&1
+echo Service stopped successfully.
 
 :: Find the installer file
 for %%I in (cloudfuse*.exe) do (
-    set "installer=%%I"
+    set "installer=%%~I"
     break
 )
 
@@ -22,18 +28,12 @@ if exist "%installer%" (
     echo Installing Cloudfuse
     "%installer%" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
 ) else (
-    echo Installer file not found
+    echo Installation failed: Installer file not found
     pause
     exit /b
 )
 
 echo Installing plugin
-
-:: Stop the VMS server
-set serviceName="metavmsMediaServer"
-echo Attempting to stop %serviceName%
-net stop %serviceName% >NUL 2>&1
-echo Service stopped successfully.
 
 :: Copy the plugin file
 echo Attempting to copy the plugin file
