@@ -1,5 +1,16 @@
 # Nx-Lyve-Cloud-Plugin Changelog #
 
+## **0.5.1** ##
+
+March 6th 2025
+This release is packaged with Cloudfuse [v1.9.1](https://github.com/Seagate/cloudfuse/releases/tag/v1.9.1).
+This release includes all features planned for the 1.0.0 release of the nx-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
+
+### Bug Fixes ###
+
+- [#79](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/79) Fix issue with path to installed version of cloudfuse on some Linux systems
+- [#78](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/78) Fix issue when running Windows installer where path has spaces
+
 ## **0.5.0** ##
 
 February 4th 2025
