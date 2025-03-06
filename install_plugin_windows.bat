@@ -24,14 +24,20 @@ for %%I in (cloudfuse*.exe) do (
 )
 
 :: Check if the installer file exists and if so install it
-if exist "%installer%" (
-    echo Installing Cloudfuse
-    "%installer%" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
-) else (
+if not exist "%installer%" (
     echo Installation failed: Installer file not found
     pause
     exit /b
 )
+
+:: Stop the VMS server
+set serviceName="metavmsMediaServer"
+echo Attempting to stop %serviceName%
+net stop %serviceName% >NUL 2>&1
+echo Service stopped successfully.
+
+echo Installing Cloudfuse
+"%installer%" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
 
 echo Installing plugin
 
