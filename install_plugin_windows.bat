@@ -11,12 +11,6 @@ if not '%errorlevel%' == '0' (
 
 cd /d "%~dp0"
 
-:: Stop the VMS server
-set serviceName="metavmsMediaServer"
-echo Attempting to stop %serviceName%
-net stop %serviceName% >NUL 2>&1
-echo Service stopped successfully.
-
 :: Find the installer file
 for %%I in (cloudfuse*.exe) do (
     set "installer=%%~I"
