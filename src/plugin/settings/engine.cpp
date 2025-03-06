@@ -283,7 +283,6 @@ nx::sdk::Error Engine::validateMount()
     std::string fileCacheDir = m_cfManager.getFileCacheDir();
     // Unmount before mounting
     std::error_code errCode;
-    NX_PRINT << "Checking if cloudfuse is currently mounted";
     if (m_cfManager.isMounted())
     {
         NX_PRINT << "Bucket is mounted. Unmounting...";
@@ -310,7 +309,6 @@ nx::sdk::Error Engine::validateMount()
     }
 #if defined(__linux__)
     // On Linux the mount folder needs to exist before mounting
-    NX_PRINT << "Checking for mount directory";
     if (!fs::exists(mountDir))
     {
         NX_PRINT << "Creating mount directory";
@@ -321,7 +319,6 @@ nx::sdk::Error Engine::validateMount()
     }
     // check and set mount folder permissions
     auto mountDirStat = fs::status(mountDir);
-    NX_PRINT << "Checking for directory permissions";
     if ((mountDirStat.permissions() & fs::perms::all) != fs::perms::all)
     {
         fs::permissions(mountDir, fs::perms::all, fs::perm_options::add, errCode);
@@ -333,7 +330,6 @@ nx::sdk::Error Engine::validateMount()
     }
 #endif
     // Create file cache if it does not exist
-    NX_PRINT << "Checking for file cache directory";
     if (!fs::exists(fileCacheDir))
     {
         NX_PRINT << "creating file cache since it does not exist";
@@ -345,7 +341,6 @@ nx::sdk::Error Engine::validateMount()
     }
     // check and set file cache directory permissions
     auto fileCacheDirStat = fs::status(fileCacheDir);
-    NX_PRINT << "Checking for file cache permissions";
     if ((fileCacheDirStat.permissions() & fs::perms::all) != fs::perms::all)
     {
         fs::permissions(fileCacheDir, fs::perms::all, fs::perm_options::add, errCode);
@@ -356,7 +351,6 @@ nx::sdk::Error Engine::validateMount()
         }
     }
 
-    NX_PRINT << "Checking if cloudfuse is installed";
     // generate cloudfuse config
     if (!m_cfManager.isInstalled())
     {
