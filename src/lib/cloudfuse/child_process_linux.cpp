@@ -119,6 +119,8 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
     if (pid == -1)
     {
         // Fork failed
+        close(pipefd[0]);
+        close(pipefd[1]);
         ret.errCode = 1;
         return ret;
     }
@@ -160,6 +162,7 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
 
         if (dup2(pipefd[1], STDOUT_FILENO) == -1 || dup2(pipefd[1], STDERR_FILENO) == -1)
         {
+            close(pipefd[1]);
             exit(EXIT_FAILURE);
         }
 
@@ -184,20 +187,17 @@ processReturn CloudfuseMngr::genS3Config(const std::string endpoint, const std::
     const std::string configArg = "--config-file=" + templateFile;
     const std::string outputArg = "--output-file=" + configFile;
     const std::string fileCachePathArg = "--temp-path=" + fileCacheDir;
-    const std::string passphraseArg = "--passphrase=" + passphrase;
-    char *const argv[] = {const_cast<char *>("/bin/cloudfuse"),
-                          const_cast<char *>("gen-config"),
-                          const_cast<char *>(configArg.c_str()),
-                          const_cast<char *>(outputArg.c_str()),
-                          const_cast<char *>(fileCachePathArg.c_str()),
-                          const_cast<char *>(passphraseArg.c_str()),
-                          NULL};
+    char *const argv[] = {const_cast<char *>("/usr/bin/cloudfuse"),     const_cast<char *>("gen-config"),
+                          const_cast<char *>(configArg.c_str()),        const_cast<char *>(outputArg.c_str()),
+                          const_cast<char *>(fileCachePathArg.c_str()), NULL};
 
     const std::string bucketNameEnv = "BUCKET_NAME=" + bucketName;
     const std::string endpointEnv = "ENDPOINT=" + endpoint;
     const std::string bucketSizeEnv = "DISPLAY_CAPACITY=" + std::to_string(bucketSizeMb);
+    const std::string passphraseKeyEnv = "CLOUDFUSE_SECURE_CONFIG_PASSPHRASE=" + passphrase;
     char *const envp[] = {const_cast<char *>(bucketNameEnv.c_str()), const_cast<char *>(endpointEnv.c_str()),
-                          const_cast<char *>(bucketSizeEnv.c_str()), NULL};
+                          const_cast<char *>(bucketSizeEnv.c_str()), const_cast<char *>(passphraseKeyEnv.c_str()),
+                          NULL};
 
     return spawnProcess(argv, envp);
 }
@@ -206,19 +206,16 @@ processReturn CloudfuseMngr::dryRun(const std::string accessKeyId, const std::st
                                     const std::string passphrase)
 {
     const std::string configArg = "--config-file=" + configFile;
-    const std::string passphraseArg = "--passphrase=" + passphrase;
-    char *const argv[] = {const_cast<char *>("/bin/cloudfuse"),
-                          const_cast<char *>("mount"),
-                          const_cast<char *>(mountDir.c_str()),
-                          const_cast<char *>(configArg.c_str()),
-                          const_cast<char *>(passphraseArg.c_str()),
-                          const_cast<char *>("--dry-run"),
-                          NULL};
+    char *const argv[] = {const_cast<char *>("/usr/bin/cloudfuse"), const_cast<char *>("mount"),
+                          const_cast<char *>(mountDir.c_str()),     const_cast<char *>(configArg.c_str()),
+                          const_cast<char *>("--dry-run"),          NULL};
 
     const std::string awsAccessKeyIdEnv = "AWS_ACCESS_KEY_ID=" + accessKeyId;
     const std::string awsSecretAccessKeyEnv = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
+    const std::string passphraseKeyEnv = "CLOUDFUSE_SECURE_CONFIG_PASSPHRASE=" + passphrase;
     char *const envp[] = {const_cast<char *>(awsAccessKeyIdEnv.c_str()),
-                          const_cast<char *>(awsSecretAccessKeyEnv.c_str()), NULL};
+                          const_cast<char *>(awsSecretAccessKeyEnv.c_str()),
+                          const_cast<char *>(passphraseKeyEnv.c_str()), NULL};
 
     return spawnProcess(argv, envp);
 }
@@ -227,33 +224,34 @@ processReturn CloudfuseMngr::mount(const std::string accessKeyId, const std::str
                                    const std::string passphrase)
 {
     const std::string configArg = "--config-file=" + configFile;
-    const std::string passphraseArg = "--passphrase=" + passphrase;
-    char *const argv[] = {const_cast<char *>("/bin/cloudfuse"),      const_cast<char *>("mount"),
-                          const_cast<char *>(mountDir.c_str()),      const_cast<char *>(configArg.c_str()),
-                          const_cast<char *>(passphraseArg.c_str()), NULL};
+    char *const argv[] = {const_cast<char *>("/usr/bin/cloudfuse"), const_cast<char *>("mount"),
+                          const_cast<char *>(mountDir.c_str()), const_cast<char *>(configArg.c_str()), NULL};
 
     const std::string awsAccessKeyIdEnv = "AWS_ACCESS_KEY_ID=" + accessKeyId;
     const std::string awsSecretAccessKeyEnv = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
+    const std::string passphraseKeyEnv = "CLOUDFUSE_SECURE_CONFIG_PASSPHRASE=" + passphrase;
     char *const envp[] = {const_cast<char *>(awsAccessKeyIdEnv.c_str()),
-                          const_cast<char *>(awsSecretAccessKeyEnv.c_str()), NULL};
+                          const_cast<char *>(awsSecretAccessKeyEnv.c_str()),
+                          const_cast<char *>(passphraseKeyEnv.c_str()), NULL};
 
     return spawnProcess(argv, envp);
 }
 
 processReturn CloudfuseMngr::unmount()
 {
-    char *const argv[] = {const_cast<char *>("/bin/cloudfuse"), const_cast<char *>("unmount"),
+    char *const argv[] = {const_cast<char *>("/usr/bin/cloudfuse"), const_cast<char *>("unmount"),
                           const_cast<char *>(mountDir.c_str()), const_cast<char *>("-z"), NULL};
-    char *const envp[] = {const_cast<char *>("PATH=/bin"), NULL};
+    char *const envp[] = {NULL};
 
     return spawnProcess(argv, envp);
 }
 
 bool CloudfuseMngr::isInstalled()
 {
-    char *const argv[] = {const_cast<char *>("/bin/cloudfuse"), const_cast<char *>("version"), NULL};
+    char *const argv[] = {const_cast<char *>("/usr/bin/cloudfuse"), const_cast<char *>("version"), NULL};
+    char *const envp[] = {NULL};
 
-    return spawnProcess(argv, NULL).errCode == 0;
+    return spawnProcess(argv, envp).errCode == 0;
 }
 
 bool CloudfuseMngr::isMounted()
@@ -267,7 +265,7 @@ bool CloudfuseMngr::isMounted()
         return false;
     }
 
-    if S_ISLNK (buf1.st_mode)
+    if (S_ISLNK(buf1.st_mode))
     {
         // Mount can't be a symbolic link
         return false;
