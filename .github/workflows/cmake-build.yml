@@ -96,7 +96,7 @@ jobs:
       - name: Cleanup Build
         if: ${{ Contains(matrix.os, 'ubuntu') }}
         run: >
-          rm -r ../dw-lyve-cloud-plugin-build/
+          rm -r ../DW-Cumulus-build/
 
       - name: Build using CMake on Linux for arm64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
