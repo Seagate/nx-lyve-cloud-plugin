@@ -1,10 +1,10 @@
-# DW-Cumulus Changelog #
+# DW Cumulus Changelog #
 
 ## **0.5.1** ##
 
 March 6th 2025
 This release is packaged with Cloudfuse [v1.9.1](https://github.com/Seagate/cloudfuse/releases/tag/v1.9.1).
-This release includes all features planned for the 1.0.0 release of the nx-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Bug Fixes ###
 
@@ -15,7 +15,7 @@ This release includes all features planned for the 1.0.0 release of the nx-lyve-
 
 February 4th 2025
 This release is packaged with Cloudfuse [v1.8.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.8.0).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Changes ###
 
@@ -25,13 +25,13 @@ This release includes all features planned for the 1.0.0 release of DW-Cumulus, 
 
 January 16th 2025
 This release is packaged with Cloudfuse [v1.7.4](https://github.com/Seagate/cloudfuse/releases/tag/v1.7.4).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ## **0.4.1** ##
 
 January 13th 2025
 This release is packaged with Cloudfuse [v1.7.3](https://github.com/Seagate/cloudfuse/releases/tag/v1.7.3).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Changes ###
 
@@ -41,7 +41,7 @@ This release includes all features planned for the 1.0.0 release of DW-Cumulus, 
 
 December 12th 2024
 This release is packaged with Cloudfuse [v1.7.2](https://github.com/Seagate/cloudfuse/releases/tag/v1.7.2).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Changes ###
 
@@ -52,7 +52,7 @@ This release includes all features planned for the 1.0.0 release of DW-Cumulus, 
 
 November 18th 2024
 This release is packaged with Cloudfuse [v1.7.1](https://github.com/Seagate/cloudfuse/releases/tag/v1.7.1).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Bug Fixes ###
 
@@ -62,7 +62,7 @@ This release includes all features planned for the 1.0.0 release of DW-Cumulus, 
 
 November 8th 2024
 This release is packaged with Cloudfuse [v1.7.1](https://github.com/Seagate/cloudfuse/releases/tag/v1.7.1).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Bug Fixes ###
 
@@ -72,13 +72,13 @@ This release includes all features planned for the 1.0.0 release of DW-Cumulus, 
 
 November 6th 2024
 This release is packaged with Cloudfuse [v1.7.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.7.0).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ## **0.2.2** ##
 
 October 22 2024
 This release is packaged with Cloudfuse [v1.6.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.6.0).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Changes ###
 
@@ -88,7 +88,7 @@ This release includes all features planned for the 1.0.0 release of DW-Cumulus, 
 
 August 29 2024
 This release is packaged with Cloudfuse [v1.5.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.5.0).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Changes ###
 
@@ -107,7 +107,7 @@ This release includes all features planned for the 1.0.0 release of DW-Cumulus, 
 
 August 7 2024
 This release is packaged with Cloudfuse [v1.4.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.4.0).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Bug Fixes ###
 
@@ -119,7 +119,7 @@ This release includes all features planned for the 1.0.0 release of DW-Cumulus, 
 
 July 23 2024
 This release was tested with Cloudfuse [v1.3.2](https://github.com/Seagate/cloudfuse/releases/tag/v1.3.2).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Bug Fixes ###
 
@@ -131,7 +131,7 @@ This release includes all features planned for the 1.0.0 release of DW-Cumulus, 
 
 July 19 2024
 This release was tested with Cloudfuse [v1.3.1](https://github.com/Seagate/cloudfuse/releases/tag/v1.3.1).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Bug Fixes ###
 
@@ -141,7 +141,7 @@ This release includes all features planned for the 1.0.0 release of DW-Cumulus, 
 
 July 11 2024
 This release was tested with Cloudfuse [v1.3.1](https://github.com/Seagate/cloudfuse/releases/tag/v1.3.1).
-This release includes all features planned for the 1.0.0 release of DW-Cumulus, which will be released after additional bug fixes and testing.
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
 
 ### Features ###
 
