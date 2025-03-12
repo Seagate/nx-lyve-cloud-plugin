@@ -30,6 +30,6 @@ rpm -i ./cloudfuse*.rpm
 ### Install plugin
 echo "Installing DW Cumulus Cloud plugin"
 cp cloudfuse_plugin.so /mnt/plugin/dwspectrum/mediaserver/bin/plugins/
-sh /mnt/plugin/dwspectrum/script/startapp.sh restart
+sh /mnt/plugin/dwspectrum/mediaserver/bin/mediaserver.sh restart
 
 echo "Finished installing DW Cumulus Cloud plugin"
