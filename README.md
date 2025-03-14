@@ -89,7 +89,7 @@ to the cloud. This can be selected as a backup mount and video files will be bac
 ## Debugging DW-Cumulus
 
 You can use the plugin with test credentials without having to access the DW private signature key.  
-Just follow the [guide](tools/subscription/README.md) in tools/subscription
+Just follow the [guide](tools/subscription) in tools/subscription
 
 ## License
 
