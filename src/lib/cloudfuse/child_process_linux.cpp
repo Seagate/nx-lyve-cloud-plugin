@@ -30,6 +30,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+const std::string PATH = "PATH=/usr/bin:/usr";
+
 std::string getSystemName()
 {
     std::string systemName;
@@ -47,16 +49,17 @@ CloudfuseMngr::CloudfuseMngr()
     // generate template contents
     std::string systemName = getSystemName();
     // NOTE: increment the version number when the config template changes
-    templateVersionString = "template-version: 0.3";
+    templateVersionString = "template-version: 0.4";
     config_template = templateVersionString + R"(
 allow-other: true
+nonempty: true
+
 logging:
   type: base
 
 components:
 - libfuse
 - file_cache
-- size_tracker
 - attr_cache
 - s3storage
 
@@ -195,8 +198,11 @@ processReturn CloudfuseMngr::genS3Config(const std::string endpoint, const std::
     const std::string endpointEnv = "ENDPOINT=" + endpoint;
     const std::string bucketSizeEnv = "DISPLAY_CAPACITY=" + std::to_string(bucketSizeMb);
     const std::string passphraseKeyEnv = "CLOUDFUSE_SECURE_CONFIG_PASSPHRASE=" + passphrase;
-    char *const envp[] = {const_cast<char *>(bucketNameEnv.c_str()), const_cast<char *>(endpointEnv.c_str()),
-                          const_cast<char *>(bucketSizeEnv.c_str()), const_cast<char *>(passphraseKeyEnv.c_str()),
+    char *const envp[] = {const_cast<char *>(PATH.c_str()),
+                          const_cast<char *>(bucketNameEnv.c_str()),
+                          const_cast<char *>(endpointEnv.c_str()),
+                          const_cast<char *>(bucketSizeEnv.c_str()),
+                          const_cast<char *>(passphraseKeyEnv.c_str()),
                           NULL};
 
     return spawnProcess(argv, envp);
@@ -213,7 +219,7 @@ processReturn CloudfuseMngr::dryRun(const std::string accessKeyId, const std::st
     const std::string awsAccessKeyIdEnv = "AWS_ACCESS_KEY_ID=" + accessKeyId;
     const std::string awsSecretAccessKeyEnv = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
     const std::string passphraseKeyEnv = "CLOUDFUSE_SECURE_CONFIG_PASSPHRASE=" + passphrase;
-    char *const envp[] = {const_cast<char *>(awsAccessKeyIdEnv.c_str()),
+    char *const envp[] = {const_cast<char *>(PATH.c_str()), const_cast<char *>(awsAccessKeyIdEnv.c_str()),
                           const_cast<char *>(awsSecretAccessKeyEnv.c_str()),
                           const_cast<char *>(passphraseKeyEnv.c_str()), NULL};
 
@@ -230,7 +236,7 @@ processReturn CloudfuseMngr::mount(const std::string accessKeyId, const std::str
     const std::string awsAccessKeyIdEnv = "AWS_ACCESS_KEY_ID=" + accessKeyId;
     const std::string awsSecretAccessKeyEnv = "AWS_SECRET_ACCESS_KEY=" + secretAccessKey;
     const std::string passphraseKeyEnv = "CLOUDFUSE_SECURE_CONFIG_PASSPHRASE=" + passphrase;
-    char *const envp[] = {const_cast<char *>(awsAccessKeyIdEnv.c_str()),
+    char *const envp[] = {const_cast<char *>(PATH.c_str()), const_cast<char *>(awsAccessKeyIdEnv.c_str()),
                           const_cast<char *>(awsSecretAccessKeyEnv.c_str()),
                           const_cast<char *>(passphraseKeyEnv.c_str()), NULL};
 
@@ -241,7 +247,7 @@ processReturn CloudfuseMngr::unmount()
 {
     char *const argv[] = {const_cast<char *>("/usr/bin/cloudfuse"), const_cast<char *>("unmount"),
                           const_cast<char *>(mountDir.c_str()), const_cast<char *>("-z"), NULL};
-    char *const envp[] = {NULL};
+    char *const envp[] = {const_cast<char *>(PATH.c_str()), NULL};
 
     return spawnProcess(argv, envp);
 }
@@ -249,7 +255,7 @@ processReturn CloudfuseMngr::unmount()
 bool CloudfuseMngr::isInstalled()
 {
     char *const argv[] = {const_cast<char *>("/usr/bin/cloudfuse"), const_cast<char *>("version"), NULL};
-    char *const envp[] = {NULL};
+    char *const envp[] = {const_cast<char *>(PATH.c_str()), NULL};
 
     return spawnProcess(argv, envp).errCode == 0;
 }
