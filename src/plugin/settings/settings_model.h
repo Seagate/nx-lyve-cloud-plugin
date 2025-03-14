@@ -12,105 +12,24 @@ namespace settings
 static const std::string kName = "name";
 static const std::string kItems = "items";
 
-// Enable this flag hide all but the credentials section
-// NOTE: enabling this will prevent the user from changing the default endpoint (kDefaultEndpoint)
-// Only set this flag true if you want to tie your users to a specific cloud storage endpoint
-static const bool credentialsOnly = false;
-
-// credentials
-static const std::string kKeyIdTextFieldId = "keyId";
-static const std::string kSecretKeyPasswordFieldId = "secretKey";
+// subscription
+static const std::string kSubscriptionKeyFieldId = "subscriptionKey";
 static const std::string kCheckCredentialsButtonId = "checkCredentialsButton";
-static const std::string kCredentialGroupBox = R"json(
-        {
-            "type": "GroupBox",
-            "caption": "Credentials",
-            "items":
-            [
-                {
-                    "type": "TextField",
-                    "name": ")json" + kKeyIdTextFieldId +
-                                               R"json(",
-                    "caption": "Access Key ID",
-                    "description": "Cloud bucket access key ID",
-                    "defaultValue": ""
-                },
-                {
-                    "type": "PasswordField",
-                    "name": ")json" + kSecretKeyPasswordFieldId +
-                                               R"json(",
-                    "caption": "Secret Key",
-                    "description": "Cloud bucket secret key",
-                    "defaultValue": ""
-                }
-            ]
-        })json";
-
-// advanced
-static const std::string kEndpointUrlTextFieldId = "endpointUrl";
-static const std::string kDefaultEndpoint = "https://s3.us-east-1.lyvecloud.seagate.com";
-static const std::string kBucketNameTextFieldId = "bucketName";
-static const std::string kBucketSizeSpinBoxId = "bucketCapacity";
-static const std::string kNumServersPerBucketSpinBoxId = "numBucketServers";
-static const uint64_t kDefaultBucketSizeGb = 1024;
-static const std::string kAdvancedGroupBox = R"json(
-        {
-            "type": "GroupBox",
-            "caption": "Advanced Settings",
-            "items":
-            [
-                {
-                    "type": "TextField",
-                    "name": ")json" + kEndpointUrlTextFieldId +
-                                             R"json(",
-                    "caption": "Endpoint URL",
-                    "description": "Set a different endpoint (different region or service)",
-                    "defaultValue": ")json" + kDefaultEndpoint +
-                                             R"json("
-                },
-                {
-                    "type": "TextField",
-                    "name": ")json" + kBucketNameTextFieldId +
-                                             R"json(",
-                    "caption": "Bucket Name",
-                    "description": "Specify a bucket name (leave empty to let the system automatically detect your bucket)",
-                    "defaultValue": ""
-                },
-                {
-                    "type": "SpinBox",
-                    "name": ")json" + kBucketSizeSpinBoxId +
-                                             R"json(",
-                    "caption": "Backup Storage Limit (in GB)",
-                    "description": "Maximum data this server should back up - default is )json" +
-                                             std::to_string(kDefaultBucketSizeGb) +
-                                             R"json(GB",
-                    "defaultValue": )json" + std::to_string(kDefaultBucketSizeGb) +
-                                             R"json(,
-                    "minValue": 1,
-                    "maxValue": 1000000000
-                },
-                {
-                    "type": "SpinBox",
-                    "name": ")json" + kNumServersPerBucketSpinBoxId +
-                                             R"json(",
-                    "caption": "Servers Sharing this Bucket",
-                    "description": "Number of servers (including merged servers) sharing this cloud storage license - default is 1",
-                    "defaultValue": 1,
-                    "minValue": 1,
-                    "maxValue": 10000
-                }
-            ]
-        })json";
-
-// gather settings items together
-static const std::string kSettingsItems = kCredentialGroupBox + (credentialsOnly ? "" : ("," + kAdvancedGroupBox));
 
 // top-level settings model
 static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
 {
     "type": "Settings",
     "items":
-    [)json" + kSettingsItems + R"json(
+    [
+        {
+            "type": "TextField",
+            "name": ")json" + kSubscriptionKeyFieldId +
+                                                R"json(",
+            "caption": "Subscription Key",
+            "description": "DW Cumulus Subscription Key",
+            "defaultValue": ""
+        }
     ]
 }
 )json";

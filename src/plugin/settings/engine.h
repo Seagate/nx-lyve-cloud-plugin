@@ -50,6 +50,7 @@ class Engine : public nx::sdk::analytics::Engine
     CloudfuseMngr m_cfManager;
     std::map<std::string, std::string> m_prevSettings;
     std::string m_passphrase;
+    nx::kit::detail::json11::Json m_subscriptionInfo;
 };
 
 } // namespace settings

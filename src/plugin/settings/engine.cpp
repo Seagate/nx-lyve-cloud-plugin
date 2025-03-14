@@ -9,10 +9,13 @@
 #include <fstream>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
+#include <openssl/crypto.h>
+#include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "device_agent.h"
 #include "settings_model.h"
@@ -76,6 +79,74 @@ std::string Engine::manifestString() const
 }
 )json";
 
+    return result;
+}
+
+std::vector<unsigned char> base64Decode(const std::string &base64_string)
+{
+    if (base64_string.empty())
+    {
+        NX_PRINT << "Warning: Base64 input string is empty.";
+        return {};
+    }
+    BIO *b64_bio = BIO_new(BIO_f_base64());
+    // no newlines
+    BIO_set_flags(b64_bio, BIO_FLAGS_BASE64_NO_NL);
+    BIO *mem_bio = BIO_new_mem_buf(base64_string.c_str(), -1);
+    BIO *chain = BIO_push(b64_bio, mem_bio);
+    size_t length = base64_string.length();
+    // maximum decoded size
+    size_t maxlen = length * 3 / 4 + 1;
+    std::vector<unsigned char> buffer(maxlen);
+    int decoded_length = BIO_read(chain, buffer.data(), (int)maxlen);
+    BIO_free_all(chain);
+    if (decoded_length <= 0)
+    {
+        NX_PRINT << "Error: Base64 decoding failed (possibly malformed input).";
+        return {};
+    }
+    // adjust buffer to actual decoded length
+    buffer.resize((size_t)decoded_length);
+    return buffer;
+}
+
+bool verifyEd25519Signature(const std::vector<unsigned char> &data, const std::vector<unsigned char> &signature,
+                            const std::vector<unsigned char> &public_key)
+{
+    EVP_PKEY *pkey = EVP_PKEY_new_raw_public_key(EVP_PKEY_ED25519, nullptr, public_key.data(), public_key.size());
+    if (!pkey)
+    {
+        NX_PRINT << "Error creating public key object";
+        return false;
+    }
+
+    bool result = false;
+    EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
+    if (md_ctx)
+    {
+        if (EVP_DigestVerifyInit_ex(md_ctx, nullptr, nullptr, nullptr, nullptr, pkey, nullptr))
+        {
+            if (EVP_DigestVerify(md_ctx, signature.data(), signature.size(), data.data(), data.size()))
+            {
+                // signature valid
+                result = true;
+            }
+            else
+            {
+                NX_PRINT << "Signature verification failed: " << ERR_error_string(ERR_get_error(), nullptr);
+            }
+        }
+        else
+        {
+            NX_PRINT << "EVP_DigestVerifyInit_ex failed";
+        }
+        EVP_MD_CTX_free(md_ctx);
+    }
+    else
+    {
+        NX_PRINT << "Error creating MD_CTX";
+    }
+    EVP_PKEY_free(pkey);
     return result;
 }
 
@@ -200,7 +271,7 @@ bool Engine::settingsChanged()
     }
 
     // check if settings are empty
-    if (newValues[kKeyIdTextFieldId] == "" && newValues[kSecretKeyPasswordFieldId] == "")
+    if (newValues[kSubscriptionKeyFieldId] == "")
     {
         NX_PRINT << "Settings are empty. Ignoring...";
         return false;
@@ -213,47 +284,10 @@ bool Engine::settingsChanged()
         return true;
     }
 
-    // we only really care about certain values
-    // key ID
-    if (m_prevSettings[kKeyIdTextFieldId] != newValues[kKeyIdTextFieldId])
+    // we only really care about the subscription key
+    if (m_prevSettings[kSubscriptionKeyFieldId] != newValues[kSubscriptionKeyFieldId])
     {
         return true;
-    }
-    // secret key
-    if (m_prevSettings[kSecretKeyPasswordFieldId] != newValues[kSecretKeyPasswordFieldId])
-    {
-        return true;
-    }
-    if (!credentialsOnly)
-    {
-        // endpoint
-        if (m_prevSettings[kEndpointUrlTextFieldId] != newValues[kEndpointUrlTextFieldId])
-        {
-            // if they're different, but both amount to the same thing, then there is no effective change
-            bool prevIsDefault = m_prevSettings[kEndpointUrlTextFieldId] == kDefaultEndpoint ||
-                                 m_prevSettings[kEndpointUrlTextFieldId] == "";
-            bool newIsDefault =
-                newValues[kEndpointUrlTextFieldId] == kDefaultEndpoint || newValues[kEndpointUrlTextFieldId] == "";
-            if (!prevIsDefault || !newIsDefault)
-            {
-                return true;
-            }
-        }
-        // bucket name
-        if (m_prevSettings[kBucketNameTextFieldId] != newValues[kBucketNameTextFieldId])
-        {
-            return true;
-        }
-        // bucket capacity
-        if (m_prevSettings[kBucketSizeSpinBoxId] != newValues[kBucketSizeSpinBoxId])
-        {
-            return true;
-        }
-        // number of servers sharing the bucket
-        if (m_prevSettings[kNumServersPerBucketSpinBoxId] != newValues[kNumServersPerBucketSpinBoxId])
-        {
-            return true;
-        }
     }
     // nothing we care about changed
     return false;
@@ -263,40 +297,80 @@ nx::sdk::Error Engine::validateMount()
 {
     NX_PRINT << "Validating mount options...";
     std::map<std::string, std::string> values = currentSettings();
-    std::string keyId = values[kKeyIdTextFieldId];
-    std::string secretKey = values[kSecretKeyPasswordFieldId];
-    std::string endpointUrl = kDefaultEndpoint;
-    std::string bucketName = "";
-    uint64_t bucketCapacityGB = kDefaultBucketSizeGb;
-    uint64_t numServersSharingBucket = 1;
-    if (!credentialsOnly)
+    // get subscription key and decode base64
+    auto subscriptionKeyJsonBytes = base64Decode(values[kSubscriptionKeyFieldId]);
+    if (subscriptionKeyJsonBytes.empty())
     {
-        endpointUrl = values[kEndpointUrlTextFieldId];
-        bucketName = values[kBucketNameTextFieldId]; // The default empty string will cause cloudfuse
-                                                     // to select first available bucket
-        // bucket capacity
-        try
-        {
-            bucketCapacityGB = std::stoi(values[kBucketSizeSpinBoxId]);
-        }
-        catch (std::invalid_argument &e)
-        {
-            NX_PRINT << "Bad input for bucket capacity: " << values[kBucketSizeSpinBoxId];
-            // revert to default - write back to settings so user can see value reset
-            values[kBucketSizeSpinBoxId] = std::to_string(kDefaultBucketSizeGb);
-        }
-        // servers sharing bucket
-        try
-        {
-            numServersSharingBucket = std::stoi(values[kNumServersPerBucketSpinBoxId]);
-        }
-        catch (std::invalid_argument &e)
-        {
-            NX_PRINT << "Bad input for num servers: " << values[kNumServersPerBucketSpinBoxId];
-            // revert to default - write back to settings so user can see value reset
-            values[kNumServersPerBucketSpinBoxId] = std::to_string(1);
-        }
+        NX_PRINT << "Failed to parse subscription key base64";
+        return error(ErrorCode::internalError, "Failed to parse subscription key base64. Check subscription key.");
     }
+    // decode JSON string
+    std::string subscriptionKeyJsonString(subscriptionKeyJsonBytes.begin(), subscriptionKeyJsonBytes.end());
+    // parse Json
+    std::string jsonParseErr;
+    Json subscriptionKey = Json::parse(subscriptionKeyJsonString, jsonParseErr);
+    if (!jsonParseErr.empty())
+    {
+        auto errorMessage = "Failed to parse subscription key JSON. Here's why: " + jsonParseErr;
+        NX_PRINT << errorMessage;
+        return error(ErrorCode::internalError, errorMessage);
+    }
+    if (!subscriptionKey.has_shape({{"subscriptionInfo", Json::STRING}, {"signature", Json::STRING}}, jsonParseErr))
+    {
+        auto errorMessage = "Subscription key format error. Expected 'subscriptionInfo' and 'signature' string fields.";
+        NX_PRINT << errorMessage;
+        return error(ErrorCode::internalError, errorMessage);
+    }
+    // extract subscriptionInfo and signature from JSON
+    std::string subscriptionInfoBase64 = subscriptionKey["subscriptionInfo"].string_value();
+    std::string signatureBase64 = subscriptionKey["signature"].string_value();
+    // convert base64 to byte data (prepare for verification)
+    std::string publicKeyRawBase64 = "0efxam97iR/yaL9pjZpaRrqxkpjOxeZj00qelt+FLas=";
+    auto publicKeyRawBytes = base64Decode(publicKeyRawBase64);
+    auto subscriptionInfoBytes = base64Decode(subscriptionInfoBase64);
+    auto signatureBytes = base64Decode(signatureBase64);
+
+    // verify signature
+    if (!verifyEd25519Signature(subscriptionInfoBytes, signatureBytes, publicKeyRawBytes))
+    {
+        auto errorMessage = "Subscription signature verification failed";
+        NX_PRINT << errorMessage;
+        return error(ErrorCode::internalError, errorMessage);
+    }
+
+    // parse cloud storage info
+    std::string subscriptionInfoJsonString(subscriptionInfoBytes.begin(), subscriptionInfoBytes.end());
+    // parse Json
+    std::string subscriptionInfoJsonParseErr;
+    m_subscriptionInfo = Json::parse(subscriptionInfoJsonString, subscriptionInfoJsonParseErr);
+    if (!jsonParseErr.empty())
+    {
+        auto errorMessage = "Failed to parse subscription info JSON. Here's why: " + jsonParseErr;
+        NX_PRINT << errorMessage;
+        return error(ErrorCode::internalError, errorMessage);
+    }
+    // verify shape
+    if (!m_subscriptionInfo.has_shape({{"bucket-name", Json::STRING},
+                                       {"access-key-id", Json::STRING},
+                                       {"secret-key", Json::STRING},
+                                       {"endpoint", Json::STRING},
+                                       {"region", Json::STRING},
+                                       {"bucket-capacity-gb", Json::NUMBER}},
+                                      jsonParseErr))
+    {
+        auto errorMessage = "Subscription info format error. Expected fields: 'bucket-name', 'access-key-id', "
+                            "'secret-key', 'endpoint', and 'region' (strings), and 'bucket-capacity-gb' (number).";
+        NX_PRINT << errorMessage;
+        return error(ErrorCode::internalError, errorMessage);
+    }
+    // extract bucket info
+    std::string bucketName = m_subscriptionInfo["bucket-name"].string_value();
+    std::string keyId = m_subscriptionInfo["access-key-id"].string_value();
+    std::string secretKey = m_subscriptionInfo["secret-key"].string_value();
+    std::string endpointUrl = m_subscriptionInfo["endpoint"].string_value();
+    std::string region = m_subscriptionInfo["region"].string_value();
+    uint64_t bucketCapacityGB = (uint64_t)m_subscriptionInfo["bucket-capacity-gb"].long_value();
+    // prepare mount paths
     std::string mountDir = m_cfManager.getMountDir();
     std::string fileCacheDir = m_cfManager.getFileCacheDir();
     // Unmount before mounting
@@ -376,11 +450,11 @@ nx::sdk::Error Engine::validateMount()
     }
     NX_PRINT << "spawning process from genS3Config";
 #if defined(__linux__)
-    const processReturn dryGenConfig = m_cfManager.genS3Config(
-        endpointUrl, bucketName, bucketCapacityGB * 1024 / numServersSharingBucket, m_passphrase);
+    const processReturn dryGenConfig =
+        m_cfManager.genS3Config(endpointUrl, bucketName, bucketCapacityGB * 1024, m_passphrase);
 #elif defined(_WIN32)
-    const processReturn dryGenConfig = m_cfManager.genS3Config(
-        keyId, secretKey, endpointUrl, bucketName, bucketCapacityGB * 1024 / numServersSharingBucket, m_passphrase);
+    const processReturn dryGenConfig =
+        m_cfManager.genS3Config(keyId, secretKey, endpointUrl, bucketName, bucketCapacityGB * 1024, m_passphrase);
 #endif
     if (dryGenConfig.errCode != 0)
     {
@@ -419,12 +493,12 @@ nx::sdk::Error Engine::validateMount()
 
 nx::sdk::Error Engine::spawnMount()
 {
-    std::map<std::string, std::string> values = currentSettings();
-    std::string keyId = values[kKeyIdTextFieldId];
-    std::string secretKey = values[kSecretKeyPasswordFieldId];
     // mount the bucket
     NX_PRINT << "Starting cloud storage mount";
 #if defined(__linux__)
+    // get bucket credentials
+    std::string keyId = m_subscriptionInfo["access-key-id"].string_value();
+    std::string secretKey = m_subscriptionInfo["secret-key"].string_value();
     const processReturn mountRet = m_cfManager.mount(keyId, secretKey, m_passphrase);
 #elif defined(_WIN32)
     const processReturn mountRet = m_cfManager.mount(m_passphrase);

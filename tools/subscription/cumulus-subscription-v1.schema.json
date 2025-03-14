@@ -1,0 +1,40 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://digital-watchdog.com/cumulus-subscription-v1.schema.json",
+    "title": "DW Cumulus Subscription Schema",
+    "description": "Defines the format of DW Cumulus subscription files used for authorizing cloud storage access in DW Spectrum IPVMS",
+    "type": "object",
+    "properties": {
+        "bucket-name": {
+            "description": "The name of the bucket this subscription grants access to",
+            "type": "string"
+        },
+        "bucket-capacity-gb": {
+            "description": "The maximum capacity of the bucket allowed by this subscription, in GiB",
+            "type": "integer"
+        },
+        "access-key-id": {
+            "description": "The access key ID to use for access to the bucket",
+            "type": "string"
+        },
+        "secret-key": {
+            "description": "The secret key to use for access to the bucket",
+            "type": "string"
+        },
+        "endpoint": {
+            "description": "The complete URL of the S3 endpoint where the bucket exists",
+            "type": "string"
+        },
+        "region": {
+            "description": "The region where the bucket exists",
+            "type": "string"
+        },
+        "date": {
+            "description": "When this subscription was generated",
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+            "format": "date-time"
+        }
+    },
+    "required": [ "access-key-id", "secret-key", "bucket-capacity-gb" ]
+}

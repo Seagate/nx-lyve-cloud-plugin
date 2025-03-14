@@ -19,9 +19,8 @@
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
+# Python venv
+venv
 
 # Compiled Static libraries
 *.lai
