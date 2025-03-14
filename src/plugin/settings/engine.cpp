@@ -369,7 +369,7 @@ nx::sdk::Error Engine::validateMount()
     std::string secretKey = m_subscriptionInfo["secret-key"].string_value();
     std::string endpointUrl = m_subscriptionInfo["endpoint"].string_value();
     std::string region = m_subscriptionInfo["region"].string_value();
-    uint64_t bucketCapacityGB = (uint64_t)m_subscriptionInfo["bucket-capacity-gb"].long_value();
+    uint64_t bucketCapacityGB = (uint64_t)m_subscriptionInfo["bucket-capacity-gb"].int_value();
     // prepare mount paths
     std::string mountDir = m_cfManager.getMountDir();
     std::string fileCacheDir = m_cfManager.getFileCacheDir();
