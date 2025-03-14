@@ -12,6 +12,9 @@ set -x #< Log each command.
 
 "$BASE_DIR"/build_plugin.sh \
     --no-tests \
-    -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux \
-    -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$BASE_DIR/toolchain_x64.cmake" \
+    --edge-build \
+    -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++-9 \
+    -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc-9 \
+    -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=arm64-linux \
+    -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$BASE_DIR/toolchain_arm64.cmake" \
     "$@"
