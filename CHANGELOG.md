@@ -9,6 +9,11 @@ This release includes all features planned for the 1.0.0 release of DW Cumulus, 
 ### Changes ###
 
 - [#8](https://github.com/dwrnd/DW-Cumulus/pull/8) Change settings to require only a subscription key
+- [#12](https://github.com/dwrnd/DW-Cumulus/pull/12) Only use cloud for bucket used capacity
+
+### Bug Fixes ###
+
+- [#12](https://github.com/dwrnd/DW-Cumulus/pull/12) Fix crashes due to path issues
 
 ## **0.5.2** ##
 
