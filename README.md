@@ -86,6 +86,11 @@ After installing cloudfuse, and copying the plugin file, restart the VMS and the
 Administration settings windows. Then you can enter your S3 credentials and a mount will appear on the system connected
 to the cloud. This can be selected as a backup mount and video files will be backed up to the cloud.
 
+## Debugging DW-Cumulus
+
+You can use the plugin with test credentials without having to access the DW private signature key.  
+Just follow the [guide](tools/subscription/README.md) in tools/subscription
+
 ## License
 
 Most of the project is licensed under the [Mozilla Public License](https://www.mozilla.org/en-US/MPL/2.0/) and the rest
