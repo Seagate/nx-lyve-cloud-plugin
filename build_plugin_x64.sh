@@ -12,6 +12,6 @@ set -x #< Log each command.
 
 "$BASE_DIR"/build_plugin.sh \
     --no-tests \
-    -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux \
+    -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux-static \
     -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$BASE_DIR/toolchain_x64.cmake" \
     "$@"

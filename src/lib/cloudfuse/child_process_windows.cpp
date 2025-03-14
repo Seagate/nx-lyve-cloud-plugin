@@ -73,7 +73,7 @@ CloudfuseMngr::CloudfuseMngr()
     // generate template contents
     std::string systemName = getSystemName();
     // NOTE: increment the version number when the config template changes
-    templateVersionString = "template-version: 0.3";
+    templateVersionString = "template-version: 0.4";
     config_template = templateVersionString + R"(
 allow-other: true
 logging:
@@ -82,7 +82,6 @@ logging:
 components:
 - libfuse
 - file_cache
-- size_tracker
 - attr_cache
 - s3storage
 

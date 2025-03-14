@@ -86,6 +86,10 @@ jobs:
           # The vcpkg.json file, which will be part of cache key computation.
           vcpkgJsonGlob: "**/src/vcpkg.json"
 
+      - name: Copy Arm64 Linux Static Triple
+        run: |
+          cp vcpkg/triples/community/arm64-linux-static.cmake $VCPKG_ROOT/triples/community
+
       - name: Build using CMake on Linux for amd64
         if: ${{ Contains(matrix.os, 'ubuntu') }}
         run: >
