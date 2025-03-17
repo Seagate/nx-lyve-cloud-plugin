@@ -18,7 +18,7 @@ class Plugin : public nx::sdk::analytics::Plugin
     virtual nx::sdk::Result<nx::sdk::analytics::IEngine *> doObtainEngine() override;
     virtual std::string instanceId() const override
     {
-        return "seagate.cloudfuse";
+        return "dw.cumulus";
     }
     virtual std::string manifestString() const override;
 };
