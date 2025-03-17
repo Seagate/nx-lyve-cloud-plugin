@@ -171,12 +171,15 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
 
         close(pipefd[1]); // Close write end of pipe
 
-        if (execve(argv[0], argv, envp) == -1)
-        {
-            exit(EXIT_FAILURE);
-        }
-
-        exit(EXIT_SUCCESS);
+        execve(argv[0], argv, envp);
+        
+        // if execve succeeded, none of the following lines will run
+        // print an error message to STDERR, which is piped to the parent
+        // this should prevent the parent from hanging (maybe)
+        char errorMessage[256];
+        std::snprintf(errorMessage, sizeof(errorMessage), "execve(%s, ...) failed", argv[0]);
+        perror(errorMessage);
+        exit(EXIT_FAILURE);
     }
 }
 
