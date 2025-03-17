@@ -132,5 +132,14 @@ static const std::string kStatusFailure = R"json(
             "text": "Cloud storage connection failed!"
         }
 )json";
+static const std::string kStatusNoSaaSSubscription = R"json(
+        {
+            "type": "Banner",
+            "name": ")json" + kStatusBannerId +
+                                          R"json(",
+            "icon": "warning",
+            "text": "Plugin unauthorized - SaaS subscription required"
+        }
+)json";
 
 } // namespace settings
