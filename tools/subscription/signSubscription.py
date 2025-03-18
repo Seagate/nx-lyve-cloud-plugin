@@ -10,7 +10,7 @@ def sign_data(subscription_data, private_key_path):
     # Prompt the user for the passphrase securely
     try:
         with open(private_key_path, 'rb') as keyFile:
-            passphrase = getpass.getpass(prompt='Enter private key passphrase: ').encode()
+            passphrase = getpass.getpass(prompt='Enter passphrase (empty for no passphrase): ').encode()
             private_key = serialization.load_ssh_private_key(
                 keyFile.read(), password=passphrase, backend=default_backend()
             )
