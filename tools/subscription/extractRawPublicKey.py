@@ -12,7 +12,7 @@ def extract_key(public_key_path):
             )
 
         raw_public_key_bytes = public_key.public_bytes(encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)
-        return base64.b64encode(raw_public_key_bytes).decode('utf-8')
+        return base64.b64encode(raw_public_key_bytes).decode()
 
     except Exception as e:
         print(f'Error loading public key. Here\'s why: {type(e)}: {e}', file=sys.stderr)

@@ -1,0 +1,9 @@
+{
+    "$schema": "cumulus-subscription-v1.schema.json",
+    "bucket-name": "123456_UUID",
+    "access-key-id": "provisionedKeyID",
+    "secret-key": "provisionedSecretKey",
+    "endpoint": "https://s3.sv15.lyve.seagate.com",
+    "region": "us-central-1",
+    "date": "2025-02-21T15:35:33Z"
+}
