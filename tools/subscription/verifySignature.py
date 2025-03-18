@@ -43,7 +43,7 @@ def main():
     subscription_key_data_base64 = sys.stdin.read().strip()
     # verify signature
     if verify_signature(subscription_key_data_base64, args.public_key_path):
-        print('Signature is valid.')
+        print('Signature is valid.', file=sys.stderr)
         return 0
     else:
         print('Signature verification failed.', file=sys.stderr)

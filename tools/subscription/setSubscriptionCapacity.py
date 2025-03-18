@@ -14,7 +14,7 @@ def main():
     try:
         subscription_info = json.loads(sys.stdin.read())
     except Exception as e:
-        print(f'Error parsing subscription data: {type(e)}: {e}')
+        print(f'Error parsing subscription data: {type(e)}: {e}', file=sys.stderr)
         return 1
     
     # add the capacity

@@ -19,7 +19,7 @@ def sign_data(subscription_data, private_key_path):
         return base64.b64encode(signature).decode()
 
     except Exception as e:
-        print(f'Error signing: {type(e)}: {e}')
+        print(f'Error signing: {type(e)}: {e}', file=sys.stderr)
         return None
 
 def main():
@@ -34,7 +34,7 @@ def main():
     try:
         subscription_data = json.dumps(json.loads(sys.stdin.read()), sort_keys=True).encode()
     except Exception as e:
-        print(f'Error parsing subscription data: {type(e)}: {e}')
+        print(f'Error parsing subscription data: {type(e)}: {e}', file=sys.stderr)
     
     # get a signature
     signature = sign_data(subscription_data, args.private_key_path)
@@ -52,7 +52,7 @@ def main():
     
     # print key (or report failure)
     if subscription_key:
-        print(subscription_key, end=None)
+        print(subscription_key)
         return 0
     else:
         print('Failed to generate subscription key.', file=sys.stderr)
