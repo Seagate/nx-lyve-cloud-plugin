@@ -194,12 +194,8 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
 
 bool Engine::settingsChanged()
 {
-    // have the settings changed?
+    // pull settings
     std::map<std::string, std::string> newValues = currentSettings();
-    if (newValues == m_prevSettings)
-    {
-        return false;
-    }
 
     // check if settings are empty
     if (newValues[kKeyIdTextFieldId] == "" && newValues[kSecretKeyPasswordFieldId] == "")
@@ -213,6 +209,12 @@ bool Engine::settingsChanged()
     if (!m_cfManager.isMounted())
     {
         return true;
+    }
+    
+    // if we're mounted and the settings haven't changed, do nothing
+    if (newValues == m_prevSettings)
+    {
+        return false;
     }
 
     // we only really care about certain values
