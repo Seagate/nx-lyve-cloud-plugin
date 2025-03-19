@@ -210,7 +210,7 @@ bool Engine::settingsChanged()
     {
         return true;
     }
-    
+
     // if we're mounted and the settings haven't changed, do nothing
     if (newValues == m_prevSettings)
     {
