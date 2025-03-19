@@ -97,24 +97,26 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     bool mountRequired = settingsChanged();
     // write new settings to previous
     m_prevSettings = values;
+    bool mountSuccessful;
     if (mountRequired)
     {
         NX_PRINT << "Settings changed.";
-        bool mountSuccessful = mount();
+        mountSuccessful = mount();
         if (!mountSuccessful)
         {
             NX_PRINT << "Mount failed.";
-        }
-        // update the model so user can see mount status
-        if (!updateModel(&model, mountSuccessful))
-        {
-            // on failure, no changes will be written to the model
-            NX_PRINT << "Status message update failed!";
         }
     }
     else
     {
         NX_PRINT << "Settings have not changed.";
+        mountSuccessful = m_cfManager.isMounted();
+    }
+    // update the model so user can see mount status
+    if (!updateModel(&model, mountSuccessful))
+    {
+        // on failure, no changes will be written to the model
+        NX_PRINT << "Status message update failed!";
     }
 
     // returning invalid JSON to the VMS will crash the server
