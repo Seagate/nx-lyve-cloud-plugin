@@ -168,24 +168,26 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     bool mountRequired = settingsChanged();
     // write new settings to previous
     m_prevSettings = values;
+    bool mountSuccessful;
     if (mountRequired)
     {
         NX_PRINT << "Settings changed.";
-        bool mountSuccessful = mount();
+        mountSuccessful = mount();
         if (!mountSuccessful)
         {
             NX_PRINT << "Mount failed.";
-        }
-        // update the model so user can see mount status
-        if (!updateModel(&model, mountSuccessful))
-        {
-            // on failure, no changes will be written to the model
-            NX_PRINT << "Status message update failed!";
         }
     }
     else
     {
         NX_PRINT << "Settings have not changed.";
+        mountSuccessful = m_cfManager.isMounted();
+    }
+    // update the model so user can see mount status
+    if (!updateModel(&model, mountSuccessful))
+    {
+        // on failure, no changes will be written to the model
+        NX_PRINT << "Status message update failed!";
     }
 
     // returning invalid JSON to the VMS will crash the server
@@ -263,12 +265,8 @@ void Engine::doGetSettingsOnActiveSettingChange(Result<const IActiveSettingChang
 
 bool Engine::settingsChanged()
 {
-    // have the settings changed?
+    // pull settings
     std::map<std::string, std::string> newValues = currentSettings();
-    if (newValues == m_prevSettings)
-    {
-        return false;
-    }
 
     // check if settings are empty
     if (newValues[kSubscriptionKeyFieldId] == "")
@@ -282,6 +280,12 @@ bool Engine::settingsChanged()
     if (!m_cfManager.isMounted())
     {
         return true;
+    }
+
+    // if we're mounted and the settings haven't changed, do nothing
+    if (newValues == m_prevSettings)
+    {
+        return false;
     }
 
     // we only really care about the subscription key
