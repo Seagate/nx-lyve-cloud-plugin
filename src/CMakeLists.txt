@@ -9,7 +9,7 @@ endif()
 
 project(
     cloudfuse_plugin
-    VERSION 0.6.0
+    VERSION 0.6.1
     DESCRIPTION "VMS Plugin for DW Cumulus Cloud"
     LANGUAGES CXX
 )

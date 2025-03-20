@@ -1,5 +1,20 @@
 # DW Cumulus Changelog #
 
+## **0.6.1** ##
+
+March 20th 2025
+This release is packaged with Cloudfuse [v1.9.2](https://github.com/Seagate/cloudfuse/releases/tag/v1.9.2).
+This release includes all features planned for the 1.0.0 release of DW Cumulus, which will be released after additional bug fixes and testing.
+
+### Changes ###
+
+- [#14](https://github.com/dwrnd/DW-Cumulus/pull/14) Update instance id to dw.cumulus
+- [#19](https://github.com/dwrnd/DW-Cumulus/pull/19) Add script to set fuse.cloudfuse as a valid filesystem
+
+### Bug Fixes ###
+
+- [#20](https://github.com/dwrnd/DW-Cumulus/pull/20) Always set status and attempt to remount when reading subscription key
+
 ## **0.6.0** ##
 
 March 14th 2025
