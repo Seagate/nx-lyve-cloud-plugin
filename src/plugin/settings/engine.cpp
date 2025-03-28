@@ -91,6 +91,14 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         return error(ErrorCode::internalError, errorMessage);
     }
 
+    // first, let the user know whether this plugin is authorized by an active SaaS subscription
+    auto subscriptionStatusJson = saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
+    if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson))
+    {
+        // on failure, no changes will be written to the model
+        NX_PRINT << "SaaS subscription status message update failed!";
+    }
+
     std::map<std::string, std::string> values = currentSettings();
 
     // check if settings changed
@@ -113,7 +121,8 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         mountSuccessful = m_cfManager.isMounted();
     }
     // update the model so user can see mount status
-    if (!updateModel(&model, mountSuccessful))
+    auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
+    if (!setStatusBanner(&model, kBucketStatusBannerId, statusJson))
     {
         // on failure, no changes will be written to the model
         NX_PRINT << "Status message update failed!";
@@ -438,14 +447,13 @@ nx::sdk::Error Engine::spawnMount()
     return Error(ErrorCode::noError, nullptr);
 }
 
-bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
+bool Engine::setStatusBanner(Json::object *model, std::string bannerId, std::string updatedJson) const
 {
-    NX_PRINT << "cloudfuse Engine::updateModel";
+    NX_PRINT << "cloudfuse Engine::setStatusBanner " << bannerId;
 
     // prepare the new status item
-    auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
     std::string error;
-    auto newStatus = Json::parse(statusJson, error);
+    auto newStatus = Json::parse(updatedJson, error);
     if (error != "")
     {
         NX_PRINT << "Failed to parse status JSON with error: " << error;
@@ -457,7 +465,7 @@ bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
     auto itemsArray = items.array_items();
     // find the status banner, if it's already present
     auto statusBannerIt = std::find_if(itemsArray.begin(), itemsArray.end(),
-                                       [](Json &item) { return item[kName].string_value() == kStatusBannerId; });
+                                       [bannerId](Json &item) { return item[kName].string_value() == bannerId; });
     // if the banner is not there, add it
     if (statusBannerIt == itemsArray.end())
     {
