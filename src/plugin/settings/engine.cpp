@@ -38,6 +38,7 @@ using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
 
+static bool checkSaasSubscription();
 static std::string buildCapabilities();
 static std::string generatePassphrase();
 static void enableLogging(std::string iniDir);
@@ -49,6 +50,8 @@ Engine::Engine(Plugin *plugin)
     : nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()), m_plugin(plugin), m_cfManager()
 {
     NX_PRINT << "cloudfuse Engine::Engine";
+    // check SaaS subscription
+    m_saasSubscriptionValid = checkSaasSubscription();
 }
 
 Engine::~Engine()
@@ -561,6 +564,92 @@ std::string parseCloudfuseError(std::string error)
     }
 
     return error.substr(start, end);
+}
+
+processReturn getServerPort()
+{
+#if defined(_WIN32)
+#elif defined(__linux__)
+    // grep port /opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf
+    const std::string vmsConfigPath = "/opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf";
+    char *const argv[] = {const_cast<char *>("/usr/bin/grep"), const_cast<char *>(R"('port=\K[0-9]*')"),
+                        const_cast<char *>(vmsConfigPath.c_str()), NULL};
+    char *const envp[] = {NULL};
+    auto processReturn = ChildProcess::spawnProcess(argv, envp);
+#endif
+    return processReturn;
+}
+
+Json getMediaserverSystemInfo(const std::string port, const std::string apiVersion)
+{
+    // use curl to make a request for system info
+    const std::string vmsSystemInfoUrl = "https://localhost:" + port + "/rest/v"+apiVersion+"/system/info";
+#if defined(_WIN32)
+#elif defined(__linux__)
+    char *const argv[] = {const_cast<char *>("/usr/bin/curl"), const_cast<char *>("-k"),
+        const_cast<char *>(vmsSystemInfoUrl.c_str()), NULL};
+    char *const envp[] = {NULL};
+    auto processReturn = ChildProcess::spawnProcess(argv, envp);
+#endif
+    if (processReturn.errCode != 0)
+    {
+        NX_PRINT << "cloudfuse Engine::Engine Failed to get media server system information. Here's why: " << processReturn.output;
+        return Json::object();
+    }
+    // try to parse JSON data
+    std::string parseError;
+    auto systemInfo = Json::parse(processReturn.output, parseError);
+    if (!parseError.empty())
+    {
+        NX_PRINT << "Failed to parse media server system info JSON. Here's why: " + parseError;
+        return false;
+    }
+    // check for API error
+    if (systemInfo["error"].is_string())
+    {
+        NX_PRINT << "Media server API error: " + systemInfo.dump();
+        // I've seen this as an API version mismatch error - retry with version 2
+        if (apiVersion == "3")
+        {
+            return getMediaserverSystemInfo(port, "2");
+        }
+    }
+
+    return systemInfo;
+}
+
+bool checkSaasSubscription()
+{
+    // first, get the server port number
+    auto portProcessReturn = getServerPort();
+    if (portProcessReturn.errCode != 0)
+    {
+        NX_PRINT << "cloudfuse Engine::Engine Failed to get media server port number. Here's why: " << portProcessReturn.output;
+        return false;
+    }
+    // check that the port is numeric
+    const std::string port = portProcessReturn.output;
+    if (port.empty() || !std::all_of(port.begin(), port.end(), ::isdigit))
+    {
+        NX_PRINT << "unexpected non-numeric media server port number: " << port;
+        return false;
+    }
+    // get server system info
+    auto systemInfo = getMediaserverSystemInfo(port, "3");
+    if (systemInfo.is_null())
+    {
+        return false;
+    }
+    auto orgId = systemInfo["organizationId"];
+    if (orgId.is_string() && !orgId.string_value().empty())
+    {
+        return true;
+    }
+    else
+    {
+        NX_PRINT << "organizationId field not found in mediaserver system information";
+        return false;
+    }
 }
 
 } // namespace settings
