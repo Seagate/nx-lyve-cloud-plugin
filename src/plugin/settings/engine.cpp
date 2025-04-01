@@ -95,7 +95,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
 
     // first, let the user know whether this plugin is authorized by an active SaaS subscription
-    auto subscriptionStatusJson = saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
+    auto subscriptionStatusJson = m_saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
     if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson))
     {
         // on failure, no changes will be written to the model
