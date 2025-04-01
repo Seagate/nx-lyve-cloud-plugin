@@ -5,8 +5,8 @@
 
 #include <algorithm>
 #include <chrono>
-#include <filesystem>
 #include <codecvt>
+#include <filesystem>
 #include <fstream>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
@@ -580,16 +580,25 @@ processReturn getServerPort()
     const std::wstring wenvp = L"";
     auto processReturn = ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
     // return on error (handled by the caller)
-    if (processReturn.errCode != 0) { return processReturn; }
+    if (processReturn.errCode != 0)
+    {
+        return processReturn;
+    }
     // parse the port number from the registry query output
     std::stringstream textStream(processReturn.output);
     std::string line;
     while (std::getline(textStream, line))
     {
         // drop \r
-        if (!line.empty() && line.back() == '\r') { line.pop_back(); }
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.pop_back();
+        }
         // skip empty lines, and skip the line repeating the registry key
-        if (line.empty() || line == registryKey) { continue; }
+        if (line.empty() || line == registryKey)
+        {
+            continue;
+        }
         // split the line we're interested (example below) by spaces:
         // "    port    REG_SZ    7001"
         std::stringstream lineStream(line);
@@ -597,7 +606,10 @@ processReturn getServerPort()
         while (lineStream >> token)
         {
             // skip until we get to the port number
-            if (token.empty() || !std::all_of(token.begin(), token.end(), ::isdigit)) { continue; }
+            if (token.empty() || !std::all_of(token.begin(), token.end(), ::isdigit))
+            {
+                continue;
+            }
             // found the port number
             // overwrite the output to the port, and return
             processReturn.output = token;
@@ -610,7 +622,7 @@ processReturn getServerPort()
     // grep port /opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf
     const std::string vmsConfigPath = "/opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf";
     char *const argv[] = {const_cast<char *>("/usr/bin/grep"), const_cast<char *>(R"('port=\K[0-9]*')"),
-                        const_cast<char *>(vmsConfigPath.c_str()), NULL};
+                          const_cast<char *>("-oP"), const_cast<char *>(vmsConfigPath.c_str()), NULL};
     char *const envp[] = {NULL};
     auto processReturn = ChildProcess::spawnProcess(argv, envp);
 #endif
@@ -620,7 +632,7 @@ processReturn getServerPort()
 Json getMediaserverSystemInfo(const std::string port, const std::string apiVersion)
 {
     // use curl to make a request for system info
-    const std::string vmsSystemInfoUrl = "https://localhost:" + port + "/rest/v"+apiVersion+"/system/info";
+    const std::string vmsSystemInfoUrl = "https://localhost:" + port + "/rest/v" + apiVersion + "/system/info";
 #if defined(_WIN32)
     // convert URL to wstring
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
@@ -634,14 +646,15 @@ Json getMediaserverSystemInfo(const std::string port, const std::string apiVersi
     auto processReturn = ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 #elif defined(__linux__)
     char *const argv[] = {const_cast<char *>("/usr/bin/curl"), const_cast<char *>("-k"),
-        const_cast<char *>(vmsSystemInfoUrl.c_str()), NULL};
+                          const_cast<char *>(vmsSystemInfoUrl.c_str()), NULL};
     char *const envp[] = {NULL};
     auto processReturn = ChildProcess::spawnProcess(argv, envp);
 #endif
     if (processReturn.errCode != 0)
     {
-        NX_PRINT << "cloudfuse Engine::Engine Failed to get media server system information. Here's why: " << processReturn.output;
-        return Json::object();
+        NX_PRINT << "cloudfuse Engine::Engine Failed to get media server system information. Here's why: "
+                 << processReturn.output;
+        return Json();
     }
     // try to parse JSON data
     std::string parseError;
@@ -671,7 +684,8 @@ bool checkSaasSubscription()
     auto portProcessReturn = getServerPort();
     if (portProcessReturn.errCode != 0)
     {
-        NX_PRINT << "cloudfuse Engine::Engine Failed to get media server port number. Here's why: " << portProcessReturn.output;
+        NX_PRINT << "cloudfuse Engine::Engine Failed to get media server port number. Here's why: "
+                 << portProcessReturn.output;
         return false;
     }
     // check that the port is numeric
@@ -690,6 +704,7 @@ bool checkSaasSubscription()
     auto orgId = systemInfo["organizationId"];
     if (orgId.is_string() && !orgId.string_value().empty())
     {
+        NX_PRINT << "found organizationId";
         return true;
     }
     else
