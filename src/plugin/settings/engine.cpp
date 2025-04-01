@@ -622,8 +622,7 @@ processReturn getServerPort()
     // grep port /opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf
     const std::string vmsConfigPath = "/opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf";
     char *const argv[] = {const_cast<char *>("/usr/bin/sed"), const_cast<char *>("-rn"),
-                          const_cast<char *>("s/port=([0-9]*)/\\1/p"), const_cast<char *>(vmsConfigPath.c_str()),
-                          NULL};
+                          const_cast<char *>("s/port=([0-9]*)/\\1/p"), const_cast<char *>(vmsConfigPath.c_str()), NULL};
     char *const envp[] = {NULL};
     auto processReturn = ChildProcess::spawnProcess(argv, envp);
 #endif
@@ -642,12 +641,16 @@ Json getMediaserverSystemInfo(const std::string port, const std::string apiVersi
     wchar_t systemRoot[MAX_PATH];
     GetEnvironmentVariableW(L"SystemRoot", systemRoot, MAX_PATH);
     const std::wstring curlPath = std::wstring(systemRoot) + LR"(\system32\curl.exe)";
-    const std::wstring wargv = curlPath + L" -k " + wVmsSystemInfoUrl;
+    const std::wstring wargv = curlPath + L" -k -m 5" + wVmsSystemInfoUrl;
     const std::wstring wenvp = L"";
     auto processReturn = ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 #elif defined(__linux__)
-    char *const argv[] = {const_cast<char *>("/usr/bin/curl"), const_cast<char *>("-k"),
-                          const_cast<char *>(vmsSystemInfoUrl.c_str()), NULL};
+    char *const argv[] = {const_cast<char *>("/usr/bin/curl"),
+                          const_cast<char *>("-k"),
+                          const_cast<char *>("-m"),
+                          const_cast<char *>("5"),
+                          const_cast<char *>(vmsSystemInfoUrl.c_str()),
+                          NULL};
     char *const envp[] = {NULL};
     auto processReturn = ChildProcess::spawnProcess(argv, envp);
 #endif
