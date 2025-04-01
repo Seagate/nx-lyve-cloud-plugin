@@ -51,8 +51,6 @@ Engine::Engine(Plugin *plugin)
     : nx::sdk::analytics::Engine(NX_DEBUG_ENABLE_OUTPUT, plugin->instanceId()), m_plugin(plugin), m_cfManager()
 {
     NX_PRINT << "cloudfuse Engine::Engine";
-    // check SaaS subscription
-    m_saasSubscriptionValid = checkSaasSubscription();
 }
 
 Engine::~Engine()
@@ -86,6 +84,9 @@ std::string Engine::manifestString() const
 Result<const ISettingsResponse *> Engine::settingsReceived()
 {
     NX_PRINT << "cloudfuse Engine::settingsReceived";
+    // check SaaS subscription
+    m_saasSubscriptionValid = checkSaasSubscription();
+    NX_PRINT << "SaaS subscription check complete";
     std::string parseError;
     Json::object model = Json::parse(kEngineSettingsModel, parseError).object_items();
     if (parseError != "")
