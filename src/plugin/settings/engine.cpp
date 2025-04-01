@@ -621,8 +621,9 @@ processReturn getServerPort()
 #elif defined(__linux__)
     // grep port /opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf
     const std::string vmsConfigPath = "/opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf";
-    char *const argv[] = {const_cast<char *>("/usr/bin/grep"), const_cast<char *>(R"('port=\K[0-9]*')"),
-                          const_cast<char *>("-oP"), const_cast<char *>(vmsConfigPath.c_str()), NULL};
+    char *const argv[] = {const_cast<char *>("/usr/bin/sed"), const_cast<char *>("-rn"),
+                          const_cast<char *>("s/port=([0-9]*)/\\1/p"), const_cast<char *>(vmsConfigPath.c_str()),
+                          NULL};
     char *const envp[] = {NULL};
     auto processReturn = ChildProcess::spawnProcess(argv, envp);
 #endif
