@@ -21,6 +21,8 @@
 
 // TODO: get NX_PRINT_PREFIX working with non-member helper functions
 // #define NX_PRINT_PREFIX (this->logUtils.printPrefix)
+#define NX_PRINT_PREFIX "[cloudfuse] "
+// #define NX_DEBUG_ENABLE_OUTPUT true
 #include <nx/kit/debug.h>
 #include <nx/kit/ini_config.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
@@ -642,7 +644,7 @@ Json getMediaserverSystemInfo(const std::string port, const std::string apiVersi
     wchar_t systemRoot[MAX_PATH];
     GetEnvironmentVariableW(L"SystemRoot", systemRoot, MAX_PATH);
     const std::wstring curlPath = std::wstring(systemRoot) + LR"(\system32\curl.exe)";
-    const std::wstring wargv = curlPath + L" -sk -m 5" + wVmsSystemInfoUrl;
+    const std::wstring wargv = curlPath + L" -sk -m 5 " + wVmsSystemInfoUrl;
     const std::wstring wenvp = L"";
     auto processReturn = ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 #elif defined(__linux__)
@@ -658,7 +660,7 @@ Json getMediaserverSystemInfo(const std::string port, const std::string apiVersi
     if (processReturn.errCode != 0)
     {
         NX_PRINT << "cloudfuse Engine::Engine Failed to get media server system information. Here's why: "
-                 << processReturn.output;
+                 << processReturn.output << "(error code " << std::to_string(processReturn.errCode) << ")";
         return Json();
     }
     // try to parse JSON data
