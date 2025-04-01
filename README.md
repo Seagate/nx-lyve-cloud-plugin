@@ -38,7 +38,7 @@ The following will default to your OS selected C compiler.
 The following will use gcc. You may also replace gcc/g++ with clang/clang++.
 
 ```bash
-./build_plugin.sh --no-tests -DCMAKE_CXX_COMPILER=gcc -DCMAKE_C_COMPILER=g++
+./build_plugin.sh --no-tests -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
 ```
 
 After running the script the resulting .so file can be found at
