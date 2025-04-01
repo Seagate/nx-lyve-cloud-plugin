@@ -33,12 +33,12 @@ struct processReturn
 
 class ChildProcess
 {
-    public:
-    #ifdef _WIN32
-        static processReturn spawnProcess(wchar_t *argv, std::wstring envp);
-    #elif defined(__linux__) || defined(__APPLE__)
-        static processReturn spawnProcess(char *const argv[], char *const envp[]);
-    #endif
+  public:
+#ifdef _WIN32
+    static processReturn spawnProcess(wchar_t *argv, std::wstring envp);
+#elif defined(__linux__) || defined(__APPLE__)
+    static processReturn spawnProcess(char *const argv[], char *const envp[]);
+#endif
 };
 
 class CloudfuseMngr

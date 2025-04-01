@@ -172,7 +172,7 @@ processReturn ChildProcess::spawnProcess(char *const argv[], char *const envp[])
         close(pipefd[1]); // Close write end of pipe
 
         execve(argv[0], argv, envp);
-        
+
         // if execve succeeded, none of the following lines will run
         // print an error message to STDERR, which is piped to the parent
         // this should prevent the parent from hanging (maybe)
