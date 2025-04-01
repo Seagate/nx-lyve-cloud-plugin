@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
+#include <codecvt>
 #include <fstream>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
@@ -569,6 +570,42 @@ std::string parseCloudfuseError(std::string error)
 processReturn getServerPort()
 {
 #if defined(_WIN32)
+    wchar_t systemRoot[MAX_PATH];
+    GetEnvironmentVariableW(L"SystemRoot", systemRoot, MAX_PATH);
+    const std::wstring regPath = std::wstring(systemRoot) + LR"(\system32\reg.exe)";
+    const std::string registryKey = R"(HKEY_LOCAL_MACHINE\SOFTWARE\Network Optix\Network Optix MetaVMS Media Server)";
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring wRegistryKey = converter.from_bytes(registryKey);
+    const std::wstring wargv = regPath + L" query \"" + wRegistryKey + L"\" /v port";
+    const std::wstring wenvp = L"";
+    auto processReturn = ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
+    // return on error (handled by the caller)
+    if (processReturn.errCode != 0) { return processReturn; }
+    // parse the port number from the registry query output
+    std::stringstream textStream(processReturn.output);
+    std::string line;
+    while (std::getline(textStream, line))
+    {
+        // drop \r
+        if (!line.empty() && line.back() == '\r') { line.pop_back(); }
+        // skip empty lines, and skip the line repeating the registry key
+        if (line.empty() || line == registryKey) { continue; }
+        // split the line we're interested (example below) by spaces:
+        // "    port    REG_SZ    7001"
+        std::stringstream lineStream(line);
+        std::string token;
+        while (lineStream >> token)
+        {
+            // skip until we get to the port number
+            if (token.empty() || !std::all_of(token.begin(), token.end(), ::isdigit)) { continue; }
+            // found the port number
+            // overwrite the output to the port, and return
+            processReturn.output = token;
+            return processReturn;
+        }
+    }
+    // port not found
+    processReturn.errCode = 1;
 #elif defined(__linux__)
     // grep port /opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf
     const std::string vmsConfigPath = "/opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf";
@@ -585,6 +622,16 @@ Json getMediaserverSystemInfo(const std::string port, const std::string apiVersi
     // use curl to make a request for system info
     const std::string vmsSystemInfoUrl = "https://localhost:" + port + "/rest/v"+apiVersion+"/system/info";
 #if defined(_WIN32)
+    // convert URL to wstring
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring wVmsSystemInfoUrl = converter.from_bytes(vmsSystemInfoUrl);
+    // get curl path so we don't need environment variables
+    wchar_t systemRoot[MAX_PATH];
+    GetEnvironmentVariableW(L"SystemRoot", systemRoot, MAX_PATH);
+    const std::wstring curlPath = std::wstring(systemRoot) + LR"(\system32\curl.exe)";
+    const std::wstring wargv = curlPath + L" -k " + wVmsSystemInfoUrl;
+    const std::wstring wenvp = L"";
+    auto processReturn = ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 #elif defined(__linux__)
     char *const argv[] = {const_cast<char *>("/usr/bin/curl"), const_cast<char *>("-k"),
         const_cast<char *>(vmsSystemInfoUrl.c_str()), NULL};
