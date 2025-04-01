@@ -689,8 +689,12 @@ bool checkSaasSubscription()
                  << portProcessReturn.output;
         return false;
     }
-    // check that the port is numeric
-    const std::string port = portProcessReturn.output;
+    std::string port = portProcessReturn.output;
+    // strip endline(s) and check that the port is numeric
+    while (!port.empty() && (port.back() == '\n' || port.back() == '\r'))
+    {
+        port.erase(port.size() - 1);
+    }
     if (port.empty() || !std::all_of(port.begin(), port.end(), ::isdigit))
     {
         NX_PRINT << "unexpected non-numeric media server port number: " << port;
