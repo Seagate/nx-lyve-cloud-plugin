@@ -41,6 +41,13 @@ The following will use gcc. You may also replace gcc/g++ with clang/clang++.
 ./build_plugin.sh --no-tests -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
 ```
 
+To be sure of compatibility, use a version 11 compiler:
+
+```bash
+sudo apt install g++-11 -y
+./build_plugin.sh --no-tests -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++-11
+```
+
 After running the script the resulting .so file can be found at
 `../nx-lyve-cloud-plugin-build/cloudfuse_plugin/libcloudfuse_plugin.so`.
 
