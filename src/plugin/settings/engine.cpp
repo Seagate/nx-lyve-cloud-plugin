@@ -86,9 +86,6 @@ std::string Engine::manifestString() const
 Result<const ISettingsResponse *> Engine::settingsReceived()
 {
     NX_PRINT << "cloudfuse Engine::settingsReceived";
-    // check SaaS subscription
-    m_saasSubscriptionValid = checkSaasSubscription();
-    NX_PRINT << "SaaS subscription check complete";
     std::string parseError;
     Json::object model = Json::parse(kEngineSettingsModel, parseError).object_items();
     if (parseError != "")
@@ -98,15 +95,17 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         return error(ErrorCode::internalError, errorMessage);
     }
 
+    std::map<std::string, std::string> values = currentSettings();
+
     // first, let the user know whether this plugin is authorized by an active SaaS subscription
+    m_saasSubscriptionValid = checkSaasSubscription();
     auto subscriptionStatusJson = m_saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
     if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson))
     {
         // on failure, no changes will be written to the model
         NX_PRINT << "SaaS subscription status message update failed!";
     }
-
-    std::map<std::string, std::string> values = currentSettings();
+    NX_PRINT << "SaaS subscription check complete";
 
     // check if settings changed
     bool mountRequired = settingsChanged();
@@ -680,6 +679,10 @@ Json getMediaserverSystemInfo(const std::string port, const std::string apiVersi
         if (apiVersion == "3")
         {
             return getMediaserverSystemInfo(port, "2");
+        }
+        else if (apiVersion == "2")
+        {
+            return getMediaserverSystemInfo(port, "1");
         }
     }
 
