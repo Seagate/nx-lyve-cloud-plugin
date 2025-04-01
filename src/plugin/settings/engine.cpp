@@ -642,12 +642,12 @@ Json getMediaserverSystemInfo(const std::string port, const std::string apiVersi
     wchar_t systemRoot[MAX_PATH];
     GetEnvironmentVariableW(L"SystemRoot", systemRoot, MAX_PATH);
     const std::wstring curlPath = std::wstring(systemRoot) + LR"(\system32\curl.exe)";
-    const std::wstring wargv = curlPath + L" -k -m 5" + wVmsSystemInfoUrl;
+    const std::wstring wargv = curlPath + L" -sk -m 5" + wVmsSystemInfoUrl;
     const std::wstring wenvp = L"";
     auto processReturn = ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 #elif defined(__linux__)
     char *const argv[] = {const_cast<char *>("/usr/bin/curl"),
-                          const_cast<char *>("-k"),
+                          const_cast<char *>("-sk"),
                           const_cast<char *>("-m"),
                           const_cast<char *>("5"),
                           const_cast<char *>(vmsSystemInfoUrl.c_str()),
@@ -667,6 +667,7 @@ Json getMediaserverSystemInfo(const std::string port, const std::string apiVersi
     if (!parseError.empty())
     {
         NX_PRINT << "Failed to parse media server system info JSON. Here's why: " + parseError;
+        NX_PRINT << "Entire JSON input: " << processReturn.output;
         return false;
     }
     // check for API error
