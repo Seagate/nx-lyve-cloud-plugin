@@ -43,13 +43,15 @@ class Engine : public nx::sdk::analytics::Engine
     bool settingsChanged();
     nx::sdk::Error validateMount();
     nx::sdk::Error spawnMount();
-    bool updateModel(nx::kit::detail::json11::Json::object *model, bool mountSuccessful) const;
+    bool setStatusBanner(nx::kit::detail::json11::Json::object *model, std::string bannerId,
+                         std::string updatedContent) const;
 
   private:
     nx::sdk::analytics::Plugin *const m_plugin;
     CloudfuseMngr m_cfManager;
     std::map<std::string, std::string> m_prevSettings;
     std::string m_passphrase;
+    bool m_saasSubscriptionValid;
 };
 
 } // namespace settings

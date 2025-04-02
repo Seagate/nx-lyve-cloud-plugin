@@ -31,6 +31,6 @@ apt-get install ./cloudfuse*.deb
 ### Install plugin
 echo "Installing Cloudfuse plugin"
 cp cloudfuse_plugin.so /opt/networkoptix-metavms/mediaserver/bin/plugins/
-systemctl restart networkoptix-mediaserver.service
+systemctl restart networkoptix-metavms-mediaserver.service
 
 echo "Finished installing Cloudfuse plugin"

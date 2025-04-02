@@ -140,7 +140,7 @@ s3storage:
     }
 }
 
-processReturn CloudfuseMngr::spawnProcess(wchar_t *argv, std::wstring envp)
+processReturn ChildProcess::spawnProcess(wchar_t *argv, std::wstring envp)
 {
     processReturn ret;
 
@@ -283,7 +283,7 @@ processReturn CloudfuseMngr::genS3Config(const std::string accessKeyId, const st
     const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
     const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
-    return spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
+    return ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 }
 
 processReturn CloudfuseMngr::dryRun(const std::string passphrase)
@@ -295,7 +295,7 @@ processReturn CloudfuseMngr::dryRun(const std::string passphrase)
     const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
     const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
-    return spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
+    return ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 }
 
 processReturn CloudfuseMngr::mount(const std::string passphrase)
@@ -307,7 +307,7 @@ processReturn CloudfuseMngr::mount(const std::string passphrase)
     const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
     const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
-    return spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
+    return ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 }
 
 processReturn CloudfuseMngr::unmount()
@@ -318,7 +318,7 @@ processReturn CloudfuseMngr::unmount()
     const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
     const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
-    return spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
+    return ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
 }
 
 bool CloudfuseMngr::isInstalled()
@@ -329,7 +329,7 @@ bool CloudfuseMngr::isInstalled()
     const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
     const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
-    return spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp).errCode == 0;
+    return ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp).errCode == 0;
 }
 
 bool CloudfuseMngr::isMounted()

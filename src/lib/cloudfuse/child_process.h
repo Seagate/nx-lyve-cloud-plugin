@@ -31,6 +31,16 @@ struct processReturn
     std::string output; // std err and std out from cloudfuse command
 };
 
+class ChildProcess
+{
+  public:
+#ifdef _WIN32
+    static processReturn spawnProcess(wchar_t *argv, std::wstring envp);
+#elif defined(__linux__) || defined(__APPLE__)
+    static processReturn spawnProcess(char *const argv[], char *const envp[]);
+#endif
+};
+
 class CloudfuseMngr
 {
   public:
@@ -64,9 +74,6 @@ class CloudfuseMngr
     bool templateValid();
     bool writeTemplate();
 #ifdef _WIN32
-    processReturn spawnProcess(wchar_t *argv, std::wstring envp);
     processReturn encryptConfig(const std::string passphrase);
-#elif defined(__linux__) || defined(__APPLE__)
-    processReturn spawnProcess(char *const argv[], char *const envp[]);
 #endif
 };
