@@ -151,5 +151,14 @@ static const std::string kStatusNoSaaSSubscription = R"json(
             "text": "Plugin unauthorized - SaaS subscription required"
         }
 )json";
+static const std::string kStatusUnkownSaaSSubscription = R"json(
+        {
+            "type": "Banner",
+            "name": ")json" + kSubscriptionStatusBannerId +
+                                                     R"json(",
+            "icon": "info",
+            "text": "SaaS subscription status: Pending verification"
+        }
+)json";
 
 } // namespace settings

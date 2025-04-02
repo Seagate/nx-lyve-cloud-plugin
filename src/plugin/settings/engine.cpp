@@ -113,12 +113,13 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     // check whether this plugin is authorized by an active SaaS subscription
     SaasSubscriptionResult subscriptionCheckResult = checkSaasSubscription();
     // only update the state if there was no error
+    auto subscriptionStatusJson = kStatusUnkownSaaSSubscription;
     if (subscriptionCheckResult != SaasSubscriptionResult::Error)
     {
         m_saasSubscriptionValid = subscriptionCheckResult == SaasSubscriptionResult::SubscriptionValid ? true : false;
+        subscriptionStatusJson = m_saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
     }
     // update the UI to show the user a banner
-    auto subscriptionStatusJson = m_saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
     if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson))
     {
         // on failure, no changes will be written to the model
