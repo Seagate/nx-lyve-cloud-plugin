@@ -117,7 +117,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     auto subscriptionStatusJson = kStatusUnkownSaaSSubscription;
     if (subscriptionCheckResult != SaasSubscriptionResult::Error)
     {
-        m_saasSubscriptionValid = subscriptionCheckResult == SaasSubscriptionResult::SubscriptionValid ? true : false;
+        m_saasSubscriptionValid = subscriptionCheckResult == SaasSubscriptionResult::SubscriptionValid;
         subscriptionStatusJson = m_saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
         // enforce subscription requirement
         if (!m_saasSubscriptionValid)
