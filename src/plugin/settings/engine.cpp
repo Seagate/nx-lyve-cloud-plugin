@@ -41,7 +41,13 @@ using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
 
-static bool checkSaasSubscription();
+enum class SaasSubscriptionResult {
+    SubscriptionValid,
+    NoSubscription,
+    Error
+};
+
+static SaasSubscriptionResult checkSaasSubscription();
 static std::string buildCapabilities();
 static std::string generatePassphrase();
 static void enableLogging(std::string iniDir);
@@ -96,21 +102,31 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
 
     std::map<std::string, std::string> values = currentSettings();
+    // check if settings changed
+    bool mountRequired = settingsChanged();
+    // write new settings to previous
+    m_prevSettings = values;
 
-    // first, let the user know whether this plugin is authorized by an active SaaS subscription
-    m_saasSubscriptionValid = checkSaasSubscription();
+    // SaaS subscription
+    // default to true, since initial checks are error-prone
+    m_saasSubscriptionValid = true;
+    // check whether this plugin is authorized by an active SaaS subscription
+    SaasSubscriptionResult subscriptionCheckResult = checkSaasSubscription();
+    // only update the state if there was no error
+    if (subscriptionCheckResult != SaasSubscriptionResult::Error)
+    {
+        m_saasSubscriptionValid = subscriptionCheckResult == SaasSubscriptionResult::SubscriptionValid ? true : false;
+    }
+    // update the UI to show the user a banner
     auto subscriptionStatusJson = m_saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
     if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson))
     {
         // on failure, no changes will be written to the model
         NX_PRINT << "SaaS subscription status message update failed!";
     }
-    NX_PRINT << "SaaS subscription check complete";
-
-    // check if settings changed
-    bool mountRequired = settingsChanged();
-    // write new settings to previous
-    m_prevSettings = values;
+    
+    // if settings have changed, mount the container
+    // TODO: enforce the SaaS subscription
     bool mountSuccessful;
     if (mountRequired)
     {
@@ -631,10 +647,11 @@ processReturn getServerPort()
     return processReturn;
 }
 
-Json getMediaserverSystemInfo(const std::string port, const std::string apiVersion)
+SaasSubscriptionResult checkSystemInfo(const std::string port, const std::string apiVersion)
 {
     // use curl to make a request for system info
     const std::string vmsSystemInfoUrl = "https://localhost:" + port + "/rest/v" + apiVersion + "/system/info";
+
 #if defined(_WIN32)
     // convert URL to wstring
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
@@ -656,12 +673,15 @@ Json getMediaserverSystemInfo(const std::string port, const std::string apiVersi
     char *const envp[] = {NULL};
     auto processReturn = ChildProcess::spawnProcess(argv, envp);
 #endif
+
+    // did curl fail?
     if (processReturn.errCode != 0)
     {
         NX_PRINT << "cloudfuse Engine::Engine Failed to get media server system information. Here's why: "
                  << processReturn.output << "(error code " << std::to_string(processReturn.errCode) << ")";
-        return Json();
+        return SaasSubscriptionResult::Error;
     }
+
     // try to parse JSON data
     std::string parseError;
     auto systemInfo = Json::parse(processReturn.output, parseError);
@@ -669,27 +689,43 @@ Json getMediaserverSystemInfo(const std::string port, const std::string apiVersi
     {
         NX_PRINT << "Failed to parse media server system info JSON. Here's why: " + parseError;
         NX_PRINT << "Entire JSON input: " << processReturn.output;
-        return false;
+        return SaasSubscriptionResult::Error;
     }
-    // check for API error
+
+    // check for an API error
     if (systemInfo["error"].is_string())
     {
         NX_PRINT << "Media server API error: " + systemInfo.dump();
         // I've seen this as an API version mismatch error - retry with version 2
         if (apiVersion == "3")
         {
-            return getMediaserverSystemInfo(port, "2");
+            return checkSystemInfo(port, "2");
         }
         else if (apiVersion == "2")
         {
-            return getMediaserverSystemInfo(port, "1");
+            return checkSystemInfo(port, "1");
+        }
+        else
+        {
+            return SaasSubscriptionResult::Error;
         }
     }
 
-    return systemInfo;
+    // got a result - look for the organizationId
+    auto orgId = systemInfo["organizationId"];
+    if (orgId.is_string() && !orgId.string_value().empty())
+    {
+        NX_PRINT << "found organizationId";
+        return SaasSubscriptionResult::SubscriptionValid;
+    }
+    else
+    {
+        NX_PRINT << "organizationId field not found in mediaserver system information";
+        return SaasSubscriptionResult::NoSubscription;
+    }
 }
 
-bool checkSaasSubscription()
+SaasSubscriptionResult checkSaasSubscription()
 {
     // first, get the server port number
     auto portProcessReturn = getServerPort();
@@ -697,7 +733,7 @@ bool checkSaasSubscription()
     {
         NX_PRINT << "cloudfuse Engine::Engine Failed to get media server port number. Here's why: "
                  << portProcessReturn.output;
-        return false;
+        return SaasSubscriptionResult::Error;
     }
     std::string port = portProcessReturn.output;
     // strip endline(s) and check that the port is numeric
@@ -708,25 +744,10 @@ bool checkSaasSubscription()
     if (port.empty() || !std::all_of(port.begin(), port.end(), ::isdigit))
     {
         NX_PRINT << "unexpected non-numeric media server port number: " << port;
-        return false;
+        return SaasSubscriptionResult::Error;
     }
-    // get server system info
-    auto systemInfo = getMediaserverSystemInfo(port, "3");
-    if (systemInfo.is_null())
-    {
-        return false;
-    }
-    auto orgId = systemInfo["organizationId"];
-    if (orgId.is_string() && !orgId.string_value().empty())
-    {
-        NX_PRINT << "found organizationId";
-        return true;
-    }
-    else
-    {
-        NX_PRINT << "organizationId field not found in mediaserver system information";
-        return false;
-    }
+    // check server system info and return result
+    return checkSystemInfo(port, "3");
 }
 
 } // namespace settings
