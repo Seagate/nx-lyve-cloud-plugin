@@ -1,5 +1,14 @@
 # Nx-Lyve-Cloud-Plugin Changelog #
 
+## **1.0.0** ##
+
+April 2nd 2025
+This release is packaged with Cloudfuse [v1.10.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.10.0).
+
+### Changes ###
+
+- [#86](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/86) Check for SAAS subscription
+
 ## **0.5.2** ##
 
 March 12th 2025
