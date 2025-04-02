@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <codecvt>
 #include <filesystem>
 #include <fstream>
 #include <openssl/bio.h>
@@ -23,6 +24,8 @@
 
 // TODO: get NX_PRINT_PREFIX working with non-member helper functions
 // #define NX_PRINT_PREFIX (this->logUtils.printPrefix)
+#define NX_PRINT_PREFIX "[cloudfuse] "
+// #define NX_DEBUG_ENABLE_OUTPUT true
 #include <nx/kit/debug.h>
 #include <nx/kit/ini_config.h>
 #include <nx/sdk/helpers/active_setting_changed_response.h>
@@ -41,6 +44,14 @@ using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
 
+enum class SaasSubscriptionResult
+{
+    SubscriptionValid,
+    NoSubscription,
+    Error
+};
+
+static SaasSubscriptionResult checkSaasSubscription();
 static std::string generatePassphrase();
 static void enableLogging(std::string iniDir);
 static std::string parseCloudfuseError(std::string error);
@@ -160,12 +171,43 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
 
     std::map<std::string, std::string> values = currentSettings();
-
     // check if settings changed
     bool mountRequired = settingsChanged();
     // write new settings to previous
     m_prevSettings = values;
-    bool mountSuccessful;
+
+    // SaaS subscription
+    // default to true, since initial checks are error-prone
+    m_saasSubscriptionValid = true;
+    // check whether this plugin is authorized by an active SaaS subscription
+    SaasSubscriptionResult subscriptionCheckResult = checkSaasSubscription();
+    // only update the state if there was no error
+    auto subscriptionStatusJson = kStatusUnkownSaaSSubscription;
+    if (subscriptionCheckResult != SaasSubscriptionResult::Error)
+    {
+        m_saasSubscriptionValid = subscriptionCheckResult == SaasSubscriptionResult::SubscriptionValid;
+        subscriptionStatusJson = m_saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
+        // enforce subscription requirement
+        if (!m_saasSubscriptionValid)
+        {
+            NX_PRINT << "Enforcing subscription requirement";
+            mountRequired = false;
+            if (m_cfManager.isMounted())
+            {
+                NX_PRINT << "Unmounting due to invalid subscription";
+                m_cfManager.unmount();
+            }
+        }
+    }
+    // update the UI to show the user a banner
+    if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson))
+    {
+        // on failure, no changes will be written to the model
+        NX_PRINT << "SaaS subscription status message update failed!";
+    }
+
+    // if settings have changed, mount the container
+    bool mountSuccessful = false;
     if (mountRequired)
     {
         NX_PRINT << "Settings changed.";
@@ -181,7 +223,8 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         mountSuccessful = m_cfManager.isMounted();
     }
     // update the model so user can see mount status
-    if (!updateModel(&model, mountSuccessful))
+    auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
+    if (!setStatusBanner(&model, kBucketStatusBannerId, statusJson))
     {
         // on failure, no changes will be written to the model
         NX_PRINT << "Status message update failed!";
@@ -531,14 +574,13 @@ nx::sdk::Error Engine::spawnMount()
     return Error(ErrorCode::noError, nullptr);
 }
 
-bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
+bool Engine::setStatusBanner(Json::object *model, std::string bannerId, std::string updatedJson) const
 {
-    NX_PRINT << "cloudfuse Engine::updateModel";
+    NX_PRINT << "cloudfuse Engine::setStatusBanner " << bannerId;
 
     // prepare the new status item
-    auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
     std::string error;
-    auto newStatus = Json::parse(statusJson, error);
+    auto newStatus = Json::parse(updatedJson, error);
     if (error != "")
     {
         NX_PRINT << "Failed to parse status JSON with error: " << error;
@@ -550,7 +592,7 @@ bool Engine::updateModel(Json::object *model, bool mountSuccessful) const
     auto itemsArray = items.array_items();
     // find the status banner, if it's already present
     auto statusBannerIt = std::find_if(itemsArray.begin(), itemsArray.end(),
-                                       [](Json &item) { return item[kName].string_value() == kStatusBannerId; });
+                                       [bannerId](Json &item) { return item[kName].string_value() == bannerId; });
     // if the banner is not there, add it
     if (statusBannerIt == itemsArray.end())
     {
@@ -632,6 +674,170 @@ std::string parseCloudfuseError(std::string error)
     }
 
     return error.substr(start, end);
+}
+
+processReturn getServerPort()
+{
+#if defined(_WIN32)
+    wchar_t systemRoot[MAX_PATH];
+    GetEnvironmentVariableW(L"SystemRoot", systemRoot, MAX_PATH);
+    const std::wstring regPath = std::wstring(systemRoot) + LR"(\system32\reg.exe)";
+    const std::string registryKey = R"(HKEY_LOCAL_MACHINE\SOFTWARE\Digital Watchdog\Digital Watchdog Media Server)";
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring wRegistryKey = converter.from_bytes(registryKey);
+    const std::wstring wargv = regPath + L" query \"" + wRegistryKey + L"\" /v port";
+    const std::wstring wenvp = L"";
+    auto processReturn = ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
+    // return on error (handled by the caller)
+    if (processReturn.errCode != 0)
+    {
+        return processReturn;
+    }
+    // parse the port number from the registry query output
+    std::stringstream textStream(processReturn.output);
+    std::string line;
+    while (std::getline(textStream, line))
+    {
+        // drop \r
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.pop_back();
+        }
+        // skip empty lines, and skip the line repeating the registry key
+        if (line.empty() || line == registryKey)
+        {
+            continue;
+        }
+        // split the line we're interested (example below) by spaces:
+        // "    port    REG_SZ    7001"
+        std::stringstream lineStream(line);
+        std::string token;
+        while (lineStream >> token)
+        {
+            // skip until we get to the port number
+            if (token.empty() || !std::all_of(token.begin(), token.end(), ::isdigit))
+            {
+                continue;
+            }
+            // found the port number
+            // overwrite the output to the port, and return
+            processReturn.output = token;
+            return processReturn;
+        }
+    }
+    // port not found
+    processReturn.errCode = 1;
+#elif defined(__linux__)
+    const std::string vmsConfigPath = "/opt/digitalwatchdog/mediaserver/etc/mediaserver.conf";
+    char *const argv[] = {const_cast<char *>("/usr/bin/sed"), const_cast<char *>("-rn"),
+                          const_cast<char *>("s/port=([0-9]*)/\\1/p"), const_cast<char *>(vmsConfigPath.c_str()), NULL};
+    char *const envp[] = {NULL};
+    auto processReturn = ChildProcess::spawnProcess(argv, envp);
+#endif
+    return processReturn;
+}
+
+SaasSubscriptionResult checkSystemInfo(const std::string port, const std::string apiVersion)
+{
+    // use curl to make a request for system info
+    const std::string vmsSystemInfoUrl = "https://localhost:" + port + "/rest/v" + apiVersion + "/system/info";
+
+#if defined(_WIN32)
+    // convert URL to wstring
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring wVmsSystemInfoUrl = converter.from_bytes(vmsSystemInfoUrl);
+    // get curl path so we don't need environment variables
+    wchar_t systemRoot[MAX_PATH];
+    GetEnvironmentVariableW(L"SystemRoot", systemRoot, MAX_PATH);
+    const std::wstring curlPath = std::wstring(systemRoot) + LR"(\system32\curl.exe)";
+    const std::wstring wargv = curlPath + L" -sk -m 2 " + wVmsSystemInfoUrl;
+    const std::wstring wenvp = L"";
+    auto processReturn = ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
+#elif defined(__linux__)
+    char *const argv[] = {const_cast<char *>("/usr/bin/curl"),
+                          const_cast<char *>("-sk"),
+                          const_cast<char *>("-m"),
+                          const_cast<char *>("2"),
+                          const_cast<char *>(vmsSystemInfoUrl.c_str()),
+                          NULL};
+    char *const envp[] = {NULL};
+    auto processReturn = ChildProcess::spawnProcess(argv, envp);
+#endif
+
+    // did curl fail?
+    if (processReturn.errCode != 0)
+    {
+        NX_PRINT << "cloudfuse Engine::Engine Failed to get media server system information. Here's why: "
+                 << processReturn.output << "(error code " << std::to_string(processReturn.errCode) << ")";
+        return SaasSubscriptionResult::Error;
+    }
+
+    // try to parse JSON data
+    std::string parseError;
+    auto systemInfo = Json::parse(processReturn.output, parseError);
+    if (!parseError.empty())
+    {
+        NX_PRINT << "Failed to parse media server system info JSON. Here's why: " + parseError;
+        NX_PRINT << "Entire JSON input: " << processReturn.output;
+        return SaasSubscriptionResult::Error;
+    }
+
+    // check for an API error
+    if (systemInfo["error"].is_string())
+    {
+        NX_PRINT << "Media server API error: " + systemInfo.dump();
+        // I've seen this as an API version mismatch error - retry with version 2
+        if (apiVersion == "3")
+        {
+            return checkSystemInfo(port, "2");
+        }
+        else if (apiVersion == "2")
+        {
+            return checkSystemInfo(port, "1");
+        }
+        else
+        {
+            return SaasSubscriptionResult::Error;
+        }
+    }
+
+    // got a result - look for the organizationId
+    auto orgId = systemInfo["organizationId"];
+    if (orgId.is_string() && !orgId.string_value().empty())
+    {
+        NX_PRINT << "found organizationId";
+        return SaasSubscriptionResult::SubscriptionValid;
+    }
+    else
+    {
+        NX_PRINT << "organizationId field not found in mediaserver system information";
+        return SaasSubscriptionResult::NoSubscription;
+    }
+}
+
+SaasSubscriptionResult checkSaasSubscription()
+{
+    // first, get the server port number
+    auto portProcessReturn = getServerPort();
+    if (portProcessReturn.errCode != 0)
+    {
+        NX_PRINT << "cloudfuse Engine::Engine Failed to get media server port number. Here's why: "
+                 << portProcessReturn.output;
+        return SaasSubscriptionResult::Error;
+    }
+    std::string port = portProcessReturn.output;
+    // strip endline(s) and check that the port is numeric
+    while (!port.empty() && (port.back() == '\n' || port.back() == '\r'))
+    {
+        port.erase(port.size() - 1);
+    }
+    if (port.empty() || !std::all_of(port.begin(), port.end(), ::isdigit))
+    {
+        NX_PRINT << "unexpected non-numeric media server port number: " << port;
+        return SaasSubscriptionResult::Error;
+    }
+    // check server system info and return result
+    return checkSystemInfo(port, "3");
 }
 
 } // namespace settings
