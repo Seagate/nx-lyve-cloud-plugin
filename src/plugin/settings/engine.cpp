@@ -682,7 +682,7 @@ processReturn getServerPort()
     wchar_t systemRoot[MAX_PATH];
     GetEnvironmentVariableW(L"SystemRoot", systemRoot, MAX_PATH);
     const std::wstring regPath = std::wstring(systemRoot) + LR"(\system32\reg.exe)";
-    const std::string registryKey = R"(HKEY_LOCAL_MACHINE\SOFTWARE\Network Optix\Network Optix MetaVMS Media Server)";
+    const std::string registryKey = R"(HKEY_LOCAL_MACHINE\SOFTWARE\Digital Watchdog\Digital Watchdog Media Server)";
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     std::wstring wRegistryKey = converter.from_bytes(registryKey);
     const std::wstring wargv = regPath + L" query \"" + wRegistryKey + L"\" /v port";
@@ -728,8 +728,7 @@ processReturn getServerPort()
     // port not found
     processReturn.errCode = 1;
 #elif defined(__linux__)
-    // grep port /opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf
-    const std::string vmsConfigPath = "/opt/networkoptix-metavms/mediaserver/etc/mediaserver.conf";
+    const std::string vmsConfigPath = "/opt/digitalwatchdog/mediaserver/etc/mediaserver.conf";
     char *const argv[] = {const_cast<char *>("/usr/bin/sed"), const_cast<char *>("-rn"),
                           const_cast<char *>("s/port=([0-9]*)/\\1/p"), const_cast<char *>(vmsConfigPath.c_str()), NULL};
     char *const envp[] = {NULL};
