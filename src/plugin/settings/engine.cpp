@@ -119,6 +119,17 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     {
         m_saasSubscriptionValid = subscriptionCheckResult == SaasSubscriptionResult::SubscriptionValid ? true : false;
         subscriptionStatusJson = m_saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
+        // enforce subscription requirement
+        if (!m_saasSubscriptionValid)
+        {
+            NX_PRINT << "Enforcing subscription requirement";
+            mountRequired = false;
+            if (m_cfManager.isMounted())
+            {
+                NX_PRINT << "Unmounting due to invalid subscription";
+                m_cfManager.unmount();
+            }
+        }
     }
     // update the UI to show the user a banner
     if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson))
@@ -128,8 +139,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     }
 
     // if settings have changed, mount the container
-    // TODO: enforce the SaaS subscription
-    bool mountSuccessful;
+    bool mountSuccessful = false;
     if (mountRequired)
     {
         NX_PRINT << "Settings changed.";
