@@ -41,7 +41,8 @@ using namespace nx::sdk;
 using namespace nx::sdk::analytics;
 using namespace nx::kit;
 
-enum class SaasSubscriptionResult {
+enum class SaasSubscriptionResult
+{
     SubscriptionValid,
     NoSubscription,
     Error
@@ -125,7 +126,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         // on failure, no changes will be written to the model
         NX_PRINT << "SaaS subscription status message update failed!";
     }
-    
+
     // if settings have changed, mount the container
     // TODO: enforce the SaaS subscription
     bool mountSuccessful;

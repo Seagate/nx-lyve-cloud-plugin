@@ -155,7 +155,7 @@ static const std::string kStatusUnkownSaaSSubscription = R"json(
         {
             "type": "Banner",
             "name": ")json" + kSubscriptionStatusBannerId +
-                                                     R"json(",
+                                                         R"json(",
             "icon": "info",
             "text": "SaaS subscription status: Pending verification"
         }
