@@ -49,13 +49,14 @@ CloudfuseMngr::CloudfuseMngr()
     // generate template contents
     std::string systemName = getSystemName();
     // NOTE: increment the version number when the config template changes
-    templateVersionString = "template-version: 0.4";
+    templateVersionString = "template-version: 0.5";
     config_template = templateVersionString + R"(
 allow-other: true
 nonempty: true
 
 logging:
   type: base
+  max-file-size-mb: 32
 
 components:
 - libfuse
@@ -112,7 +113,7 @@ s3storage:
     }
 }
 
-processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[])
+processReturn ChildProcess::spawnProcess(char *const argv[], char *const envp[])
 {
     processReturn ret;
 
@@ -176,12 +177,15 @@ processReturn CloudfuseMngr::spawnProcess(char *const argv[], char *const envp[]
 
         close(pipefd[1]); // Close write end of pipe
 
-        if (execve(argv[0], argv, envp) == -1)
-        {
-            exit(EXIT_FAILURE);
-        }
+        execve(argv[0], argv, envp);
 
-        exit(EXIT_SUCCESS);
+        // if execve succeeded, none of the following lines will run
+        // print an error message to STDERR, which is piped to the parent
+        // this should prevent the parent from hanging (maybe)
+        char errorMessage[256];
+        std::snprintf(errorMessage, sizeof(errorMessage), "execve(%s, ...) failed", argv[0]);
+        perror(errorMessage);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -210,7 +214,7 @@ processReturn CloudfuseMngr::genS3Config(const std::string endpoint, const std::
                           const_cast<char *>(passphraseKeyEnv.c_str()),
                           NULL};
 
-    return spawnProcess(argv, envp);
+    return ChildProcess::spawnProcess(argv, envp);
 }
 
 processReturn CloudfuseMngr::dryRun(const std::string accessKeyId, const std::string secretAccessKey,
@@ -228,7 +232,7 @@ processReturn CloudfuseMngr::dryRun(const std::string accessKeyId, const std::st
                           const_cast<char *>(awsSecretAccessKeyEnv.c_str()),
                           const_cast<char *>(passphraseKeyEnv.c_str()), NULL};
 
-    return spawnProcess(argv, envp);
+    return ChildProcess::spawnProcess(argv, envp);
 }
 
 processReturn CloudfuseMngr::mount(const std::string accessKeyId, const std::string secretAccessKey,
@@ -245,7 +249,7 @@ processReturn CloudfuseMngr::mount(const std::string accessKeyId, const std::str
                           const_cast<char *>(awsSecretAccessKeyEnv.c_str()),
                           const_cast<char *>(passphraseKeyEnv.c_str()), NULL};
 
-    return spawnProcess(argv, envp);
+    return ChildProcess::spawnProcess(argv, envp);
 }
 
 processReturn CloudfuseMngr::unmount()
@@ -254,7 +258,7 @@ processReturn CloudfuseMngr::unmount()
                           const_cast<char *>(mountDir.c_str()), const_cast<char *>("-z"), NULL};
     char *const envp[] = {const_cast<char *>(PATH.c_str()), NULL};
 
-    return spawnProcess(argv, envp);
+    return ChildProcess::spawnProcess(argv, envp);
 }
 
 bool CloudfuseMngr::isInstalled()
@@ -262,7 +266,7 @@ bool CloudfuseMngr::isInstalled()
     char *const argv[] = {const_cast<char *>("/usr/bin/cloudfuse"), const_cast<char *>("version"), NULL};
     char *const envp[] = {const_cast<char *>(PATH.c_str()), NULL};
 
-    return spawnProcess(argv, envp).errCode == 0;
+    return ChildProcess::spawnProcess(argv, envp).errCode == 0;
 }
 
 bool CloudfuseMngr::isMounted()
