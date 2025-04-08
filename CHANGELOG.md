@@ -1,5 +1,21 @@
 # Nx-Lyve-Cloud-Plugin Changelog #
 
+## **0.6.0** ##
+
+March 12th 2025
+This release is packaged with Cloudfuse [v1.10.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.10.0).
+This release includes all features planned for the 1.0.0 release of the nx-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
+
+### Changes ###
+
+- [#86](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/86) Require a SaaS subscription to use the plugin
+- [#87](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/87) Reduce log data cap to 320MB, to save space on system drive
+
+### Bug Fixes ###
+
+- [#83](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/83) Fix Linux build issues
+- [#84](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/84) Always provide an updated mount status in plugin settings
+
 ## **0.5.2** ##
 
 March 12th 2025
