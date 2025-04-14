@@ -1,0 +1,78 @@
+This README contains documentation for flow and list-disable-enable-bucket.
+
+README for flow
+
+flow implements the Lyve Cloud Object Storage (LCOS) REST API using curl in a bash environment for the Reseller Account environment.
+
+flow uses the STS, IAM and S3 services of LCOS. STS supports login and temporary assume role capabilities. IAM supports
+the user and credential management. S3 supports bucket management and read/write operations. All account and bucket management 
+permsissions are granted through the initial reseller admin login and the assume role as customer admin. This results in the customer admin password 
+never being stored or displayed as the account admin, also the root user of the customer account should never need to login to the customer account directly. 
+However there may be a need to perform some management outside of flow or other support scripts such as using the AWS CLI. When the assume role operation is
+made a temporary access key and secret key are generated and allow both IAM and S3 RESTAPI calls for the current customer. The keys are temporary and expire 
+based on the value of tmout_customer in config.flow. 
+
+flow is a single script the allows for authentication into LCOS, the creation of customer accounts, bucket creation, policy creation, user creation and generates
+a JSON formatted output which includes access and secret keys mapped to a specific user, policy and bucket. These crdentials are for bucket write, read, list and 
+delete object operations. 
+
+flow runs in interactive and in batch mode. 
+
+Interactive Mode: After authentication to LCOS, flow only requires the name of the customer and the region where the bucket will be provisioned. 
+Batch Mode: Supports automated creation of multiple licenses for multiple CPPs in any allowed region.
+
+There is a configuration file, called config.flow, which defines various defaults such as admin user namer, a default admin name/email address for
+each customer, test/production mode for account namimg where test prefixes the account name with "test-", the account name of the reseller account, the available 
+for the account, timeouts for reseller and customer admin operations related to the temporary keys generated during reseller login and when assume role is used to 
+become a customer admin. An entry for two dependencies described below. A setting to expose the temporary customer level access and secret keys as described earlier.
+Finally, the reseller admin may store a password in the home directory of logged in user in a file called dwrootcred. Storing the password facilitates a 
+quick reseller login as reexecution of flow is common. 
+
+flow is bash shell script. flow was developed in a git bash for Windows environment. flow has been tested in older CentOS and recent Ubuntu and runs without 
+modification in these Linux environments. flow runs in Windows git bash and will also likely run within Cygwin.
+
+flow has two dependencies. The dependencies are related to parsing both JSON and XML. git bash does not have reliable JSON or XML parsers. Two additional bash scripts
+are required, they are jp and xp. By default, config.flow will execute both programs from the same directory as flow.
+
+flow only requires user level permission to execute. 
+
+Syntax: flow [-i | -b file | -h]
+
+	flow and flow -i are the same
+
+Options:
+	-i Runs in interactive mode
+	-b Run in batch mode and requires file
+        -h Displays help information
+
+File for batch mode:
+The input file may contain:
+	1. Comment lines: a line where the first non-whitespace character is a #
+	2. Blank lines and whitespace lines
+	3. Batch data: CPP region license_quantity
+
+An example input file:
+# CPP# region QTY
+
+10380 us-central-2 3
+10381 us-central-2 1
+# 11331 us-central-2 2
+# 39347 us-east-1 10
+#340084 us-west-1 4
+431835 us-central-2 3
+
+  # 
+
+#34952 us-central-2 10
+#343371 us-east-1 10
+#343382 us-west-1 4
+
+
+README for list-disable-enable-bucket
+
+list-disable-enable-bucket is an interactive bash script that effectively disables and enables buckets. 
+A bucket owned by a user that has not policy attached cannot perform IO to that bucket. 
+list-disable-enable-bucket will detach and reattach a bucket policy for the owner of a bucket. 
+
+list-disable-enable-bucket performs many of the same operations as flow and uses the same configuration file config.flow for those defaults that apply to 
+disable and enable operations. Since the policy name and user name are derived from the bucket name, only the bucket name for a particular CPP needs to be specified. 

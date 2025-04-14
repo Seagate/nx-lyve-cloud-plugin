@@ -1,0 +1,172 @@
+#!/bin/bash
+
+
+ids=""
+dent="    "
+dir=in
+
+parse(){
+# exec 3< ${fn}
+
+while IFS= read -u $fdu -N 1 ch
+do
+   if [[ "${ch}" == "<" ]]
+      then
+         break
+   fi
+done
+
+if [[ "${ch}" == "" ]]
+   then
+      echo "No xml declaration, exiting"
+      exit
+fi
+
+echo -n "${ch}"
+lch="${ch}"
+
+while IFS= read -u $fdu -N 1 ch
+   do
+      if [[ "${lch}" == "?" ]] && [[ "${ch}" == ">" ]]
+         then
+            echo "${ch}"
+            break
+         else
+            echo -n "${ch}"
+      fi
+   lch="${ch}"
+   done
+
+while IFS= read -u $fdu -N 1 ch
+   do
+      if [[ "${ch}" == "<" ]]
+         then
+            echo -n "${ch}"
+            break
+      fi
+   done
+
+lch=${ch}
+
+while IFS= read -u $fdu -N 1 ch
+   do
+      if [[ "${ch}" == ">" ]]
+         then
+            echo ">"
+         elif [[ "${lch}" != ">" ]] && [[ "${ch}" == "<" ]]
+            then
+               echo -ne "\n<"
+         else
+            echo -n "${ch}"
+      fi
+      lch="${ch}"
+   done
+}
+
+redent(){
+read line
+echo $line
+read line
+echo $line
+
+while read line
+   do
+      if [[ "${line:0:2}" != "</" ]] && [[ "${dir}" == "in" ]]
+         then
+            ids="${ids}${dent}"
+            echo "${ids}${line}"
+         elif [[ "${line:0:2}" != "</" ]] && [[ "${dir}" == "out" ]]
+          then
+            echo "${ids}${line}"
+            dir="in"
+         elif [[ "${line:0:2}" == "</" ]] && [[ "${dir}" == "in" ]]
+          then
+             if [[ "${lline:0:1}" != "<" ]]
+                then
+                    ids="${ids:4}"
+                    echo "${ids}${line}"
+                    dir="out"
+                else
+                    echo "${ids}${line}"
+                    dir="out"
+            fi        
+         elif [[ "${line:0:2}" == "</" ]] && [[ "${dir}" == "out" ]]
+          then
+            ids="${ids:4}"
+            echo "${ids}${line}"
+      fi
+      lline="${line}"
+   done      
+}
+
+# main
+
+#parse command line options
+
+if [[ "$#" != "0" ]]
+   then
+      pos=0
+      for i in $*
+         do
+            fc=${i:0:1}
+            if [[ "${fc}" == "-" ]]
+               then
+                  ((pos++))
+                  opt["${pos}"]=${i:1}
+               else
+                  break
+            fi
+         done
+      shift $pos
+    # for ((i=1; i<=pos; i++))
+    #    do
+    #       echo "opt $i ${opt["${i}"]}"
+    #    done
+fi
+
+# set default options
+if [[ "${pos}" == "0" ]]
+   then
+      opt[1]=p #p pretty print indent; s simple serial list; r raw output no filtering
+fi
+
+#apply command line or default options
+for i in ${opt[*]}
+   do
+       case $i in
+          p)
+             printtype=p
+             ;;
+          s) 
+             printtype=s
+             ;;
+          *)
+             echo "Invalid option: $i"
+             exit
+             ;;
+       esac
+   done
+
+if [ "$#" == "0" ]
+   then
+       fdu=0
+     # exec 3<&0-
+     # fdu=3
+   else
+      infile="$1"
+      if [ -e "$infile" ]
+         then
+            fdu=3
+            exec 3< $infile
+         else
+            echo file: $infile does not exist
+            exit
+      fi
+fi
+
+
+  parse | redent 
+
+#
+#
+

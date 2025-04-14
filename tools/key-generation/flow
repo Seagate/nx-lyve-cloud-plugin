@@ -1,0 +1,1598 @@
+#!/bin/bash 
+
+# v1.0  - Basic functionality, reseller admin authentication, create customer/org account, assume role to manage customer/SI/reseller account, list regions,
+#        create bucket.
+# v1.1  - Add check if customer/org exists, create if not exist. Need to add additional regions for new account being provisioned.
+# v1.2  - Add region selection for bucket creation with US-CENTRAL-2 as default and already provided CPP #.
+# v1.3  - Add policy create and user create with policy attach and key creation.
+#       - Working version
+# v1.4  - Add JSON output for credentials
+# v1.5  - Add error checking bucket already exist
+#       - Add verify CPP is all digits
+#       - Turn off some verbosity
+#       - Randomize the customer root password
+#       - Define default root admin name + CPP
+# v1.6  - Add password check and correct logic error
+# v1.7  - Remove tracing output add special char in password since they are accepted
+# v1.8  - Verbose *** password entry and character checking
+# v1.9  - For testing in new DW Reseller Account. 
+#       - Sets CPP to start with test so not to use number only accounts which cannot be recreated/reused.
+#       - Identifies with #@# sections of code to change for production.
+# v1.10 - Adjust policy document: removed managed true
+#       - Correct input validation for region, comment out credential history file
+# v2.0  - Working version. 
+#       - Defaults configured for digital-watchdog reseller account.
+#       - Multiple regions need to be tested.
+#       - Available regions are set in regions_avaiable in the defaults.
+#       - test- will prefix bucket names for testing.
+#
+
+# NOTES:
+# 1. This code was developed in the git for Windows environment which provides a bash shell. 
+# 2. This code is intended to run either in Windows using a bash shell from git for Windows or natively in a Linux bash shell.
+# 3. Testing shows both git bash and Linux bash all this code to run in either environment without modification.
+# 4. There is one dependency for an additional utility to parse json. git bash does not natively have a robust json parser. 
+#    Although json_pp is available, the parsing is strict and often fails. To resolve this issue an external bash script called jp
+#    must be added to the execution environment like other system utilities. The script jp is a json parser.
+# 5. The final json output may be piped directly to the license generator. This will be enabled in the Defaults section.
+
+# A config file to provide settings instead of code modifications
+# This moves the defaults section to the config file in the current directory
+. ./config.flow
+
+# Constants
+# Newline
+NL=$(echo -ne "\n")
+# Backspace
+BS=$(echo -ne "\b")
+# Save fd1 and redirect stdout to stderr
+exec 4>&1
+exec 1>&2
+
+# functions
+# hmac_sha256 supports AWS v4 signature generation
+hmac_sha256() {
+  key="$1"
+  data="$2"
+  echo -n "$data" | openssl dgst -sha256 -mac HMAC -macopt "$key" | sed 's/^.* //'
+}
+
+calc_v4_sig(){
+   # Calculate the AWS v4 signature
+   # See AWS documentation for implementation details
+
+   isodate=$(date -u '+%Y%m%dT%H%M%SZ')
+   date=${isodate:0:8}
+
+   creq=$(echo -ne "${method}
+/${uri}
+${qstr}
+host:${endpointuri}
+x-amz-content-sha256:${sha256sum_mydata}
+x-amz-date:${isodate}
+
+host;x-amz-content-sha256;x-amz-date
+${sha256sum_mydata}")
+
+   crh=$(echo -ne "${creq}" | openssl dgst -sha256 | awk -F= '{print $2}' | tr -d ' ')
+
+   sts=$(echo -ne "AWS4-HMAC-SHA256
+${isodate}
+${date}/${region}/${service}/aws4_request
+${crh}")
+
+ # Four-step signing key calculation
+   dateKey=$(hmac_sha256 key:"AWS4$secret" $date)
+   dateRegionKey=$(hmac_sha256 hexkey:$dateKey $region)
+   dateRegionServiceKey=$(hmac_sha256 hexkey:$dateRegionKey $service)
+   signingKey=$(hmac_sha256 hexkey:$dateRegionServiceKey "aws4_request")
+
+   reqsig=$(echo -ne "${sts}" | openssl dgst -sha256 \
+               -mac HMAC \
+               -macopt hexkey:${signingKey} \
+      | awk -F= '{print $2}' | tr -d ' ')
+}
+
+f_rslogin(){
+# RSLogin Start
+# Loop until access/secret keys are obtained for reseller level operations.
+   while true
+      do
+         echo -n "Enter reseller account admin username: [default ${reseller_admin}] "
+         read rusername 
+
+      if [[ "${rusername}" == "" ]]
+         then
+            rusername="${reseller_admin}"
+      fi
+
+      rpassword=""
+      echo -n "Enter password: "
+      while IFS= true
+             do
+                stty -echo
+                read -u 0 -r -n 1 myword
+                stty echo
+                if [[ "${myword}" == "${NL}" ]]
+                   then
+	              echo
+                      break
+                   else
+                      if [[ ${myword} == $'\x7f' ]]
+                         then
+                            echo -ne "${BS} ${BS}"
+                            rpassword=${rpassword:0:-1}
+                         else
+                            echo -n '*'
+                            rpassword="${rpassword}${myword}"
+                      fi
+                fi
+             done
+
+      if [[ "${rpassword}" == "" ]]
+         then
+            rpassword="${rootpass}"
+      fi
+
+      echo -n "Enter 2FA OTP (leave blank if 2FA is not in use): "
+      read rotp
+
+    #   echo -ne "\nRSLogin\n"
+      # read -p "Press enter" abc
+
+      # The + needs handling since a + will convert to a space by curl. 
+      # Shell escape does in general work as the character " is often part of the payload. Therefore, \" will allow a " to be handled without conflict in the string.
+
+      #Payload string with URL encoding of '+'. Add other characters/regex for additional encoding. Characters in the [] will be encoded.
+      mydata=$(echo -n "Action=RSLogin&Version=2011-06-15&DurationSeconds=${tmout_reseller}&Customer=&UserName=${rusername}&Password=${rpassword}&OTP=${rotp}" | \
+      while IFS='' read -n 1 c ; do [[ "$c" =~ [+] ]] && printf '%%%02X' "'$c" || printf "$c" ; done)
+
+  # The initial login to the Reseller Account top level uses username/password/OTP authentication.
+  # After successful login all subsequent API calls require an AWS v4 signature to authorize the request.
+  # Both RSLogin and RSAssumeCustomerRole return an access key and secret key pair to use for generating the v4 signature. 
+  # The key pair returned by RSLogin is used for all applicable calls made for management at the reseller level including RSAssumeCustomerRole.
+  # The key pair returned by RSAssumeCustomerRole is used for all applicable calls made for account management at the customer level.
+  
+      rslogin=$(curl "https://sts.${tenant}.lyve.seagate.com/" \
+        -H 'Accept: application/json, text/plain, */*' \
+        -H 'Accept-Language: en-US,en;q=0.9' \
+        -H 'Connection: keep-alive' \
+        -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' \
+        -H "Origin: https://console.${tenant}.lyve.seagate.com" \
+        -H "Referer: https://console.${tenant}.lyve.seagate.com/" \
+        -H 'X-RStor-Action: sts:RSLogin' \
+        -sS \
+        --data ${mydata} ;)
+
+    # echo "RSLogin return: ${rslogin}"
+    # echo
+    # echo -n "${rslogin}" | ${depend_path}jp 2>/dev/null
+
+      RSLoginSecretAccessKey=$(echo "${rslogin}" | ${depend_path}jp 2>/dev/null | grep '"SecretAccessKey"' | awk -F':' '{print $2}' | tr -d '", ' )
+      RSLoginAccessKeyId=$(echo "${rslogin}" | ${depend_path}jp 2>/dev/null | grep '"AccessKeyId"' | awk -F':' '{print $2}' | tr -d '", ' ) 
+      RSLoginExpiration=$(echo "${rslogin}" | ${depend_path}jp 2>/dev/null | grep '"Expiration"' | awk -F':' '{print $2 ":" $3 ":" $4}' | tr -d '", ' ) 
+      RSLoginExpirationSec=$(date -d "${RSLoginExpiration}" +%s)
+    # CurrentSec=$(date -u +%s)
+    # RSLoginExpireSec=$((RSLoginExpirationSec - CurrentSec))
+    # echo "Reseller session expires in ${RSLoginExpireSec} seconds"
+
+
+      access=${RSLoginAccessKeyId}
+      secret=${RSLoginSecretAccessKey}
+
+      if [[ "${access:0:3}" == "STX" ]]
+         then
+            break
+         else
+            echo -ne "Login unsuccessful, retry (default y) y|n: " 
+	    read e_retry
+	    if [[ "${e_retry}" == "y" || "${e_retry}" == "" ]]
+               then
+                  continue
+               else
+                  echo "Exiting"
+	          exit	  
+	    fi
+      fi
+   done
+# RSLogin End f_rslogin
+}
+
+validate_input(){
+	# open input file
+	batch_input=$1
+	exec 5<${batch_input}
+        while read -u 5 cpp_batch region_batch qty_batch
+	do
+		# echo "${cpp_batch} ${region_batch} ${qty_batch}"
+		  if [[ "${cpp_batch}" == "" ]] || [[ "${cpp_batch:0:1}" == "#" ]]
+		  then
+			# echo "Line is empty or comment, continue"
+			  continue
+		  fi
+
+		  # check for three params
+		  if (( $(echo -n  "${cpp_batch} ${region_batch} ${qty_batch}" | wc -w) != 3 ))
+		  then
+			  echo "Error: Input data must only have three parameters: CPP# Region Quantity"
+			  echo "Input is: ${cpp_batch} ${region_batch} ${qty_batch}"
+			  echo "Check the file: ${batch_input}"
+			  exit
+		  fi
+
+                  # Check for at least three characters
+                    if (( ${#cpp_batch} < 3 ))
+                       then
+                          echo "Error: CPP must be three or more digits"
+                          echo "Input is: ${cpp_batch} ${region_batch} ${qty_batch}"
+                          exit
+                    fi
+                  # Check for leading char not zero char
+                    if [[ "${cpp_batch:0:1}" == "0" ]]
+                        then
+                           echo "Error: CPP may not start with 0"
+                           echo "Input is: ${cpp_batch} ${region_batch} ${qty_batch}"
+                           exit
+                    fi
+                  # Check for only digits
+                    exec 3<<< $(echo -n "${cpp_batch}")
+                    while IFS='' true
+                       do
+                          read -u 3 -n 1 c
+                          if [[ "${c}" == "" ]]
+                             then
+                                exec 3>&-
+                                break
+                          fi
+               
+                         if [[ "$c" =~ [0-9] ]]
+                            then
+                                  :
+                            else
+                               exec 3>&-
+                               echo "Error: CPP must only be digits"
+                               echo "Input is: ${cpp_batch} ${region_batch} ${qty_batch}"
+                               exit
+                         fi
+		       done
+
+		       # check second param for specified regions
+		       case ${region_batch} in
+			       us-east-1|us-central-2|us-west-1)
+				       :
+				       ;;
+			       *)
+				       echo "Error: Region ${region_batch} is not valid"
+                               echo "Input is: ${cpp_batch} ${region_batch} ${qty_batch}"
+			       exit
+			       ;;
+		       esac
+
+		# Check that quantity is a number
+                # Check for leading char not zero char
+                    if [[ "${qty_batch:0:1}" == "0" ]]
+                        then
+                           echo "Error: Quantity may not start with 0"
+                           echo "Input is: ${cpp_batch} ${region_batch} ${qty_batch}"
+                           exit
+                    fi
+                  # Check for only digits
+                    exec 3<<< $(echo -n "${qty_batch}")
+                    while IFS='' true
+                       do
+                          read -u 3 -n 1 c
+                          if [[ "${c}" == "" ]]
+                             then
+                                exec 3>&-
+                                break
+                          fi
+
+                         if [[ "$c" =~ [0-9] ]]
+                            then
+                                  :
+                            else
+                               exec 3>&-
+                               echo "Error: Quantity must only be digits"
+                               echo "Input is: ${cpp_batch} ${region_batch} ${qty_batch}"
+                               exit
+                         fi
+                       done
+
+	done
+	exec 5>&-
+}
+
+parse_cmd_line(){
+
+if (( $# > 0 ))
+then
+	firstword="${1}"
+        fc=${firstword:0:1}
+        if [[ "${fc}" == "-" ]]
+        then
+                if (( ${#firstword} != 2 ))
+                then
+                        echo "Error: command line options not valid"
+			echo "Syntax: flow [-i | -b file | -h]"
+                        exit
+                fi
+
+                sc=${firstword:1:1}
+                case ${sc} in
+                        i)
+                                if (( ${#} != 1 ))
+                                then
+                                        echo "Error: -i does not have an argument"
+                                        exit
+                                fi
+                                mode="i"
+                                ;;
+                        b)
+                                if (( ${#} == 2 ))
+                                then
+					:
+				else
+					if (( ${#} < 2 ))
+					then
+                                        	echo "Error: -b requires a filename"
+						echo "Syntax: flow [-i | -b file | -h]"
+					else
+						echo "Error: Too many arguments"
+						echo "Syntax: flow [-i | -b file | -h]"
+					fi
+                                        exit
+                                fi
+
+                                secondword="${2}"
+                                if [[ -e ${secondword} ]]
+                                then
+					echo "Checking ${secondword} for errors"
+					validate_input ${secondword}
+                                	mode="b"
+				else
+                                        echo "Error: ${secondword} does not exist"
+					echo "Syntax: flow [-i | -b file | -h]"
+                                        exit
+                                fi
+                                ;;
+                        h)
+				echo "Help: Syntax: flow [-i | -b file | -h]"
+                                exit
+                                ;;
+                        *)
+                                echo "Invalid option -${sc}"
+				echo "Syntax: flow [-i | -b file | -h]"
+                                exit
+                                ;;
+                esac
+        else
+                echo "Error: Valid option not specified"
+		echo "Syntax: flow [-i | -b file | -h]"
+                exit
+        fi
+else
+        mode="i"
+fi
+}
+
+run_batch(){
+	echo "Running in batch mode with file ${batch_input}"
+	echo
+   	# Log in reseller admin level
+      	f_rslogin
+
+
+        # open input file
+        exec 5<${batch_input}
+	echo
+
+	# Checking the status of all CPP in input. Verifying if CPP exists the CPP is enabled
+        while read -u 5 cpp_batch region_batch qty_batch
+        do
+                # echo "${cpp_batch} ${region_batch} ${qty_batch}"
+                  if [[ "${cpp_batch}" == "" ]] || [[ "${cpp_batch:0:1}" == "#" ]]
+                  then
+                        # echo "Line is empty or comment, continue"
+                          continue
+                  else
+		        # echo "make ${cpp_batch} ${region_batch} ${qty_batch}"
+			# echo "Check each CPP ${cpp_batch} if exist is enabled; exit if not enabled"
+			  Customer_Name=${cpp_batch}
+
+			  # Rename CPP depednding on run_state=prod|test
+			   if [[ "${run_state}" == "test" ]]
+			   then
+			        Customer_Name="test-${Customer_Name}"
+			   fi
+
+			 # echo -ne "\nChecking if CPP ${Customer_Name} exists and active/enabled.\n"
+
+			   # procedure specific variables
+			   region=any
+			   service=iam
+			   endpointuri=${service}.${tenant}.lyve.seagate.com
+			   method=POST
+			   uri=""
+			   qstr=""
+			
+			   mydata="Action=RSCustomerDetails&Version=2010-05-08&CustomerName=${Customer_Name}"
+			   sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+			
+			   calc_v4_sig
+			
+			   cpp_exist=$(curl "https://${endpointuri}/${uri}" \
+			     -H "Authorization: AWS4-HMAC-SHA256 \
+			         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+			         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+			         Signature=${reqsig}" \
+			     -H "host: ${endpointuri}" \
+			     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+			     -H "x-amz-date: ${isodate}" \
+			     -H "Connection: keep-alive" \
+			     -sS \
+			     --data ${mydata} ;)
+			
+			 # echo -n "${cpp_exist}}" | ${depend_path}jp
+
+			   echo -n "Checking status for CPP ${Customer_Name}: "
+			   if echo -n "${cpp_exist}" | grep '"message":"IAM: Customer not found"' > /dev/null
+			   then
+				 # echo "${Customer_Name} does not exist -ok"
+				   echo "will be created" 
+				   continue
+			   else
+
+				   customer_active=$(echo "${cpp_exist}" | ${depend_path}jp 2>/dev/null | grep '"Active"' | awk -F':' '{print $2}' | tr -d '", ' )
+				 # echo "CPP ${Customer_Name} exists and state is Active = ${customer_active}"
+				   if [[ "${customer_active}" == "true" ]]
+				   then
+			              #	echo "${Customer_Name} is Active - ok"
+				        echo "exists and active" 
+					continue
+				   else
+					echo
+					echo "CPP ${Customer_Name} exists and is not enabled, may be a deleted CPP"
+					echo "Enable CPP ${Customer_Name} or remove from ${batch_input} and re-run"
+					exit
+				   fi
+			   fi
+
+			
+
+	
+
+                  fi
+        done
+
+      # echo "EOF"
+        exec 5<&-
+
+        # open input file
+        exec 5<${batch_input}
+	echo
+
+	# create CPP Account, create bucket, create policy, create user, attach policy, generate credentials, output JSON
+        while read -u 5 cpp_batch region_batch qty_batch
+        do
+		    # CurrentSec=$(date -u +%s)
+		    # RSLoginExpireSec=$((RSLoginExpirationSec - CurrentSec))
+		    # echo "Reseller session expires in ${RSLoginExpireSec} seconds"
+
+		      access=${RSLoginAccessKeyId}
+		      secret=${RSLoginSecretAccessKey}
+
+                # echo "${cpp_batch} ${region_batch} ${qty_batch}"
+                  if [[ "${cpp_batch}" == "" ]] || [[ "${cpp_batch:0:1}" == "#" ]]
+                  then
+                        # echo "Line is empty or comment, continue"
+                          continue
+                  else
+                        # echo "make ${cpp_batch} ${region_batch} ${qty_batch}"
+                        # echo "Check each CPP ${cpp_batch} if exist is enabled; exit if not enabled"
+                          Customer_Name=${cpp_batch}
+
+                          # Rename CPP depednding on run_state=prod|test
+                           if [[ "${run_state}" == "test" ]]
+                           then
+                                Customer_Name="test-${Customer_Name}"
+                           fi
+
+                         # echo -ne "\nChecking if CPP ${Customer_Name} exists and active/enabled.\n"
+
+                           # procedure specific variables
+                           region=any
+                           service=iam
+                           endpointuri=${service}.${tenant}.lyve.seagate.com
+                           method=POST
+                           uri=""
+                           qstr=""
+
+                           mydata="Action=RSCustomerDetails&Version=2010-05-08&CustomerName=${Customer_Name}"
+                           sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+                           calc_v4_sig
+
+                           cpp_exist=$(curl "https://${endpointuri}/${uri}" \
+                             -H "Authorization: AWS4-HMAC-SHA256 \
+                                 Credential=${access}/${date}/${region}/${service}/aws4_request, \
+                                 SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+                                 Signature=${reqsig}" \
+                             -H "host: ${endpointuri}" \
+                             -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+                             -H "x-amz-date: ${isodate}" \
+                             -H "Connection: keep-alive" \
+                             -sS \
+                             --data ${mydata} ;)
+
+                         # echo -n "${cpp_exist}}" | ${depend_path}jp
+			 # echo "Processing CPP ${Customer_Name}"
+
+                           if echo -n "${cpp_exist}" | grep '"message":"IAM: Customer not found"' > /dev/null
+                           then
+                                 # create CPP
+				   echo -n "Create: CPP ${Customer_Name}"
+				   cusername=$(echo -n ${default_admin} | sed "s/\@/\+${Customer_Name}\@/")
+				   pwuuidlow=$(openssl rand 15 | base32 | sed 's/=//g' | tr '[:upper:]' '[:lower:]')
+				   pwuuidupp=$(openssl rand 15 | base32 | sed 's/=//g')
+				   cpassword="${pwuuidlow}${pwuuidupp}" 
+				   
+
+			         # procedure specific variables
+			         region=any
+			         service=iam
+			         endpointuri=${service}.${tenant}.lyve.seagate.com
+			         method=POST
+			         uri=""
+			         qstr=""
+			
+			 # Since a " is often part of the data, the sequence \" may be used to pass a " in a quoted string.
+			#  Encode the characters in [].
+			   mydata=$(echo -n "Action=RSCreateCustomer&Version=2010-05-08&Name=${Customer_Name}&AssumeRoleControl=reseller&ReplicationEnforcement=false&Regions=[${regions_available}]&Email=${cusername}&Password=${cpassword}" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\"+] ]] && printf '%%%02X' "'$c" || printf "$c" ; done)
+			   sha256sum_mydata=$(echo -n "${mydata}" | sha256sum | awk '{print $1}')
+			
+			#  echo mydata $mydata
+			
+			calc_v4_sig
+			
+			  customer_create=$(curl "https://${endpointuri}/${uri}" \
+			     -H "Authorization: AWS4-HMAC-SHA256 \
+			         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+			         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+			         Signature=${reqsig}" \
+			     -H "host: ${endpointuri}" \
+			     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+			     -H "x-amz-date: ${isodate}" \
+			     -H "Connection: keep-alive" \
+			     -sS \
+			     --data ${mydata} ;)
+			
+			     # echo "cust_create: ${customer_create}"
+			
+			       customer_created=$(echo "${customer_create}" | ${depend_path}jp 2>/dev/null | grep '"Ok"' | awk -F':' '{print $2}' | tr -d '", ' )
+			       if [[ "${customer_created}" == "true" ]]
+			          then
+			               :
+			          else
+			             echo "Error creating CPP ${Customer_Name}, exiting"
+				     exit
+			       fi
+		            else
+				    echo -n "Manage: CPP ${Customer_Name}"
+                          fi
+         
+     		            # CPP account exists at this point
+			  # perform other operations: assume rolt, create bucket, policy, user, keys
+			  #
+			   
+# Assume Role prior to loop
+# procedure specific variables
+region=any
+service=sts
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata="Action=RSAssumeCustomerRole&Version=2011-06-15&Customer=${Customer_Name}&DurationSeconds=${tmout_customer}"
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig
+
+  rsassumerole=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "Response rsassumerole: ${rsassumerole}"
+
+
+  RSAssumeRoleSecretAccessKey=$(echo "${rsassumerole}" | ${depend_path}jp | grep '"SecretAccessKey"' | awk -F':' '{print $2}' | tr -d '", ')
+  RSAssumeRoleAccessKeyId=$(echo "${rsassumerole}" | ${depend_path}jp | grep '"AccessKeyId"' | awk -F':' '{print $2}' | tr -d '", ')
+  RSAssumeRoleExpiration=$(echo "${rsassumerole}" | ${depend_path}jp 2>/dev/null | grep '"Expiration"' | awk -F':' '{print $2 ":" $3 ":" $4}' | tr -d '", ' )
+  RSAssumeRoleExpirationSec=$(date -d "${RSAssumeRoleExpiration}" +%s)
+# CurrentSec=$(date -u +%s)
+# RSAssumeRoleExpireSec=$((RSAssumeRoleExpirationSec - CurrentSec))
+# echo "Reseller session expires in ${RSLoginExpireSec} seconds"
+
+access=${RSAssumeRoleAccessKeyId}
+secret=${RSAssumeRoleSecretAccessKey}
+
+echo ", CPP admin - Create ${qty_batch} licenses"
+
+
+##############
+# Create loop based on qty_batch
+for ((b_loop=1; b_loop<=qty_batch; b_loop++))
+do
+
+#create bucket
+echo -n "CPP ${Customer_Name} Create: bucket"
+uuid=$(openssl rand 15 | base32 | sed 's/=//g' | tr '[:upper:]' '[:lower:]')
+
+# procedure specific variables
+region=any
+service=s3
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=PUT
+uri=${Customer_Name}-${uuid}
+qstr=""
+bucket_name="${uri}"
+
+uc_region_batch=$(echo -n "${region_batch}" | tr '[:lower:]' '[:upper:]')
+mydata="replication-policy=${uc_region_batch}"
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig
+
+createbucket_ret=$(curl -X PUT "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo -ne "\nCreate Bucket return: ${createbucket_ret}\n"
+
+# echo -ne "\nCreating policy\n"
+echo -n ", policy"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+p1="Action=CreatePolicy"
+p2="Description="
+p3="Path=/"
+p4="PolicyDocument={\"Version\":\"2012-10-17\",\"RSUserPolicy\":\"v1\",\"Managed\":true,\"Statement\":[{\"Action\":[\"s3:GetObject\",\"s3:GetObjectVersion\",\"s3:ListMultipartUploadParts\",\"s3:GetObjectACL\",\"s3:PutObject\",\"s3:PutObjectACL\",\"s3:DeleteObject\",\"s3:DeleteObjectVersion\",\"s3:AbortMultipartUpload\",\"s3:ListBucket\",\"s3:GetBucketVersioning\",\"s3:ListBucketVersions\",\"s3:ListBucketMultipartUploads\",\"s3:GetBucketLocation\",\"s3:HeadBucket\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:s3:::${bucket_name}/*\",\"arn:aws:s3:::${bucket_name}\"]},{\"Action\":[\"s3:ListAllMyBuckets\"],\"Effect\":\"Allow\",\"Resource\":\"*\"}]}"
+p5="PolicyName=${uuid}"
+p6="Version=2010-05-08"
+
+# URL encode characters not in []
+mydata=$(echo -n "${p1}\&${p2}\&${p3}\&${p4}\&${p5}\&${p6}" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\&A-Za-z0-9=-] ]] && printf "$c" || printf '%%%02X' "'$c" ; done)
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+# echo "mydata ${mydata}"
+
+calc_v4_sig
+
+createpolicy_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+ #  echo "Create policy ret ${createpolicy_ret}"
+
+policy_arn=$(echo "${createpolicy_ret}" | grep CreatePolicyResponse |  sed 's/^.*<Arn>//' | sed 's/<\/Arn>.*$//')
+# echo "Policy ARN: ${policy_arn}"
+
+# echo -ne "\nCreating user\n"
+echo -n ", user"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata=$(echo -n "Action=CreateUser&UserName=${uuid}&Version=2010-05-08" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\&A-Za-z0-9=-] ]] && printf "$c" || printf '%%%02X' "'$c" ; done)
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig
+
+user_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "userret ${user_ret}"
+
+# attach policy
+echo -n ", attach"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata=$(echo -n "Action=AttachUserPolicy&PolicyArn=${policy_arn}&UserName=${uuid}&Version=2010-05-08" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\&A-Za-z0-9=-] ]] && printf "$c" || printf '%%%02X' "'$c" ; done)
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+# echo "mydata ${mydata}"
+
+calc_v4_sig
+
+attachpolicy_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "Attach Policy return ${attachpolicy_ret}"
+
+# echo -ne "\nCreate Access Keys\n"
+echo -n ", keys"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata=$(echo -n "Action=CreateAccessKey&UserName=${uuid}&Version=2010-05-08" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\&A-Za-z0-9=-] ]] && printf "$c" || printf '%%%02X' "'$c" ; done)
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+# echo "mydata ${mydata}"
+
+calc_v4_sig
+
+createaccesskey_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+
+
+
+# echo -ne "\nGenerating JSON output\n"
+# AccessKeyId><Status>Active</Status><SecretAccessKey
+
+access_key_id=$(echo "${createaccesskey_ret}" | grep CreateAccessKeyResponse |  sed 's/^.*<AccessKeyId>//' | sed 's/<\/AccessKeyId>.*$//')
+secret_key=$(echo "${createaccesskey_ret}" | grep CreateAccessKeyResponse |  sed 's/^.*<SecretAccessKey>//' | sed 's/<\/SecretAccessKey>.*$//')
+service=s3
+endpointuri=${service}.${region_batch}.${tenant}.lyve.seagate.com
+license_capacity=0
+cdate=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+    jout1='"$schema": "cumulus-subscription-v1.schema.json",'
+    jout2='"bucket-name": "'${bucket_name}'",'
+    jout3='"access-key-id": "'${access_key_id}'",'
+    jout4='"secret-key": "'${secret_key}'",'
+    jout5='"endpoint": "https://'${endpointuri}'",'
+    jout6='"region": "'${region_batch}'",'
+    jout7='"bucket-capacity-gb": '${license_capacity}','
+    jout8='"date": "'${cdate}'"'
+
+# echo -e "\nThe followoing JSON is written to stdout"
+# echo -ne \
+# "{
+#     ${jout1}
+#     ${jout2}
+#     ${jout3}
+#     ${jout4}
+#     ${jout5}
+#     ${jout6}
+#     ${jout7}
+#     ${jout8}
+# }\n"
+echo ", write"
+
+# Restore stdout
+exec 1>&4
+
+echo -ne \
+"{
+    ${jout1}
+    ${jout2}
+    ${jout3}
+    ${jout4}
+    ${jout5}
+    ${jout6}
+    ${jout7}
+    ${jout8}
+}\n"
+  # | python /c/Users/723848/DW-Cumulus/tools/subscription/setSubscriptionCapacity.py 5500 | python /c/Users/723848/DW-Cumulus/tools/subscription/signSubscription.py ./debugkey
+
+# Redirect stdout to stderr
+exec 1>&2
+
+
+	  done
+                  fi
+
+
+	done
+}
+
+
+
+run_interactive(){
+
+   # Log in reseller admin level
+      f_rslogin
+
+
+# CPP Management Start
+# Loop to create account, assume account admin role, get temp credential for account,
+# create bucket, policy, user and generate JSON output for license key.
+ 
+Customer_Name=""
+while true
+ do
+   access=${RSLoginAccessKeyId}
+   secret=${RSLoginSecretAccessKey}
+
+ while true
+  do
+   CurrentSec=$(date -u +%s)
+   RSLoginExpireSec=$((RSLoginExpirationSec - CurrentSec))
+   echo -e "\nReseller session expires in ${RSLoginExpireSec} seconds\n"
+
+   if [[ "${run_state}" == "test" ]]
+   then
+           echo "In 'test' mode. The value of CPP will have 'test-' as a prefix."
+   fi
+
+     if [[ "${Customer_Name}" = "" ]]
+        then
+		read -p "Enter the CPP number, account will be created if does not exist (enter 0 to exit): " Customer_Name
+        else
+		read -p "Enter the CPP number, account will be created if does not exist (enter 0 to exit) (default ${Customer_Name}): " Customer_Name_New
+		if [[ "${Customer_Name_New}" != "" ]]
+                   then
+                      Customer_Name="${Customer_Name_New}"
+		fi
+     fi 
+
+     if [[ "${Customer_Name}" == "0" ]]
+     then
+	     exit
+     fi
+
+   # Check for at least three characters
+     if (( ${#Customer_Name} < 3 ))
+        then
+	   echo "CPP must be three or more digits, retrying"
+	   Customer_Name=""
+	   continue
+     fi
+   # Check for leading char not zero char
+     if [[ "${Customer_Name:0:1}" == "0" ]]
+	 then
+            echo "CPP may not start with 0, retrying" 
+	    Customer_Name=""
+	    continue
+     fi
+   # Check for only digits
+     cdigit="F"
+     exec 3<<< $(echo -n "${Customer_Name}")
+     while IFS='' true
+        do
+           read -u 3 -n 1 c
+           if [[ "${c}" == "" ]]
+              then
+                 exec 3>&-
+                 break
+           fi
+
+          if [[ "$c" =~ [0-9] ]]
+             then
+                 cdigit="T"
+             else
+                exec 3>&-
+		echo "CPP must only be digits, retry"
+		cdigit="F"
+                break
+          fi
+       done
+       if [[ "${cdigit}" == "F" ]]
+	  then
+             continue
+       fi
+# Rename CPP depednding on run_state=prod|test
+   if [[ "${run_state}" == "test" ]]
+   then
+   	Customer_Name="test-${Customer_Name}"
+   fi
+
+   echo -ne "\nChecking if CPP ${Customer_Name} exists and active/enabled.\n"
+
+   # procedure specific variables
+   region=any
+   service=iam
+   endpointuri=${service}.${tenant}.lyve.seagate.com
+   method=POST
+   uri=""
+   qstr=""
+
+   mydata="Action=RSCustomerDetails&Version=2010-05-08&CustomerName=${Customer_Name}"
+   sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+   calc_v4_sig
+
+   cpp_exist=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+ # echo "cpp_exist: ${cpp_exist}}"
+ # echo -n "${cpp_exist}}" | ${depend_path}jp
+ # echo
+
+ while true
+  do
+   if echo -n "${cpp_exist}" | grep '"message":"IAM: Customer not found"' > /dev/null
+      then
+         echo "CPP ${Customer_Name} does not exist, creating account"
+
+	 echo -ne "\nEnter the root username, a valid email address (default is ${default_admin}) for account ${Customer_Name} (+${Customer_Name} will be appended: " 
+	 read cusername
+         if [[ "${cusername}" == "" ]]
+            then
+               cusername="${default_admin}"
+         fi
+
+       cusername=$(echo -n ${cusername} | sed "s/\@/\+${Customer_Name}\@/")
+       while true
+        do
+         echo -ne "\n\nIf the passwords are left empty a 240-bit random password is generated.\n\n"
+         cpassword=""
+         echo -n "Enter password for ${cusername}: "
+	 while IFS= true
+             do
+                stty -echo
+                read -u 0 -r -n 1 myword
+                stty echo
+                if [[ "${myword}" == "${NL}" ]]
+                   then
+                      echo
+                      break
+                   else
+                      if [[ ${myword} == $'\x7f' ]]
+                         then
+                            echo -ne "${BS} ${BS}"
+                            cpassword=${cpassword:0:-1}
+                         else
+                            echo -n '*'
+                            cpassword="${cpassword}${myword}"
+                      fi
+                fi
+             done
+         echo
+         cpassword2=""
+         echo -n "Re-enter password for ${cusername}: "
+	 while IFS= true
+             do
+                stty -echo
+                read -u 0 -r -n 1 myword
+                stty echo
+                if [[ "${myword}" == "${NL}" ]]
+                   then
+                      echo
+                      break
+                   else
+                      if [[ ${myword} == $'\x7f' ]]
+                         then
+                            echo -ne "${BS} ${BS}"
+                            cpassword2=${cpassword2:0:-1}
+                         else
+                            echo -n '*'
+                            cpassword2="${cpassword2}${myword}"
+                      fi
+                fi
+             done
+         
+         if [[ "${cpassword}" != "${cpassword2}" ]]; then
+            echo -ne "\n\nPasswords do not match, re-enter password\n\n"
+            continue
+         fi
+
+         if [[ "${cpassword}" == "" ]]
+            then
+               pwuuidlow=$(openssl rand 15 | base32 | sed 's/=//g' | tr '[:upper:]' '[:lower:]')
+               pwuuidupp=$(openssl rand 15 | base32 | sed 's/=//g')
+	       cpassword="${pwuuidlow}${pwuuidupp}" 
+#@#
+#              echo -ne "\nPassword is ${cpassword}\n\n"
+#@#
+         fi
+
+         if (( ${#cpassword} < 10 ))
+            then
+              echo "Password must contain digits, uppercase and lowercase letters, must be at least 10 characters and special characters may be included."
+              continue
+         fi
+
+	 # Validate password
+         ucase="F"; lcase="F"; digit="F";
+         exec 3<<< $(echo -n "${cpassword}")
+         while IFS='' true
+            do
+               read -u 3 -r -n 1 c
+               if [[ "${c}" == "" ]]
+                  then
+                     exec 3>&-
+                     break
+               fi
+               if [[ "$c" =~ [\]\[\\\!\&\`\~\$\;\<\>\'\"\*A-Za-z0-9@_^%/?#().,|:{}+=-] ]]
+                  then
+                     [[ "$c" =~ [A-Z] ]] && ucase="T" ;
+                     [[ "$c" =~ [a-z] ]] && lcase="T" ;
+                     [[ "$c" =~ [0-9] ]] && digit="T" ;
+                  else
+                     ucase="F"; lcase="F"; digit="F";
+                     exec 3>&-
+                     break
+               fi
+            done
+
+       if [[ "${ucase}" == "F" ]] || [[ "${lcase}" == "F" ]] || [[ "${digit}" == "F" ]]
+           then
+              echo "Password must contain digits, uppercase and lowercase letters, must be at least 10 characters and special characters may be included."
+              continue
+           else 
+              break 
+       fi
+  done
+
+
+         # procedure specific variables
+         region=any
+         service=iam
+         endpointuri=${service}.${tenant}.lyve.seagate.com
+         method=POST
+         uri=""
+	 qstr=""
+
+ # Since a " is often part of the data, the sequence \" may be used to pass a " in a quoted string.
+#  Encode the characters in [].
+   mydata=$(echo -n "Action=RSCreateCustomer&Version=2010-05-08&Name=${Customer_Name}&AssumeRoleControl=reseller&ReplicationEnforcement=false&Regions=[${regions_available}]&Email=${cusername}&Password=${cpassword}" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\"+] ]] && printf '%%%02X' "'$c" || printf "$c" ; done)
+   sha256sum_mydata=$(echo -n "${mydata}" | sha256sum | awk '{print $1}')
+
+#  echo mydata $mydata
+
+calc_v4_sig 
+
+  customer_create=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+     # echo "cust_create: ${customer_create}"
+
+       customer_created=$(echo "${customer_create}" | ${depend_path}jp 2>/dev/null | grep '"Ok"' | awk -F':' '{print $2}' | tr -d '", ' )
+       if [[ "${customer_created}" == "true" ]]
+          then
+             echo "CPP ${Customer_Name} created"
+	     cust_ok="T"
+          else
+	     echo "Error creating CPP ${Customer_Name}, retry or use another CPP number"
+	     cust_ok="F"
+       fi
+       break
+
+   else
+    # Since customer exists the cusername and cpassword values have already been stored in credhist.csv.
+    # These two variables may be cleared since the previous loop may still have the cusername and cpassword of
+    # a CPP just created.
+      cusername=""; cpassword="";
+
+      customer_active=$(echo "${cpp_exist}" | ${depend_path}jp 2>/dev/null | grep '"Active"' | awk -F':' '{print $2}' | tr -d '", ' )
+      echo "CPP ${Customer_Name} exists and state is Active = ${customer_active}"
+      if [[ "${customer_active}" == "true" ]]
+         then
+            cust_ok="T"
+            break
+         else
+	      while true
+	       do
+		 echo -n "CPP ${Customer_Name} was previously disabled/deleted, re-enable? (default n) [yn] "
+		 read activate_cpp
+		 if [[ "${activate_cpp}" == "n" ]] || [[ "${activate_cpp}" == "" ]] || [[ "${activate_cpp}" == "y" ]]
+		    then
+		       break
+		 fi
+	       done
+
+                 if [[ "${activate_cpp}" == "n" ]] || [[ "${activate_cpp}" == "" ]]
+                    then
+                       echo "CPP ${Customer_Name} not reactivated, chose another CPP"
+		       cust_ok="F"
+		       break
+		    else
+		       echo "Re-enable CPP ${Customer_Name}"
+		       
+                       # procedure specific variables
+                       region=any
+                       service=iam
+                       endpointuri=${service}.${tenant}.lyve.seagate.com
+                       method=POST
+                       uri=""
+		       qstr=""
+
+		       mydata="Action=RSModifyCustomer&Version=2010-05-08&CustomerName=${Customer_Name}&Status=enabled"
+		       sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+                       calc_v4_sig
+
+                       modify_enable=$(curl "https://${endpointuri}/${uri}" \
+                          -H "Authorization: AWS4-HMAC-SHA256 \
+                              Credential=${access}/${date}/${region}/${service}/aws4_request, \
+                              SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+                              Signature=${reqsig}" \
+                          -H "host: ${endpointuri}" \
+                          -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+                          -H "x-amz-date: ${isodate}" \
+                          -H "Connection: keep-alive" \
+                          -sS \
+			  --data ${mydata} ;)
+
+		  #    echo "Show customer enable: ${modify_enable}"
+
+                       mydata="Action=RSCustomerDetails&Version=2010-05-08&CustomerName=${Customer_Name}"
+                       sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+                       calc_v4_sig
+
+                       cpp_exist=$(curl "https://${endpointuri}/${uri}" \
+                         -H "Authorization: AWS4-HMAC-SHA256 \
+                             Credential=${access}/${date}/${region}/${service}/aws4_request, \
+                             SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+                             Signature=${reqsig}" \
+                         -H "host: ${endpointuri}" \
+                         -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+                         -H "x-amz-date: ${isodate}" \
+                         -H "Connection: keep-alive" \
+                         -sS \
+                         --data ${mydata} ;)
+
+                  #    echo "cpp_exist: ${cpp_exist}}"
+
+                       customer_active=$(echo "${cpp_exist}" | ${depend_path}jp 2>/dev/null | grep '"Active"' | awk -F':' '{print $2}' | tr -d '", ' )
+                  #    echo "CPP ${Customer_Name} exists and state is Active = ${customer_active}"
+                       if [[ "${customer_active}" == "true" ]]
+                          then
+                             echo "CPP Account ${Customer_Name} was re-enabled"
+                             cust_ok="T"
+                             break
+                          else
+                             echo "CPP ${Customer_Name} was deleted and may not be reused, select another CPP"
+		             cust_ok="F"
+		             break
+		       fi
+	       fi 
+      fi
+  fi
+  done
+       if [[ "${cust_ok}" == "T" ]]
+          then
+             break
+       fi
+done
+# CPP Management End
+
+# Account Management Start
+# Enter account, create bucket, policy, user and output credentials as JSON
+echo -ne "\nManaging CPP ${Customer_Name}\n"
+# read -p "Press enter" abc
+
+# procedure specific variables
+region=any
+service=sts
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata="Action=RSAssumeCustomerRole&Version=2011-06-15&Customer=${Customer_Name}&DurationSeconds=${tmout_customer}"
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig 
+
+  rsassumerole=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "Response rsassumerole: ${rsassumerole}"
+
+
+  RSAssumeRoleSecretAccessKey=$(echo "${rsassumerole}" | ${depend_path}jp | grep '"SecretAccessKey"' | awk -F':' '{print $2}' | tr -d '", ')
+  RSAssumeRoleAccessKeyId=$(echo "${rsassumerole}" | ${depend_path}jp | grep '"AccessKeyId"' | awk -F':' '{print $2}' | tr -d '", ')
+  RSAssumeRoleExpiration=$(echo "${rsassumerole}" | ${depend_path}jp 2>/dev/null | grep '"Expiration"' | awk -F':' '{print $2 ":" $3 ":" $4}' | tr -d '", ' ) 
+  RSAssumeRoleExpirationSec=$(date -d "${RSAssumeRoleExpiration}" +%s)
+# CurrentSec=$(date -u +%s)
+# RSAssumeRoleExpireSec=$((RSAssumeRoleExpirationSec - CurrentSec))
+# echo "Reseller session expires in ${RSLoginExpireSec} seconds"
+
+access=${RSAssumeRoleAccessKeyId}
+secret=${RSAssumeRoleSecretAccessKey}
+
+
+  if [[ "${show_keys}" == "true" ]]
+  then
+	  echo -e "\nTemporary AccessKey ${access} and SecretKey ${secret}"
+	  echo -e "for executing admin RESTAPI calls for CPP ${Customer_Name}"
+	  echo -e "outside of this program with possibly the AWS CLI"
+  fi
+
+
+# echo -ne "\n\nCreate Bucket\n"
+# read -p "Press enter" abc
+
+uuid=$(openssl rand 15 | base32 | sed 's/=//g' | tr '[:upper:]' '[:lower:]')
+
+# procedure specific variables
+region=any
+service=s3
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=PUT
+uri=${Customer_Name}-${uuid}
+qstr=""
+bucket_name="${uri}"
+
+   while true
+      do
+        CurrentSec=$(date -u +%s)
+        RSAssumeRoleExpireSec=$((RSAssumeRoleExpirationSec - CurrentSec))
+         echo -e "\nAccount CPP ${Customer_Name} session expires in ${RSAssumeRoleExpireSec} seconds\n"
+         echo -ne "Select region where bucket will be created:
+   1 US-EAST-1
+   2 US-CENTRAL-2
+   3 US-WEST-1
+
+   Enter selection (default is 2 US-CENTRAL-2) [1-3]: "
+
+         read region_select
+         case ${region_select} in
+                 1|2|3) break;;
+                    "") break;;
+                     *) echo -e "\nSelect a number 1-3\n"
+         esac
+   done
+
+if [[ "${region_select}" == "" ]]
+   then
+      region_select=2
+fi
+
+case ${region_select} in
+	1) region_val="US-EAST-1";    lc_region_val="us-east-1" ;;
+	2) region_val="US-CENTRAL-2"; lc_region_val="us-central-2" ;;
+	3) region_val="US-WEST-1";    lc_region_val="us-west-1" ;;
+esac
+
+#@#
+  # region_val="EU-WEST-1"
+#@#
+
+# echo -ne "\n\nEnter the licensed capacity in GB (1 TB = 1000 GB): "
+# read license_capacity
+
+mydata="replication-policy=${region_val}"
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig 
+
+createbucket_ret=$(curl -X PUT "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo -ne "\nCreate Bucket return: ${createbucket_ret}\n"
+
+echo -ne "\nCreating policy, bucket user and access/secret keys\n"
+
+# echo -ne "\nCreating policy\n"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+p1="Action=CreatePolicy"
+p2="Description="
+p3="Path=/"
+p4="PolicyDocument={\"Version\":\"2012-10-17\",\"RSUserPolicy\":\"v1\",\"Managed\":true,\"Statement\":[{\"Action\":[\"s3:GetObject\",\"s3:GetObjectVersion\",\"s3:ListMultipartUploadParts\",\"s3:GetObjectACL\",\"s3:PutObject\",\"s3:PutObjectACL\",\"s3:DeleteObject\",\"s3:DeleteObjectVersion\",\"s3:AbortMultipartUpload\",\"s3:ListBucket\",\"s3:GetBucketVersioning\",\"s3:ListBucketVersions\",\"s3:ListBucketMultipartUploads\",\"s3:GetBucketLocation\",\"s3:HeadBucket\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:s3:::${bucket_name}/*\",\"arn:aws:s3:::${bucket_name}\"]},{\"Action\":[\"s3:ListAllMyBuckets\"],\"Effect\":\"Allow\",\"Resource\":\"*\"}]}"
+p5="PolicyName=${uuid}"
+p6="Version=2010-05-08"
+
+# URL encode characters not in []
+mydata=$(echo -n "${p1}\&${p2}\&${p3}\&${p4}\&${p5}\&${p6}" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\&A-Za-z0-9=-] ]] && printf "$c" || printf '%%%02X' "'$c" ; done)
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+# echo "mydata ${mydata}"
+
+calc_v4_sig 
+
+createpolicy_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+ #  echo "Create policy ret ${createpolicy_ret}"
+
+policy_arn=$(echo "${createpolicy_ret}" | grep CreatePolicyResponse |  sed 's/^.*<Arn>//' | sed 's/<\/Arn>.*$//')
+# echo "Policy ARN: ${policy_arn}"
+
+# echo -ne "\nCreating user\n"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata=$(echo -n "Action=CreateUser&UserName=${uuid}&Version=2010-05-08" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\&A-Za-z0-9=-] ]] && printf "$c" || printf '%%%02X' "'$c" ; done)
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig
+
+user_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "userret ${user_ret}"
+
+# echo -ne "\nAttach policy\n"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata=$(echo -n "Action=AttachUserPolicy&PolicyArn=${policy_arn}&UserName=${uuid}&Version=2010-05-08" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\&A-Za-z0-9=-] ]] && printf "$c" || printf '%%%02X' "'$c" ; done)
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+# echo "mydata ${mydata}"
+
+calc_v4_sig
+
+attachpolicy_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "Attach Policy return ${attachpolicy_ret}"
+
+# echo -ne "\nCreate Access Keys\n"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata=$(echo -n "Action=CreateAccessKey&UserName=${uuid}&Version=2010-05-08" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\&A-Za-z0-9=-] ]] && printf "$c" || printf '%%%02X' "'$c" ; done)
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+# echo "mydata ${mydata}"
+
+calc_v4_sig
+
+createaccesskey_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "Create Access Key return ${createaccesskey_ret}"
+
+# echo -ne "\nGenerating JSON output\n"
+# AccessKeyId><Status>Active</Status><SecretAccessKey
+
+access_key_id=$(echo "${createaccesskey_ret}" | grep CreateAccessKeyResponse |  sed 's/^.*<AccessKeyId>//' | sed 's/<\/AccessKeyId>.*$//')
+secret_key=$(echo "${createaccesskey_ret}" | grep CreateAccessKeyResponse |  sed 's/^.*<SecretAccessKey>//' | sed 's/<\/SecretAccessKey>.*$//')
+service=s3
+endpointuri=${service}.${lc_region_val}.${tenant}.lyve.seagate.com
+license_capacity=0
+cdate=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+    jout1='"$schema": "cumulus-subscription-v1.schema.json",'
+    jout2='"bucket-name": "'${bucket_name}'",'
+    jout3='"access-key-id": "'${access_key_id}'",'
+    jout4='"secret-key": "'${secret_key}'",'
+    jout5='"endpoint": "https://'${endpointuri}'",'
+    jout6='"region": "'${lc_region_val}'",'
+    jout7='"bucket-capacity-gb": '${license_capacity}','
+    jout8='"date": "'${cdate}'"'
+
+# Write data to CSV
+#   echo "CPP,root user,root password,bucket name,user/policy name,policy ARN,access key,secret key,region, endpoint,console url" >> credhist.csv
+# ${Customer_Name},${cusername},${cpassword},${bucket_name},${uuid},${policy_arn},${access},${secret},${region_val},https://${endpointuri},https://console.${tenant}.lyve.seagate.com/signin?c=${Customer_Name}
+#   echo "${Customer_Name},${cusername},${cpassword},${bucket_name},${uuid},${policy_arn},${access_key_id},${secret_key},${region_val},https://${endpointuri},https://console.${tenant}.lyve.seagate.com/signin?c=${Customer_Name}" 
+#   echo "${Customer_Name},${cusername},${cpassword},${bucket_name},${uuid},${policy_arn},${access_key_id},${secret_key},${region_val},https://${endpointuri},https://console.${tenant}.lyve.seagate.com/signin?c=${Customer_Name}" >> credhist.csv
+
+echo -e "\nThe followoing JSON is written to stdout"
+echo -ne \
+"{
+    ${jout1}
+    ${jout2}
+    ${jout3}
+    ${jout4}
+    ${jout5}
+    ${jout6}
+    ${jout7}
+    ${jout8}
+}\n" 
+
+
+# Restore stdout
+exec 1>&4
+
+echo -ne \
+"{
+    ${jout1}
+    ${jout2}
+    ${jout3}
+    ${jout4}
+    ${jout5}
+    ${jout6}
+    ${jout7}
+    ${jout8}
+}\n"  
+  # | python /c/Users/723848/DW-Cumulus/tools/subscription/setSubscriptionCapacity.py 5500 | python /c/Users/723848/DW-Cumulus/tools/subscription/signSubscription.py ./debugkey
+
+# Redirect stdout to stderr
+exec 1>&2
+
+echo -e "\n\n"
+# Account Management End
+
+done 
+
+
+
+}
+
+
+
+#main()
+
+#parse command line
+parse_cmd_line ${*}
+
+if [[ "${mode}" == "b" ]]
+then
+	batch_input=${2}
+	 
+      # echo "mode is b using file ${batch_input}"
+	# Override config.flow and set reseller and account admin session to max
+	# Session timeout in seconds for reseller admin login
+	# Range is 15 minutes to 12 hours (900-43200 in seconds)
+	tmout_reseller="43200"
+	# Session timeout in seconds for customer assume role login
+	# Range is 15 minutes to 12 hours (900-43200 in seconds)
+	tmout_customer="43200"
+
+	run_batch
+else
+        echo "mode is i"
+	run_interactive
+fi
+

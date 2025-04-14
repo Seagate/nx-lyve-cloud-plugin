@@ -1,0 +1,504 @@
+#!/bin/bash 
+
+# read the defaults from config file
+. ./config.flow
+
+
+# Constants
+# Newline
+NL=$(echo -ne "\n")
+# Backspace
+BS=$(echo -ne "\b")
+# Save fd1 and redirect stdout to stderr
+exec 4>&1
+exec 1>&2
+
+# functions
+# hmac_sha256 supports AWS v4 signature generation
+hmac_sha256() {
+  key="$1"
+  data="$2"
+  echo -n "$data" | openssl dgst -sha256 -mac HMAC -macopt "$key" | sed 's/^.* //'
+}
+
+calc_v4_sig(){
+   # Calculate the AWS v4 signature
+   # See AWS documentation for implementation details
+
+   isodate=$(date -u '+%Y%m%dT%H%M%SZ')
+   date=${isodate:0:8}
+
+   creq=$(echo -ne "${method}
+/${uri}
+${qstr}
+host:${endpointuri}
+x-amz-content-sha256:${sha256sum_mydata}
+x-amz-date:${isodate}
+
+host;x-amz-content-sha256;x-amz-date
+${sha256sum_mydata}")
+
+   crh=$(echo -ne "${creq}" | openssl dgst -sha256 | awk -F= '{print $2}' | tr -d ' ')
+
+   sts=$(echo -ne "AWS4-HMAC-SHA256
+${isodate}
+${date}/${region}/${service}/aws4_request
+${crh}")
+
+ # Four-step signing key calculation
+   dateKey=$(hmac_sha256 key:"AWS4$secret" $date)
+   dateRegionKey=$(hmac_sha256 hexkey:$dateKey $region)
+   dateRegionServiceKey=$(hmac_sha256 hexkey:$dateRegionKey $service)
+   signingKey=$(hmac_sha256 hexkey:$dateRegionServiceKey "aws4_request")
+
+   reqsig=$(echo -ne "${sts}" | openssl dgst -sha256 \
+               -mac HMAC \
+               -macopt hexkey:${signingKey} \
+      | awk -F= '{print $2}' | tr -d ' ')
+}
+
+# RSLogin Start
+# Loop until access/secret keys are obtained for reseller level operations.
+   while true
+      do
+         echo -n "Enter reseller account admin username: [default ${reseller_admin}] "
+         read rusername 
+
+      if [[ "${rusername}" == "" ]]
+         then
+            rusername="${reseller_admin}"
+      fi
+
+      rpassword=""
+      echo -n "Enter password: "
+      while IFS= true
+             do
+                stty -echo
+                read -u 0 -r -n 1 myword
+                stty echo
+                if [[ "${myword}" == "${NL}" ]]
+                   then
+	              echo
+                      break
+                   else
+                      if [[ ${myword} == $'\x7f' ]]
+                         then
+                            echo -ne "${BS} ${BS}"
+                            rpassword=${rpassword:0:-1}
+                         else
+                            echo -n '*'
+                            rpassword="${rpassword}${myword}"
+                      fi
+                fi
+             done
+
+#@#
+      if [[ "${rpassword}" == "" ]]
+         then
+            rpassword="${rootpass}"
+      fi
+#@#
+
+      echo -n "Enter 2FA OTP (leave blank if 2FA is not in use): "
+      read rotp
+
+    #   echo -ne "\nRSLogin\n"
+      # read -p "Press enter" abc
+
+      # The + needs handling since a + will convert to a space by curl. 
+      # Shell escape does in general work as the character " is often part of the payload. Therefore, \" will allow a " to be handled without conflict in the string.
+
+      #Payload string with URL encoding of '+'. Add other characters/regex for additional encoding. Characters in the [] will be encoded.
+      mydata=$(echo -n "Action=RSLogin&Version=2011-06-15&DurationSeconds=${tmout_reseller}&Customer=&UserName=${rusername}&Password=${rpassword}&OTP=${rotp}" | \
+      while IFS='' read -n 1 c ; do [[ "$c" =~ [+] ]] && printf '%%%02X' "'$c" || printf "$c" ; done)
+
+  # The initial login to the Reseller Account top level uses username/password/OTP authentication.
+  # After successful login all subsequent API calls require an AWS v4 signature to authorize the request.
+  # Both RSLogin and RSAssumeCustomerRole return an access key and secret key pair to use for generating the v4 signature. 
+  # The key pair returned by RSLogin is used for all applicable calls made for management at the reseller level including RSAssumeCustomerRole.
+  # The key pair returned by RSAssumeCustomerRole is used for all applicable calls made for account management at the customer level.
+  
+      rslogin=$(curl "https://sts.${tenant}.lyve.seagate.com/" \
+        -H 'Accept: application/json, text/plain, */*' \
+        -H 'Accept-Language: en-US,en;q=0.9' \
+        -H 'Connection: keep-alive' \
+        -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' \
+        -H "Origin: https://console.${tenant}.lyve.seagate.com" \
+        -H "Referer: https://console.${tenant}.lyve.seagate.com/" \
+        -H 'X-RStor-Action: sts:RSLogin' \
+        -sS \
+        --data ${mydata} ;)
+
+    # echo "RSLogin return: ${rslogin}"
+    # echo
+    # echo -n "${rslogin}" | ${depend_path}jp 2>/dev/null
+
+      RSLoginSecretAccessKey=$(echo "${rslogin}" | ${depend_path}jp 2>/dev/null | grep '"SecretAccessKey"' | awk -F':' '{print $2}' | tr -d '", ' )
+      RSLoginAccessKeyId=$(echo "${rslogin}" | ${depend_path}jp 2>/dev/null | grep '"AccessKeyId"' | awk -F':' '{print $2}' | tr -d '", ' ) 
+      RSLoginExpiration=$(echo "${rslogin}" | ${depend_path}jp 2>/dev/null | grep '"Expiration"' | awk -F':' '{print $2 ":" $3 ":" $4}' | tr -d '", ' ) 
+      RSLoginExpirationSec=$(date -d "${RSLoginExpiration}" +%s)
+    # CurrentSec=$(date -u +%s)
+    # RSLoginExpireSec=$((RSLoginExpirationSec - CurrentSec))
+    # echo "Reseller session expires in ${RSLoginExpireSec} seconds"
+
+
+      access=${RSLoginAccessKeyId}
+      secret=${RSLoginSecretAccessKey}
+
+      if [[ "${access:0:3}" == "STX" ]]
+         then
+            break
+         else
+            echo -ne "Login unsuccessful, retry (default y) y|n: " 
+	    read e_retry
+	    if [[ "${e_retry}" == "y" || "${e_retry}" == "" ]]
+               then
+                  continue
+               else
+                  echo "Exiting"
+	          exit	  
+	    fi
+      fi
+   done
+# RSLogin End
+
+# CPP Management Start
+while true
+ do	
+   CurrentSec=$(date -u +%s)
+   RSLoginExpireSec=$((RSLoginExpirationSec - CurrentSec))
+   echo -e "\nReseller session expires in ${RSLoginExpireSec} seconds\n"
+   access=${RSLoginAccessKeyId}
+   secret=${RSLoginSecretAccessKey}
+#  echo -ne "RSCreateCustomer\n\n"
+ # read -p "Press enter" abc
+
+# CPP Management End
+#
+# list CPPs, select CPP, assume role as CPP, list policies, disable/enable policy
+#
+
+# List CPPs (List customers)
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata="Action=RSListCustomer&Version=2010-05-08" 
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig
+
+listcustomer_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "list customer ${listcustomer_ret}"
+
+mycpps=$(echo -n "${listcustomer_ret}" | ${depend_path}jp | grep '"Name"' | awk -F ':' '{print $2}' | tr -d '",' | sort ) 
+
+numlines=$(echo "${mycpps}" | wc -l)
+# charwidth=15
+charwidth=15
+screenwidth=$(tput cols)
+numcols=$((screenwidth / charwidth))
+linespercol=$((numlines / numcols))
+remlines=$((numlines % numcols))
+if (( remlines > 0 ))
+   then
+      newlinespercol=$((linespercol + 1))
+   else
+       newlinespercol=$linespercol
+fi
+
+echo "Number of Accounts: $numlines"
+# echo charwidth $charwidth
+# echo screenwidth $screenwidth
+# echo numcols $numcols
+# echo linespercol $linespercol
+# echo remlines $remlines
+# echo newlinespercol $newlinespercol
+
+echo "${mycpps}" | pr -s"  " -${numcols} -t -l ${newlinespercol}
+
+echo -ne "\nEnter CPP name [Press enter to go back]: "
+read mycpp
+
+if [[ "${mycpp}" == "" ]]
+   then
+      break
+fi
+      # echo "Selected ${mycpp}"
+	Customer_Name="${mycpp}"
+
+
+# Account Management Start
+echo -ne "\nRSAssumeCustomerRole for CPP ${Customer_Name}\n"
+# read -p "Press enter" abc
+
+# procedure specific variables
+region=any
+service=sts
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata="Action=RSAssumeCustomerRole&Version=2011-06-15&Customer=${Customer_Name}&DurationSeconds=${tmout_customer}"
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig 
+
+  rsassumerole=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "Response rsassumerole: ${rsassumerole}"
+
+
+  RSAssumeRoleSecretAccessKey=$(echo "${rsassumerole}" | ${depend_path}jp | grep '"SecretAccessKey"' | awk -F':' '{print $2}' | tr -d '", ')
+  RSAssumeRoleAccessKeyId=$(echo "${rsassumerole}" | ${depend_path}jp | grep '"AccessKeyId"' | awk -F':' '{print $2}' | tr -d '", ')
+  RSAssumeRoleExpiration=$(echo "${rsassumerole}" | ${depend_path}jp 2>/dev/null | grep '"Expiration"' | awk -F':' '{print $2 ":" $3 ":" $4}' | tr -d '", ' ) 
+  RSAssumeRoleExpirationSec=$(date -d "${RSAssumeRoleExpiration}" +%s)
+# CurrentSec=$(date -u +%s)
+# RSAssumeRoleExpireSec=$((RSAssumeRoleExpirationSec - CurrentSec))
+# echo "Reseller session expires in ${RSLoginExpireSec} seconds"
+
+access=${RSAssumeRoleAccessKeyId}
+secret=${RSAssumeRoleSecretAccessKey}
+
+  CurrentSec=$(date -u +%s)
+  RSAssumeRoleExpireSec=$((RSAssumeRoleExpirationSec - CurrentSec))
+  echo "Account CPP ${Customer_Name} session expires in ${RSAssumeRoleExpireSec} seconds"
+
+  echo -n "Enter a bucket name for CPP ${Customer_Name} or press Enter to list buckets: "
+  read mybucket
+
+  if [[ "${mybucket}" == "" ]]
+     then
+
+  echo "List bucket names for CPP ${Customer_Nmae}"
+
+# procedure specific variables
+region=any
+service=s3
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=GET
+uri=""
+qstr=""
+
+# mydata="Action=ListPolicies&Version=2010-05-08"
+mydata=""
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig
+
+bucketlist_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS ;)
+  #  --data ${mydata} ;)
+
+mybuckets=$(echo -n "${bucketlist_ret}" | ${depend_path}xp | while read bline
+	                                                 do
+							    if [[ "${bline}" == "<Name>" ]]
+							       then
+								  read bline
+								  echo "${bline}"
+							       else
+								  continue
+							    fi
+						    done | sort)
+numlines=$(echo "${mybuckets}" | wc -l)
+# charwidth=34
+charwidth=39
+screenwidth=$(tput cols)
+numcols=$((screenwidth / charwidth))
+linespercol=$((numlines / numcols))
+remlines=$((numlines % numcols))
+if (( remlines > 0 ))
+   then
+      newlinespercol=$((linespercol + 1))
+   else
+       newlinespercol=$linespercol
+fi
+
+echo "Number of buckets: $numlines"
+# echo charwidth $charwidth
+# echo screenwidth $screenwidth
+# echo numcols $numcols
+# echo linespercol $linespercol
+# echo remlines $remlines
+# echo newlinespercol $newlinespercol
+
+echo "${mybuckets}" | pr -s"  " -${numcols} -t -l ${newlinespercol}
+
+echo -ne "\nEnter bucket name [Press enter to go back]: "
+read mybucket
+
+if [[ "${mybucket}" == "" ]]
+   then
+      continue
+fi
+  fi
+        echo "Selected ${mybucket}"
+        Bucket_Name="${mybucket}"
+        Policy_Name=$(echo -n "${Bucket_Name}" | sed 's/^.*-//')
+	echo "List policy for user ${Policy_Name}"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata="Action=ListAttachedUserPolicies&Version=2010-05-08&UserName=${Policy_Name}"
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig
+
+policylist_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "Attached policies are:"
+# echo "${policylist_ret}"
+# <AttachedPolicies></AttachedPolicies>
+policy_val=$(echo "${policylist_ret}" | grep '<ListAttachedUserPoliciesResult>' | sed 's/^.*<AttachedPolicies>//' | sed 's/<\/AttachedPolicies>.*$//')
+
+if [[ "${policy_val}" == "" ]]
+   then
+      echo -n "Bucket ${Bucket_Name} is disabled, policy not attached, attach policy? [yn]: "
+      while true
+	 do
+	   read attach_req
+	   if [[ "${attach_req}" == "y" ]] || [[ "${attach_req}" == "n" ]]
+	      then
+		 break
+	      else
+		 continue
+	   fi
+         done
+      if [[ "${attach_req}" == "y" ]]
+	  then
+             echo "Attaching policy"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata=$(echo -n "Action=AttachUserPolicy&UserName=${Policy_Name}&PolicyArn=arn:aws:iam::000000000000:policy/${Policy_Name}&Version=2010-05-08" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\&A-Za-z0-9=-] ]] && printf "$c" || printf '%%%02X' "'$c" ; done)
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig
+
+policyattach_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "attached: ${policyattach_ret}"
+  echo "Policy attached"
+
+          else
+	     echo "Policy will remain detached"
+      fi
+
+   else
+      echo -n "Bucket ${Bucket_Name} is enabled, policy is attached, detach policy? [yn]: "
+      while true
+	 do
+	   read attach_req
+	   if [[ "${attach_req}" == "y" ]] || [[ "${attach_req}" == "n" ]]
+	      then
+		 break
+	      else
+		 continue
+	   fi
+         done
+      if [[ "${attach_req}" == "y" ]]
+	  then
+             echo "Detaching policy"
+
+# procedure specific variables
+region=any
+service=iam
+endpointuri=${service}.${tenant}.lyve.seagate.com
+method=POST
+uri=""
+qstr=""
+
+mydata=$(echo -n "Action=DetachUserPolicy&UserName=${Policy_Name}&PolicyArn=arn:aws:iam::000000000000:policy/${Policy_Name}&Version=2010-05-08" | while IFS='' read -n 1 c ; do [[ "$c" =~ [\&A-Za-z0-9=-] ]] && printf "$c" || printf '%%%02X' "'$c" ; done)
+sha256sum_mydata=$(echo -n ${mydata} | sha256sum | awk '{print $1}')
+
+calc_v4_sig
+
+policydetach_ret=$(curl "https://${endpointuri}/${uri}" \
+     -H "Authorization: AWS4-HMAC-SHA256 \
+         Credential=${access}/${date}/${region}/${service}/aws4_request, \
+         SignedHeaders=host;x-amz-content-sha256;x-amz-date, \
+         Signature=${reqsig}" \
+     -H "host: ${endpointuri}" \
+     -H "x-amz-content-sha256: ${sha256sum_mydata}" \
+     -H "x-amz-date: ${isodate}" \
+     -H "Connection: keep-alive" \
+     -sS \
+     --data ${mydata} ;)
+
+# echo "detached: ${policydetach_ret}"
+  echo "Policy detached"
+
+          else
+	     echo "Policy will remain attached"
+      fi
+
+fi
+
+done

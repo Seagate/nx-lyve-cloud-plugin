@@ -1,0 +1,1162 @@
+#!/bin/bash 
+
+# First complete clean version.
+
+# This code attempts to implement the parsing of JSON text
+# based on the ECMA-404 JSON Data Interchange Standard.
+# The data structures follow the definitions found in 
+# Introducing JSON located at https://www.json.org/
+#
+# Recursive parsing is performed on the 
+# JSON forms: object, array, value, string, number and whitespace
+#
+# Command line options include:
+# The parser will read from standard input or the named file.
+# The parser will -p pretty print or -s serial print
+#
+
+#level flag
+# T=print F=no output
+levprint="F"
+lrc=""
+
+#read one character at a time
+rc(){
+    call_code=$1
+    read -u $fdu -r -N 1 rdchar
+  # exit_code=$?
+    printf -v char "%i" \"${rdchar}\"
+  # if [[ "${exit_code}" != "0" ]]
+  #     then
+  #         echo last call at ${call_code}
+  # fi
+    return $exit_code
+}
+
+# Constants
+dent="    "
+ids=""  # ids indent string
+inc=0
+idx=0
+
+indent(){
+ids="${ids}${dent}"
+}
+
+outdent(){
+ids=${ids:4}
+}
+
+object(){
+    echo "{"
+           rc 101
+         # printf -v char "%i" \"${rdchar}\"
+           whitespace
+
+    case $char in
+        125) echo "}"; return ;;
+         34) # "
+             while true
+                 do
+                     whitespace
+                     string # key
+                     whitespace
+                     if [[ "${char}" == "58" ]]  # :
+                         then
+                             echo ":"
+                             rc 125
+                           # printf -v char "%i" \"${rdchar}\"
+                         else
+                             echo
+                             echo "Error 126: Expected : char is $char $rdchar"
+                             exit
+                     fi
+                     value
+                     case $char in
+                         125) # # }
+                              echo "}"
+                              rc 130
+                            # printf -v char "%i" \"${rdchar}\"
+                              return ;;
+                          44) echo ","
+                              rc 131
+                            # printf -v char "%i" \"${rdchar}\" ;;
+                              ;;
+                           *) echo
+                              echo "Error 127: Unexpected character $char $rdchar"
+                              exit ;;
+                     esac
+                 done ;; 
+          *) echo "Error 102: Unexpected char $char"; exit ;;
+    esac
+
+}
+
+whitespace(){
+    while true
+        do
+            case $char in
+               9|10|13|32)  # tab|NL|CR|space
+                               rc 110
+                             # printf -v char "%i" \"${rdchar}\"
+                               continue ;;
+                       *) return   ;;
+            esac
+        done
+}
+
+string(){
+  # echo -n "${ids}"
+    echo -n "\""
+
+    while true
+        do
+                rc 113
+                  # printf -v char "%i" \"${rdchar}\"
+                    if [[ "${char}" == "34" ]]         # "
+                        then
+                            echo '"'
+                                rc 124
+                                  # printf -v char "%i" \"${rdchar}\"
+                                    return
+                        else
+                                    if [[ "${char}" == "92" ]]   # \
+                                        then
+                                                   rc 123
+                                                  # printf -v char "%i" \"${rdchar}\"
+                                                    case $char in
+                                                        34) echo -n '\\\"'    # quotation 
+                                                            continue ;;
+                                                        92) echo -n '\\\\'    # \
+                                                            continue ;;
+                                                        47) echo -n '\\/'    # /
+                                                            continue ;;
+                                                         8) echo -n "\\${rdchar}"  # backspace
+                                                            continue ;;
+                                                        12) echo -n "\\${rdchar}"  # formfeed
+                                                            continue ;;
+                                                        10) echo -n "\\${rdchar}"  # newline
+                                                            continue ;;
+                                                        13) echo -n "\\${rdchar}"  # carriage return
+                                                            continue ;;
+                                                         9) echo -n "\\${rdchar}"  # horizontal tab
+                                                            continue ;;
+                                        48|49|50|51|52|53|54|55|56|57|65|66|67|68|69|70|97|98|99|100|101|102) 
+                                                            echo -n "\\${rdchar}"
+                                                            for subcount in {2..4}
+                                                                do
+                                                                        rc 132
+                                                                          # printf -v char "%i" \"${rdchar}\"
+                                                                            if ((char >= 48)) && ((char <= 57)) || ((char >=65)) && ((char <= 70)) || ((char >=97)) && ((char <= 102))
+                                                                                then
+                                                                                    echo -n "${rdchar}"
+                                                                                    continue
+                                                                                else
+                                                                                    echo
+                                                                                    echo "Error 111: not hex char"
+                                                                                    exit
+                                                                            fi
+                                                                done ;;
+                                                         *) echo
+                                                            echo "Error 122: Unexpected character $char $rdchar"
+                                                            exit  ;;
+                                                     esac
+                                        elif ((char >= 32)) && ((char <= 126))
+                                             then
+                                                 echo -n "${rdchar}"
+                                        else
+                                               echo 
+                                               echo "Error 121: Unexpected character $char $rdchar"
+                                               exit
+                                    fi
+                    fi
+        done
+}
+
+value(){
+    whitespace
+
+
+    case $rdchar in
+         '"') string ;;    # "
+         '{') object ;;    # {
+         '-') number ;;    # -
+           0) number ;;    # 0
+       [1-9]) number ;;    # 1-9
+         '[') array ;;     # [
+         t|T) true_t ;;
+         f|F) false_f ;;
+         n|N) null_n ;;
+           *) echo
+              echo "Error 115: Unexpected char $char $rdchar"
+              exit ;;
+    esac
+  
+    whitespace
+    
+}
+
+true_t(){
+    echo -n "${rdchar}"
+        rc 200
+        if [[ "${rdchar}" == "r" ]]
+            then
+                echo -n "${rdchar}"
+            else
+                echo
+                echo "Error 300: r expected"
+                exit
+        fi
+        rc 200
+        if [[ "${rdchar}" == "u" ]]
+            then
+                echo -n "${rdchar}"
+            else
+                echo
+                echo "Error 300: u expected"
+                exit
+        fi
+        rc 200
+        if [[ "${rdchar}" == "e" ]]
+            then
+                echo -n "${rdchar}"
+            else
+                echo
+                echo "Error 300: e expected"
+                exit
+        fi
+
+        echo
+        rc 200
+      # printf -v char "%i" \"${rdchar}\"
+
+}
+
+false_f(){
+    echo -n "${rdchar}"
+        rc 201
+        if [[ "${rdchar}" == "a" ]]
+            then
+                echo -n "${rdchar}"
+            else
+                echo
+                echo "Error 300: a expected"
+                exit
+        fi
+        rc 200
+        if [[ "${rdchar}" == "l" ]]
+            then
+                echo -n "${rdchar}"
+            else
+                echo
+                echo "Error 300: l expected"
+                exit
+        fi
+        rc 200
+        if [[ "${rdchar}" == "s" ]]
+            then
+                echo -n "${rdchar}"
+            else
+                echo
+                echo "Error 300: s expected"
+                exit
+        fi
+        rc 200
+        if [[ "${rdchar}" == "e" ]]
+            then
+                echo -n "${rdchar}"
+            else
+                echo
+                echo "Error 300: e expected"
+                exit
+        fi
+
+        echo
+        rc 200
+      # printf -v char "%i" \"${rdchar}\"
+}
+
+null_n(){
+    echo -n "${rdchar}"
+        rc 202
+        if [[ "${rdchar}" == "u" ]]
+            then
+                echo -n "${rdchar}"
+            else
+                echo
+                echo "Error 300: u expected"
+                exit
+        fi
+        rc 200
+        if [[ "${rdchar}" == "l" ]]
+            then
+                echo -n "${rdchar}"
+            else
+                echo
+                echo "Error 300: l expected"
+                exit
+        fi
+        rc 200
+        if [[ "${rdchar}" == "l" ]]
+            then
+                echo -n "${rdchar}"
+            else
+                echo
+                echo "Error 300: l expected"
+                exit
+        fi
+
+        echo
+        rc 200
+      # printf -v char "%i" \"${rdchar}\"
+}
+
+#############
+fraction(){
+     if [[ ! "0123456789" =~ "${rdchar}" ]]
+         then
+             echo
+             echo "Error 850: Expected [0-9] character $rdchar found"
+             exit
+     fi
+     while true
+         do
+           case $rdchar in
+                  [0-9])  
+                         echo -n "${rdchar}"
+                         rc 445
+                       # printf -v char "%i" \"${rdchar}\"
+                         ;;
+                    e|E)
+                         break
+                         ;;
+            ','|']'|'}')
+                       # echo
+                         break
+                         ;;
+                      *) echo
+                         echo "Error 851: Unexpected character $rdchar"
+                         exit
+                         ;;
+           esac
+       done
+}
+
+exponent(){
+     if [[ ! "+-0123456789" =~ "${rdchar}" ]]
+         then
+             echo
+             echo "Error 870: Expected +- or [0-9] character $rdchar found"
+             exit
+     fi
+     if [[  "+-" =~ "${rdchar}" ]]
+         then
+             echo -n "${rdchar}"
+             rc 872
+           # printf -v char "%i" \"${rdchar}\"
+     fi
+     while true
+         do
+           case $rdchar in
+                  [0-9])
+                         echo -n "${rdchar}"
+                         rc 445
+                       # printf -v char "%i" \"${rdchar}\"
+                         ;;
+            ','|']'|'}')
+                       # echo
+                         break
+                         ;;
+                      *) echo
+                         echo "Error 871: Unexpected character $rdchar"
+                         exit
+                         ;;
+           esac
+        done
+}
+
+frac_expo(){
+             while true
+                 do
+                     case $rdchar in
+                         '.')
+                              echo -n '.'
+                              rc 442
+                            # printf -v char "%i" \"${rdchar}\"
+                              fraction
+                              ;;
+                         e|E)
+                              echo -n "${rdchar}"
+                              rc 446
+                            # printf -v char "%i" \"${rdchar}\"
+                              exponent
+                              ;;
+                 ','|']'|'}')
+                         #    echo
+                              break
+                              ;;
+                           *)
+                              echo
+                              echo "Error 550: Character $rdchar $char unexpected"
+                              exit
+                              ;;
+                     esac
+                 done
+}
+
+number(){
+    case $rdchar in
+        '-') 
+             echo -n "-"
+             rc 400
+           # printf -v char "%i" \"${rdchar}\"
+                 case $rdchar in
+                     0) 
+                        echo -n "0"
+                        rc 430
+                      # printf -v char "%i" \"${rdchar}\"
+                        frac_expo
+                        ;;
+                 [1-9]) 
+                        echo -n "${rdchar}"
+                        rc 420
+                      # printf -v char "%i" \"${rdchar}\"
+                        while true
+                            do
+                                case $rdchar in
+                                    [0-9])
+                                           echo -n "${rdchar}"
+                                           rc 421
+                                         # printf -v char "%i" \"${rdchar}\"
+                                           ;;
+                                  '.'|e|E)
+                                           frac_expo
+                                           ;;
+                              ','|']'|'}')
+                                           break
+                                           ;;
+                                        *) 
+                                           if [[ "${char}" == "10" ]]
+                                               then
+                                                   rc 995
+                                                   whitespace
+                                                   continue
+                                           fi
+                                           echo
+                                           echo "Error 780: Character $rdchar $char unexpected"
+                                           exit
+                                           ;;
+                                esac
+                            done
+                        ;;
+                     *) 
+                        echo 
+                        echo "Error 490: [0-9] expected, $rdchar found"
+                        exit
+                        ;;
+                 esac
+             ;;
+          0)  
+             echo -n "0"
+             rc 410
+           # printf -v char "%i" \"${rdchar}\"
+             frac_expo
+             ;;
+      [1-9]) 
+             echo -n "${rdchar}"
+             rc 420
+           # printf -v char "%i" \"${rdchar}\"
+             while true
+                 do
+                     case $rdchar in
+                         [0-9])  
+                                echo -n "${rdchar}"
+                                rc 421
+                              # printf -v char "%i" \"${rdchar}\"
+                                ;;
+                       '.'|e|E)  
+                                frac_expo
+                                ;;
+                   ','|']'|'}')
+                                break
+                                ;;
+                             *) 
+                                if [[ "${char}" == "10" ]]
+                                    then
+                                        rc 995
+                                        whitespace
+                                        continue
+                                fi
+                                echo
+                                echo "Error 781: Character rd $rdchar c $char unexpected"
+                                exit
+                                ;;
+                     esac
+                 done
+             ;;
+          *) 
+             echo
+             echo "Error 500: Unexpected character $char $rdchar"
+             exit
+             ;;
+    esac
+    echo
+}
+
+####if [[ "tTfFnN" =~ "${lrd}" ]]
+
+array(){
+ # echo 
+ # echo -n "${ids}"
+   echo "["
+#   echo -n "${ids}"
+
+               rc 120
+                 # printf -v char "%i" \"${rdchar}\"
+                   whitespace 
+                       if [[ "${char}" == "93" ]] # ]
+                           then
+                            # echo
+                            # echo "${ids}]"
+                              echo "]"
+                                  rc 128
+                                    # printf -v char "%i" \"${rdchar}\"
+                                      return
+
+                       fi
+                   while true
+                       do
+                           value
+                           case $char in
+                               93) # echo
+                                 # echo -n "${ids}]"
+                                   echo "]"
+                                       rc 133
+                                         # printf -v char "%i" \"${rdchar}\"
+                                           return ;;
+                               44) echo ","
+                                 # echo -n "${ids}"
+                                         rc 134
+                                         # printf -v char "%i" \"${rdchar}\" ;;
+                                         ;;
+                                *) echo
+                                   echo "Error 129: Unexpected character $char $rdchar"
+                                   exit ;;
+                           esac
+                       done
+}
+
+# determine element type
+    whattype(){
+       
+        detline=$1
+  
+        
+
+}
+
+findmatchbrk(){
+
+    #find matching [ from array lvl
+    #current array position
+    pos=$inc
+    lcount=0
+    rcount=1
+
+    while true
+        do
+            pval="${lvl[${pos}]}"
+            pchar="${pval:0-1}"
+            if [[ "${pchar}" == "[" ]] || [[ "${pchar}" == "]" ]]
+                then
+                    if [[ "${pchar}" == "[" ]]
+                        then
+                            ((lcount++))
+                        else
+                            ((rcount++))
+                    fi
+
+                    if ((lcount == rcount))
+                        then
+
+                            level=$(echo ${lvl[${pos}]} | awk '{print $3}')
+                            idx=$level
+                            ids=""
+                            for ((ocount=1; ocount<=level; ocount++))
+                                do
+                                    ids="${ids}${dent}"
+                                done
+                            break
+                    fi
+
+            fi
+
+            ((pos--))
+            if ((pos < 0))
+               then
+                   echo "Error: findmatchbrk subscript out of range"
+                   exit
+            fi
+        done
+
+}
+
+findmatchbrc(){
+
+    #find matching { from array lvl
+    #current array position
+    pos=$inc
+    lcount=0
+    rcount=1
+
+    while true
+        do
+            pval="${lvl[${pos}]}"
+            pchar="${pval:0-1}"
+            if [[ "${pchar}" == "{" ]] || [[ "${pchar}" == "}" ]]
+                then
+                    if [[ "${pchar}" == "{" ]]
+                        then
+                            ((lcount++))
+                        else
+                            ((rcount++))
+                    fi
+
+                    if ((lcount == rcount))
+                        then
+
+                            level=$(echo ${lvl[${pos}]} | awk '{print $3}')
+                            idx=$level
+                            ids=""
+                            for ((ocount=1; ocount<=level; ocount++))
+                                do
+                                    ids="${ids}${dent}"
+                                done
+                            break
+                    fi
+
+            fi
+
+            ((pos--))
+            if ((pos < 0))
+               then
+                   echo "Error: findmatchbrk subscript out of range"
+                   exit
+            fi
+        done
+
+}
+
+redent1(){
+
+declare -a lvl
+
+lrd=""
+
+while read myline
+do
+
+# figure out what to do with a NL as curr char
+
+#printf -v char "%i" \"${rdchar}\"
+#var="text,text,text,text"
+#res="${var//[^,]}"
+#echo "$res"
+#echo "${#res}"
+#rem="${line//[^\"]}"
+# first/last char
+#fc=${myline:0:1}
+#lc=${line:0-1}
+
+# Determine type read and in/outdent
+# from first char of line
+
+    fc=${myline:0:1}
+    case $fc in
+            '"') 
+                 if [[ "${lrd}" == "{" ]]
+                    then
+                        echo
+                        indent
+                        echo -n "${ids}${myline}"
+                        ((idx++))
+                        ((inc++))
+                        lvl[${inc}]="inc1 $inc $idx \""
+                        if [[ "${levprint}" == "T" ]]
+                            then
+                                echo "inc1 $inc $idx"
+                        fi
+                      # echo -n "${myline}"
+                 fi
+                 if [[ "${lrd}" == ":" ]]
+                    then
+                       echo -n "${myline}"
+                 fi
+                 if [[ "${lrd}" == "," ]]
+                    then
+                       echo
+                       pval="${lvl[${inc}]}"
+                       pchar="${pval:0-1}"
+                       if [[ "${pchar}" == "]" ]] || [[ "${pchar}" == "}" ]]
+                           then
+                               outdent
+                               ((idx--))
+                               ((inc++))
+                               lvl[${inc}]="dec1 $inc $idx \""
+                               if [[ "${levprint}" == "T" ]]
+                                   then
+                                       echo "dec1 $inc $idx"
+                               fi
+                       fi
+                       echo -n "${ids}${myline}"
+                 fi
+                 if [[ "${lrd}" == "[" ]]
+                    then
+                       echo
+                       indent
+                       echo -n "${ids}${myline}"
+                       ((idx++))
+                       ((inc++))
+                       lvl[${inc}]="inc2 $inc $idx \""
+                        if [[ "${levprint}" == "T" ]]
+                            then
+                                echo "inc2 $inc $idx"
+                        fi
+                      # echo -n "${myline}"
+                 fi
+                 ;;
+      '-'|[0-9]) 
+                 if [[ "${lrd}" == "[" ]]
+                    then
+                       echo
+                       indent
+                       echo -n "${ids}${myline}"
+                       ((idx++))
+                       ((inc++))
+                       lvl[${inc}]="inc9 $inc $idx ${fc}"
+                        if [[ "${levprint}" == "T" ]]
+                            then
+                                echo "inc9 $inc $idx"
+                        fi
+                      # echo -n "${myline}"
+                 fi 
+                 if [[ "${lrd}" == "," ]]
+                    then
+                       echo
+                       pval="${lvl[${inc}]}"
+                       pchar="${pval:0-1}"
+                       if [[ "${pchar}" == "]" ]]
+                           then
+                               outdent
+                               ((idx--))
+                               ((inc++))
+                               lvl[${inc}]="dec8 $inc $idx \""
+                               if [[ "${levprint}" == "T" ]]
+                                   then
+                                       echo "dec8 $inc $idx"
+                               fi
+                       fi
+                       echo -n "${ids}${myline}"
+                 fi
+                 if [[ "${lrd}" == ":" ]]
+                    then
+                        echo -n "${myline}"
+                 fi 
+                 ;;
+    t|T|f|F|n|N) 
+                 echo -n "${myline}"
+                 ;;
+            '{') 
+                 if [[ "${lrd}" == "" ]]
+                     then
+                         echo -n "{"
+                      #  indent
+                      #  ((idx++))
+                      #  ((inc++))
+                         lvl[${inc}]="inc3 $inc $idx {"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                         echo "inc3 $inc $idx"
+                         fi
+                      #  echo -n "${ids}"
+                 fi
+                 if [[ "${lrd}" == ":" ]]
+                     then
+                         echo
+                         indent
+                         echo -n "${ids}{"
+                         ((inc++))
+                         ((idx++))
+                         lvl[${inc}]="inc4 $inc $idx {"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                                 echo "inc4 $inc $idx"
+                         fi
+                 fi
+                 if [[ "${lrd}" == "[" ]]
+                     then
+                         echo 
+                         indent
+                         echo -n "${ids}${myline}"
+                         ((inc++))
+                         ((idx++))
+                         lvl[${inc}]="inc5 $inc $idx {"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                         echo "inc5 $inc $idx"
+                         fi
+                      #  echo -n "${ids}"
+                 fi
+                 if [[ "${lrd}" == "," ]]
+                     then
+                         echo
+                       # indent
+                         echo -n "${ids}{"
+                         ((inc++))
+                       # ((idx++))
+                         lvl[${inc}]="inc6 $inc $idx {"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                         echo "inc6 $inc $idx"
+                         fi
+                 fi
+                 ;;
+            '[') 
+                 if [[ "${lrd}" == "" ]]
+                     then
+                         echo -n "["
+                      #  indent
+                      #  ((idx++))
+                      #  ((inc++))
+                         lvl[${inc}]="inc8 $inc $idx ["
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                         echo "inc8 $inc $idx"
+                         fi
+                      #  echo -n "${ids}"
+                 fi
+                 if [[ "${lrd}" == ":" ]]
+                     then
+                         echo
+                         indent
+                         ((inc++))
+                         ((idx++))
+                         echo -n "${ids}["
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                         echo "inc7 $inc $idx"
+                         fi
+                         lvl[${inc}]="inc7 $inc $idx ["
+                 fi
+                 if [[ "${lrd}" == "," ]]
+                     then
+                         echo
+                       # indent
+                         ((inc++))
+                       # ((idx++))
+                         echo -n "${ids}["
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                         echo "inc10 $inc $idx"
+                         fi
+                         lvl[${inc}]="inc10 $inc $idx ["
+                 fi
+                 ;;
+            '}') 
+                 if [[ "${lrd}" == "]" ]]
+                     then
+                         echo
+                      #  outdent
+                         findmatchbrc
+                         echo -n "${ids}}"
+                         ((inc++))
+                      #  ((idx--))
+                         lvl[${inc}]="dec2 $inc $idx }"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                                 echo "dec2 $inc $idx"
+                         fi
+                 fi
+                 if [[ "${lrd}" == "\"" ]]
+                     then
+                         echo
+                      #  outdent
+                         findmatchbrc
+                      #  echo -n "${ids}${myline}"
+                         echo -n "${ids}}"
+                         ((inc++))
+                      #  ((idx--))
+                         lvl[${inc}]="dec3 $inc $idx }"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                                 echo "dec3 $inc $idx"
+                         fi
+                 fi
+                 if [[ "-0123456789tTfFnN" =~ "${lrd}" ]]
+                     then
+                         echo
+                      #  outdent
+                         findmatchbrc
+                      #  echo -n "${ids}${myline}"
+                         echo -n "${ids}}"
+                         ((inc++))
+                      #  ((idx--))
+                         lvl[${inc}]="dec4 $inc $idx }"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                                 echo "dec4 $inc $idx"
+                         fi
+                 fi
+                 if [[ "${lrd}" == "}" ]]
+                     then
+                         echo
+                       # outdent
+                         findmatchbrc
+                         echo -n "${ids}}"
+                         ((inc++))
+                       # ((idx--))
+                         lvl[${inc}]="dec5 $inc $idx }"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                                 echo "dec5 $inc $idx"
+                         fi
+                      #  echo -n "${ids}"
+                 fi
+                 ;;
+            ']') 
+                 if [[ "${lrd}" == "\"" ]]
+                     then
+                         echo
+                      #  outdent
+                         findmatchbrk
+                      #  echo -n "${ids}${myline}"
+                         echo -n "${ids}]"
+                         ((inc++))
+                      #  ((idx--))
+                         lvl[${inc}]="dec6 $inc $idx ]"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                                 echo "dec6 $inc $idx"
+                         fi
+                 fi
+                 if [[ "${lrd}" == "]" ]]
+                     then
+                         echo
+                      #  outdent
+                         findmatchbrk
+                      #  echo -n "${ids}${myline}"
+                         echo -n "${ids}]"
+                         ((inc++))
+                      #  ((idx--))
+                         lvl[${inc}]="dec10 $inc $idx ]"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                                 echo "dec10 $inc $idx"
+                         fi
+                 fi
+                 if [[ "${lrd}" == "[" ]]
+                     then
+                         echo
+                      #  outdent
+                         findmatchbrk
+                      #  echo -n "${ids}${myline}"
+                         echo -n "${ids}]"
+                         ((inc++))
+                      #  ((idx--))
+                         lvl[${inc}]="dec11 $inc $idx ]"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                                 echo "dec11 $inc $idx"
+                         fi
+                 fi
+                 if [[ "-0123456789" =~ "${lrd}" ]]
+                     then
+                         echo
+                      #  outdent
+                         findmatchbrk
+                      #  echo -n "${ids}${myline}"
+                         echo -n "${ids}]"
+                         ((inc++))
+                      #  ((idx--))
+                         lvl[${inc}]="dec9 $inc $idx ]"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                                 echo "dec9 $inc $idx"
+                         fi
+                 fi
+                 if [[ "${lrd}" == "}" ]]
+                     then
+                         echo
+                         outdent
+                         echo -n "${ids}]"
+                         ((inc++))
+                         ((idx--))
+                         lvl[${inc}]="dec7 $inc $idx ]"
+                         if [[ "${levprint}" == "T" ]]
+                             then
+                         echo "dec7 $inc $idx"
+                         fi
+                 fi
+                 ;;
+            ':') 
+                 echo -n ':'
+                 ;;
+            ',') 
+                 if [[ "${lrd}" == "\"" ]]
+                    then
+                        echo -n ','
+                 fi
+                 if [[ "${lrd}" == "]" ]]
+                    then
+                         echo -n ','
+                 fi
+                 if [[ "${lrd}" == "}" ]]
+                    then
+                         echo -n ','
+                 fi
+                 if [[ "tTfFnN" =~ "${lrd}" ]]
+                    then
+                        echo -n ','
+                 fi
+                 if [[ "-0123456789" =~ "${lrd}" ]]
+                    then
+                        echo -n ','
+                 fi
+                 ;;
+              *)  
+               # echo
+               # printf -v tchar "%i" \"${fc}\"
+               # echo tchar $tchar
+                 echo; echo "Error 700: Character $fc unexpected"; exit
+                 ;;
+    esac
+
+    lrd="${fc}"
+    
+done
+
+#  echo
+#  for i in {0..55}
+#  do
+#  echo ${lvl[$i]}
+#  done
+
+}
+
+#main()
+
+#parse command line options
+if [[ "$#" != "0" ]]
+   then
+      pos=0
+      for i in $*
+         do
+            fc=${i:0:1}
+            if [[ "${fc}" == "-" ]]
+               then
+                  ((pos++))
+                  opt["${pos}"]=${i:1}
+               else
+                  break
+            fi
+         done
+      shift $pos
+    # for ((i=1; i<=pos; i++))
+    #    do
+    #       echo "opt $i ${opt["${i}"]}"
+    #    done
+fi
+
+# set default options
+if [[ "${pos}" == "0" ]]
+   then
+      opt[1]=p #p pretty print indent; s simple serial list
+fi
+
+#apply command line or default options
+for i in ${opt[*]}
+   do
+       case $i in
+          p)
+             printtype=p
+             ;;
+          s) 
+             printtype=s
+             ;;
+          *)
+             echo "Invalid option: $i"
+             exit
+             ;;
+       esac
+   done
+
+if [ "$#" == "0" ]
+   then
+       fdu=0
+     # exec 3<&0-
+     # fdu=3
+   else
+      infile="$1"
+      if [ -e "$infile" ]
+         then
+            fdu=3
+            exec 3< $infile
+         else
+            echo file: $infile does not exist
+            exit
+      fi
+fi
+
+# read and echo all characters on one line
+# until a { or [ is read and call object() or array()
+
+#echo -n "Press ENTER to display next object"
+#read abc < /dev/tty
+
+loopcount=0
+
+IFS=
+while true
+    do
+        while true
+            do
+                read -u $fdu -r -N 1 rdchar
+                read_exit=$?
+                if [[ "${read_exit}" != "0" ]]
+                    then
+                       exit
+                fi
+        
+                if [[ "${rdchar}" == "{" ]] || [[ "${rdchar}" == "[" ]]
+                    then
+                        printf -v char "%i" \"${rdchar}\"
+                        break
+                    else
+                        echo -n "${rdchar}"
+                fi
+            done
+                
+        if [[ "${rdchar}" == "{" ]]
+            then
+               if [[ "${printtype}" == "s" ]]
+                  then
+                     object 
+                  else
+                     object | redent1
+               fi
+            else
+               if [[ "${printtype}" == "s" ]]
+                  then
+                     array
+                  else
+                     array | redent1
+               fi
+        fi
+#echo -ne "\nPress ENTER to display next object"
+#read abc < /dev/tty
+#((loopcount++))
+#echo loopcount $loopcount
+echo
+    done
+
+

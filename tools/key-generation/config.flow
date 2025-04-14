@@ -1,0 +1,48 @@
+# Defaults
+
+#Run state: test or prod
+# test automatically prefixes the bucket name with test-
+# prod is for generating production buckets, policies and users
+run_state="test"
+
+# The tenant name
+tenant="digital-watchdog"
+
+# The reseller account admin user
+# The reseller admin allows for default login username.
+# reseller_admin=mark.ellis.1@seagate.com
+reseller_admin="justin.rackowski@seagate.com"
+
+# The default root admin name for all customers/orgs
+# The default admin is a valid email address.
+# Each customer/org requires a unique root admin email address.
+# A +CPP number will automatically be appended to the username portion of the address.
+default_admin="justin.rackowski@seagate.com"
+
+# The value refers to the available regions in the customer/org, us-east-1, us-central-2 and us-west-1
+regions_available="\"US-CENTRAL-2\",\"US-EAST-1\",\"US-WEST-1\""
+
+# Session timeout in seconds for reseller admin login
+# Range is 15 minutes to 12 hours (900-43200 in seconds)
+tmout_reseller="3600"
+
+# Session timeout in seconds for customer assume role login
+# Range is 15 minutes to 12 hours (900-43200 in seconds)
+tmout_customer="900"
+
+# The absolute or relative path to run the dependencies jp and xp.
+# The path may be set to "" if the dependencies are placed on the users execution PATH.
+depend_path="./"
+
+# Show the customer level access and secret when assume customer role is executed.
+# Set show_keys to true to display keys. Any other value will not display keys.
+show_keys="true"
+
+# Read root password for admin login to reseller console
+  if [[ -e ~/dwrootcred ]]
+     then
+        . ~/dwrootcred
+     else
+        rootpass=""
+  fi
+
