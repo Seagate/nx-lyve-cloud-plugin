@@ -1,5 +1,14 @@
 # DW Cumulus Changelog #
 
+## **0.7.0** ##
+
+June 10th 2025
+This release is packaged with Cloudfuse [v1.12.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.12.0).
+
+### Changes ###
+
+- [#23](https://github.com/dwrnd/DW-Cumulus/pull/23) Disable showing plugin settings in camera
+
 ## **0.6.1** ##
 
 March 20th 2025
