@@ -264,7 +264,16 @@ bool Engine::mount()
         return false;
     }
 
-    auto validationErr = validateMount();
+    auto numServers = getNumberOfServers();
+    if (numServers < 1)
+    {
+        NX_PRINT << "Server not ready. Scheduling asynchronous mount retry.";
+        startAsyncMount();
+        return false;
+    }
+    NX_PRINT << "Number of servers: " << numServers;
+
+    auto validationErr = validateMount(numServers);
     if (!validationErr.isOk())
     {
         std::string errorMessage =
@@ -285,6 +294,44 @@ bool Engine::mount()
     }
 
     return true;
+}
+
+void Engine::startAsyncMount()
+{
+    std::thread([this]() -> void {
+        const int maxRetries = 30;
+        const int retryIntervalSeconds = 2;
+        for (int attempt = 0; attempt < maxRetries; ++attempt)
+        {
+            NX_PRINT << "Async mount retry attempt " << (attempt + 1);
+            auto numServers = getNumberOfServers();
+            if (numServers > 0)
+            {
+                NX_PRINT << "Server is now ready. Proceeding with mount.";
+                auto validationErr = this->validateMount(numServers);
+                if (!validationErr.isOk())
+                {
+                    std::string errorMessage =
+                        "mount aborted (validation failed). Here's why: " + std::string(Ptr(validationErr.errorMessage())->str());
+                    NX_PRINT << errorMessage;
+                    pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Connection Error", errorMessage);
+                    return;
+                }
+
+                auto mountErr = this->spawnMount();
+                if (!mountErr.isOk())
+                {
+                    // mount failed - this is very unexpected
+                    std::string errorMessage = "mount failed. Here's why: " + std::string(Ptr(mountErr.errorMessage())->str());
+                    NX_PRINT << errorMessage;
+                    pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Mount Error", errorMessage);
+                    return;
+                }
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(retryIntervalSeconds));
+        }
+    }).detach();
 }
 
 bool Engine::isCompatible(const IDeviceInfo *deviceInfo) const
@@ -344,7 +391,7 @@ bool Engine::settingsChanged()
     return false;
 }
 
-nx::sdk::Error Engine::validateMount()
+nx::sdk::Error Engine::validateMount(size_t numServers)
 {
     NX_PRINT << "Validating mount options...";
     std::map<std::string, std::string> values = currentSettings();
@@ -424,7 +471,6 @@ nx::sdk::Error Engine::validateMount()
     uint64_t serverCapacity = bucketCapacityGB;
 
     // Set bucket capacity per server if there are merged servers
-    auto numServers = getNumberOfServers();
     if (numServers > 0)
     {
         serverCapacity = bucketCapacityGB / numServers;
@@ -524,10 +570,10 @@ nx::sdk::Error Engine::validateMount()
     NX_PRINT << "spawning process from genS3Config";
 #if defined(__linux__)
     const processReturn dryGenConfig =
-        m_cfManager.genS3Config(endpointUrl, bucketName, bucketCapacityGB * 1024, m_passphrase);
+        m_cfManager.genS3Config(endpointUrl, bucketName, serverCapacity * 1024, m_passphrase);
 #elif defined(_WIN32)
     const processReturn dryGenConfig =
-        m_cfManager.genS3Config(keyId, secretKey, endpointUrl, bucketName, bucketCapacityGB * 1024, m_passphrase);
+        m_cfManager.genS3Config(keyId, secretKey, endpointUrl, bucketName, serverCapacity * 1024, m_passphrase);
 #endif
     if (dryGenConfig.errCode != 0)
     {
@@ -873,7 +919,7 @@ static size_t getNumberOfServers()
     {
         std::string errMsg = "Failed to get server port for system info: " + portProcessReturn.output;
         NX_PRINT << errMsg;
-        return -1; // Return -1 to indicate no servers found
+        return 0; // Return 0 to indicate no servers found
     }
 
     std::string port = portProcessReturn.output;
@@ -885,7 +931,7 @@ static size_t getNumberOfServers()
     if (port.empty() || !std::all_of(port.begin(), port.end(), ::isdigit))
     {
         NX_PRINT << "unexpected non-numeric media server port number: " << port;
-        return -1;
+        return 0;
     }
 
     // Construct URL to get number of servers
@@ -897,7 +943,8 @@ static size_t getNumberOfServers()
     char* const argv[] = {
         const_cast<char*>("/usr/bin/curl"),
         const_cast<char*>("-sk"),
-        const_cast<char*>("-m"), const_cast<char*>("5"),      // 5 second timeout
+        const_cast<char*>("-m"),
+        const_cast<char*>("2"),
         const_cast<char*>(apiUrl.c_str()),
         nullptr
     };
@@ -910,7 +957,7 @@ static size_t getNumberOfServers()
     {
         NX_PRINT << "Failed to get system info from API. Curl error: " + processReturn.output +
                              " (code " + std::to_string(processReturn.errCode) + ")";
-        return -1;
+        return 0;
     }
 
     std::string jsonParseErr;
@@ -919,7 +966,7 @@ static size_t getNumberOfServers()
     {
         NX_PRINT << "Failed to parse system info JSON: " + jsonParseErr +
                              ". Response: " + processReturn.output;
-        return -1;
+        return 0;
     }
 
     // Check for API error
@@ -927,7 +974,7 @@ static size_t getNumberOfServers()
     {
         NX_PRINT << "Media server API error in system/info response: " +
                                   systemInfoJson["error"].string_value();
-        return -1;
+        return 0;
     }
 
     // Count number of servers
@@ -941,7 +988,7 @@ static size_t getNumberOfServers()
         std::string errMsg = "System info JSON response does not contain a 'servers' array or it's not an array. JSON: " +
                              processReturn.output;
         NX_PRINT << errMsg;
-        return -1;
+        return 0;
     }
 }
 

@@ -43,7 +43,8 @@ class Engine : public nx::sdk::analytics::Engine
 
   private:
     bool settingsChanged();
-    nx::sdk::Error validateMount();
+    nx::sdk::Error validateMount(size_t numServers);
+    void startAsyncMount();
     nx::sdk::Error spawnMount();
     bool setStatusBanner(nx::kit::detail::json11::Json::object *model, std::string bannerId,
                          std::string updatedContent) const;
