@@ -55,6 +55,7 @@ static SaasSubscriptionResult checkSaasSubscription();
 static std::string generatePassphrase();
 static void enableLogging(std::string iniDir);
 static std::string parseCloudfuseError(std::string error);
+static size_t getNumberOfServers();
 
 static int maxWaitSecondsAfterMount = 10;
 
@@ -373,7 +374,7 @@ nx::sdk::Error Engine::validateMount()
     std::string subscriptionInfoBase64 = subscriptionKey["subscriptionInfo"].string_value();
     std::string signatureBase64 = subscriptionKey["signature"].string_value();
     // convert base64 to byte data (prepare for verification)
-    std::string publicKeyRawBase64 = "0efxam97iR/yaL9pjZpaRrqxkpjOxeZj00qelt+FLas=";
+    std::string publicKeyRawBase64 = "MBLfuNV7TA+bmcfFurEyRGrxfjroSS4JTzpZITfOwC0=";
     auto publicKeyRawBytes = base64Decode(publicKeyRawBase64);
     auto subscriptionInfoBytes = base64Decode(subscriptionInfoBase64);
     auto signatureBytes = base64Decode(signatureBase64);
@@ -418,6 +419,28 @@ nx::sdk::Error Engine::validateMount()
     std::string endpointUrl = m_subscriptionInfo["endpoint"].string_value();
     std::string region = m_subscriptionInfo["region"].string_value();
     uint64_t bucketCapacityGB = (uint64_t)m_subscriptionInfo["bucket-capacity-gb"].int_value();
+    uint64_t serverCapacity = bucketCapacityGB;
+
+    // Set bucket capacity per server if there are merged servers
+    auto numServers = getNumberOfServers();
+    if (numServers > 0)
+    {
+        serverCapacity = bucketCapacityGB / numServers;
+        if (serverCapacity == 0) // Result of integer division is 0, but original was > 0
+        {
+            serverCapacity = 1; // Set minimum 1GB per server
+            NX_PRINT << "Calculated capacity per server < 1GB. Setting to minimum 1GB";
+        }
+        else
+        {
+            NX_PRINT << "Adjusted bucket capacity per server: " << serverCapacity << "GB.";
+        }
+    }
+    else // numServers is 0 or -1 for error
+    {
+        NX_PRINT << "Server count has an error. Defaulting to original bucket capacity";
+    }
+
     // prepare mount paths
     std::string mountDir = m_cfManager.getMountDir();
     std::string fileCacheDir = m_cfManager.getFileCacheDir();
@@ -839,5 +862,86 @@ SaasSubscriptionResult checkSaasSubscription()
     // check server system info and return result
     return checkSystemInfo(port, "3");
 }
+
+static size_t getNumberOfServers()
+{
+    // Get server port
+    processReturn portProcessReturn = getServerPort();
+    if (portProcessReturn.errCode != 0)
+    {
+        std::string errMsg = "Failed to get server port for system info: " + portProcessReturn.output;
+        NX_PRINT << errMsg;
+        return -1; // Return -1 to indicate no servers found
+    }
+
+    std::string port = portProcessReturn.output;
+    // strip endline(s) and check that the port is numeric
+    while (!port.empty() && (port.back() == '\n' || port.back() == '\r'))
+    {
+        port.erase(port.size() - 1);
+    }
+    if (port.empty() || !std::all_of(port.begin(), port.end(), ::isdigit))
+    {
+        NX_PRINT << "unexpected non-numeric media server port number: " << port;
+        return -1;
+    }
+
+    // Construct URL to get number of servers
+    const std::string apiUrl = "https://localhost:" + port + "/rest/v2/system/info";
+
+    // Make HTTP GET request using curl
+    processReturn processReturn;
+#if defined(__linux__)
+    char* const argv[] = {
+        const_cast<char*>("/usr/bin/curl"),
+        const_cast<char*>("-sk"),
+        const_cast<char*>("-m"), const_cast<char*>("5"),      // 5 second timeout
+        const_cast<char*>(apiUrl.c_str()),
+        nullptr
+    };
+    char* const envp[] = {nullptr};
+    processReturn = ChildProcess::spawnProcess(argv, envp);
+#endif
+
+    // Check curl result
+    if (processReturn.errCode != 0)
+    {
+        NX_PRINT << "Failed to get system info from API. Curl error: " + processReturn.output +
+                             " (code " + std::to_string(processReturn.errCode) + ")";
+        return -1;
+    }
+
+    std::string jsonParseErr;
+    auto systemInfoJson = Json::parse(processReturn.output, jsonParseErr);
+    if (!jsonParseErr.empty())
+    {
+        NX_PRINT << "Failed to parse system info JSON: " + jsonParseErr +
+                             ". Response: " + processReturn.output;
+        return -1;
+    }
+
+    // Check for API error
+    if (systemInfoJson["error"].is_string() && !systemInfoJson["error"].string_value().empty())
+    {
+        NX_PRINT << "Media server API error in system/info response: " +
+                                  systemInfoJson["error"].string_value();
+        return -1;
+    }
+
+    // Count number of servers
+    if (systemInfoJson["servers"].is_array())
+    {
+        size_t count = systemInfoJson["servers"].array_items().size();
+        return count;
+    }
+    else
+    {
+        std::string errMsg = "System info JSON response does not contain a 'servers' array or it's not an array. JSON: " +
+                             processReturn.output;
+        NX_PRINT << errMsg;
+        return -1;
+    }
+}
+
 
 } // namespace settings
