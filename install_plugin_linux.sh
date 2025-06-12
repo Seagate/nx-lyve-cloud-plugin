@@ -62,7 +62,7 @@ fi
 # Send a request to the system settings endpoint
 settings_url="https://localhost:$port/rest/v2/system/settings"
 settings_data='{"additionalLocalFsTypes": "fuse.cloudfuse"}'
-settings_headers="Cookie: x-runtime-guid=ahhh"
+settings_headers="Cookie: x-runtime-guid=$token"
 if ! send_request "$settings_url" "$settings_data" "$settings_headers" "PATCH"; then
     echo "Error: Failed to get a response from the system settings endpoint. Unable to set additional local file system types."
     exit 1

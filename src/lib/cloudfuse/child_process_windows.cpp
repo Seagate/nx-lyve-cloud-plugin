@@ -108,6 +108,8 @@ s3storage:
   secret-key: { AWS_SECRET_ACCESS_KEY }
   bucket-name: { BUCKET_NAME }
   endpoint: { ENDPOINT }
+  enable-dir-marker: true
+  enable-checksum: true
   subdirectory: )" + systemName +
                       "\n";
 

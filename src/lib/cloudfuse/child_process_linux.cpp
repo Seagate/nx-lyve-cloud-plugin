@@ -84,6 +84,8 @@ attr_cache:
 s3storage:
   bucket-name: { BUCKET_NAME }
   endpoint: { ENDPOINT }
+  enable-dir-marker: true
+  enable-checksum: true
   subdirectory: )" + systemName +
                       "\n";
 
