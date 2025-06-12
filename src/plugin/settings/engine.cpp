@@ -311,10 +311,11 @@ void Engine::startAsyncMount()
                 auto validationErr = this->validateMount(numServers);
                 if (!validationErr.isOk())
                 {
-                    std::string errorMessage =
-                        "mount aborted (validation failed). Here's why: " + std::string(Ptr(validationErr.errorMessage())->str());
+                    std::string errorMessage = "mount aborted (validation failed). Here's why: " +
+                                               std::string(Ptr(validationErr.errorMessage())->str());
                     NX_PRINT << errorMessage;
-                    pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Connection Error", errorMessage);
+                    pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Connection Error",
+                                              errorMessage);
                     return;
                 }
 
@@ -322,9 +323,11 @@ void Engine::startAsyncMount()
                 if (!mountErr.isOk())
                 {
                     // mount failed - this is very unexpected
-                    std::string errorMessage = "mount failed. Here's why: " + std::string(Ptr(mountErr.errorMessage())->str());
+                    std::string errorMessage =
+                        "mount failed. Here's why: " + std::string(Ptr(mountErr.errorMessage())->str());
                     NX_PRINT << errorMessage;
-                    pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Mount Error", errorMessage);
+                    pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Mount Error",
+                                              errorMessage);
                     return;
                 }
                 break;
@@ -940,23 +943,21 @@ static size_t getNumberOfServers()
     // Make HTTP GET request using curl
     processReturn processReturn;
 #if defined(__linux__)
-    char* const argv[] = {
-        const_cast<char*>("/usr/bin/curl"),
-        const_cast<char*>("-sk"),
-        const_cast<char*>("-m"),
-        const_cast<char*>("2"),
-        const_cast<char*>(apiUrl.c_str()),
-        nullptr
-    };
-    char* const envp[] = {nullptr};
+    char *const argv[] = {const_cast<char *>("/usr/bin/curl"),
+                          const_cast<char *>("-sk"),
+                          const_cast<char *>("-m"),
+                          const_cast<char *>("2"),
+                          const_cast<char *>(apiUrl.c_str()),
+                          nullptr};
+    char *const envp[] = {nullptr};
     processReturn = ChildProcess::spawnProcess(argv, envp);
 #endif
 
     // Check curl result
     if (processReturn.errCode != 0)
     {
-        NX_PRINT << "Failed to get system info from API. Curl error: " + processReturn.output +
-                             " (code " + std::to_string(processReturn.errCode) + ")";
+        NX_PRINT << "Failed to get system info from API. Curl error: " + processReturn.output + " (code " +
+                        std::to_string(processReturn.errCode) + ")";
         return 0;
     }
 
@@ -964,16 +965,14 @@ static size_t getNumberOfServers()
     auto systemInfoJson = Json::parse(processReturn.output, jsonParseErr);
     if (!jsonParseErr.empty())
     {
-        NX_PRINT << "Failed to parse system info JSON: " + jsonParseErr +
-                             ". Response: " + processReturn.output;
+        NX_PRINT << "Failed to parse system info JSON: " + jsonParseErr + ". Response: " + processReturn.output;
         return 0;
     }
 
     // Check for API error
     if (systemInfoJson["error"].is_string() && !systemInfoJson["error"].string_value().empty())
     {
-        NX_PRINT << "Media server API error in system/info response: " +
-                                  systemInfoJson["error"].string_value();
+        NX_PRINT << "Media server API error in system/info response: " + systemInfoJson["error"].string_value();
         return 0;
     }
 
@@ -985,12 +984,12 @@ static size_t getNumberOfServers()
     }
     else
     {
-        std::string errMsg = "System info JSON response does not contain a 'servers' array or it's not an array. JSON: " +
-                             processReturn.output;
+        std::string errMsg =
+            "System info JSON response does not contain a 'servers' array or it's not an array. JSON: " +
+            processReturn.output;
         NX_PRINT << errMsg;
         return 0;
     }
 }
-
 
 } // namespace settings
