@@ -28,7 +28,9 @@ static const std::string kEngineSettingsModel = /*suppress newline*/ 1 + R"json(
                                                 R"json(",
             "caption": "Subscription Key",
             "description": "DW Cumulus Subscription Key",
-            "defaultValue": ""
+            "defaultValue": "",
+            "validationRegex": "^[-A-Za-z0-9+/]*={0,3}$",
+            "validationErrorMessage": "Invalid subscription key! Did some extra characters get pasted in at the beginning or end?"
         }
     ]
 }
