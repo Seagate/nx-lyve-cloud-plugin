@@ -1,5 +1,15 @@
 # Nx-Lyve-Cloud-Plugin Changelog #
 
+## **0.6.1** ##
+
+June 15th 2025
+This release is packaged with Cloudfuse [v1.12.0](https://github.com/Seagate/cloudfuse/releases/tag/v1.10.0).
+This release includes all features planned for the 1.0.0 release of the nx-lyve-cloud-plugin, which will be released after additional bug fixes and testing.
+
+### Changes ###
+
+- [#90](https://github.com/Seagate/nx-lyve-cloud-plugin/pull/90) Fix linux install script, use checksums on upload, use named pipes to write to mount, fix camera settings
+
 ## **0.6.0** ##
 
 April 8th 2025
