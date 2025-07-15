@@ -41,6 +41,11 @@ namespace fs = std::filesystem;
 #include <fstream>
 #include <locale>
 
+#include <memory>
+#include <objbase.h>
+#include <sddl.h>
+#include <thread>
+
 // Return available drive letter to mount
 std::string getAvailableDriveLetter()
 {
@@ -140,6 +145,76 @@ s3storage:
     {
         writeTemplate();
     }
+}
+
+using HandleGuard = std::unique_ptr<void, decltype(&::CloseHandle)>;
+
+bool createNamedPipeForCurrentUser(HANDLE &hPipeOut, std::wstring &pipeNameOut)
+{
+    // Get the SID for the current user
+    HANDLE hToken = NULL;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
+    {
+        return false;
+    }
+    HandleGuard tokenGuard(hToken, &::CloseHandle);
+
+    DWORD dwTokenInfoSize = 0;
+    GetTokenInformation(hToken, TokenUser, NULL, 0, &dwTokenInfoSize);
+    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+    {
+        return false;
+    }
+
+    std::vector<BYTE> tokenInfoBuffer(dwTokenInfoSize);
+    PTOKEN_USER pTokenUser = reinterpret_cast<PTOKEN_USER>(tokenInfoBuffer.data());
+    if (!GetTokenInformation(hToken, TokenUser, pTokenUser, dwTokenInfoSize, &dwTokenInfoSize))
+    {
+        return false;
+    }
+
+    // Create a Security Descriptor from the user's SID
+    LPWSTR pSidString = NULL;
+    if (!ConvertSidToStringSidW(pTokenUser->User.Sid, &pSidString))
+    {
+        return false;
+    }
+    std::unique_ptr<WCHAR, decltype(&::LocalFree)> sidGuard(pSidString, &::LocalFree);
+
+    std::wstring sddl = L"D:P(A;;GA;;;";
+    sddl += pSidString;
+    sddl += L")";
+
+    PSECURITY_DESCRIPTOR pSD = NULL;
+    if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(sddl.c_str(), SDDL_REVISION_1, &pSD, NULL))
+    {
+        return false;
+    }
+    std::unique_ptr<void, decltype(&::LocalFree)> sdGuard(pSD, &::LocalFree);
+
+    SECURITY_ATTRIBUTES sa;
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.lpSecurityDescriptor = pSD;
+    sa.bInheritHandle = FALSE;
+
+    // Generate a unique name and create the pipe
+    GUID guid;
+    CoCreateGuid(&guid);
+    wchar_t guidString[40];
+    StringFromGUID2(guid, guidString, 40);
+
+    pipeNameOut = L"\\\\.\\pipe\\";
+    pipeNameOut += guidString;
+
+    hPipeOut = CreateNamedPipeW(pipeNameOut.c_str(), PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED,
+                                PIPE_TYPE_BYTE | PIPE_WAIT, 1, 4096, 0, 0, &sa);
+
+    if (hPipeOut == INVALID_HANDLE_VALUE)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 processReturn ChildProcess::spawnProcess(wchar_t *argv, std::wstring envp)
@@ -302,14 +377,62 @@ processReturn CloudfuseMngr::dryRun(const std::string passphrase)
 
 processReturn CloudfuseMngr::mount(const std::string passphrase)
 {
-    const std::string argv =
-        "cloudfuse mount " + mountDir + " --config-file=" + configFile + " --passphrase=" + passphrase;
     const std::string envp = "";
 
+    // Create the named pipe.
+    HANDLE hPipe = INVALID_HANDLE_VALUE;
+    std::wstring wPipeName;
+    if (!createNamedPipeForCurrentUser(hPipe, wPipeName))
+    {
+        return processReturn{1, "Error: Failed to create named pipe."};
+    }
+    HandleGuard pipeGuard(hPipe, &::CloseHandle);
+
+    OVERLAPPED overlapped = {0};
+    overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (overlapped.hEvent == NULL)
+    {
+        return processReturn{1, "Error: CreateEvent failed."};
+    }
+    HandleGuard eventGuard(overlapped.hEvent, &::CloseHandle);
+
+    BOOL bConnected = ConnectNamedPipe(hPipe, &overlapped);
+    if (!bConnected && GetLastError() != ERROR_IO_PENDING)
+    {
+        return processReturn{1, "Error: ConnectNamedPipe failed."};
+    }
+
+    // Start a thread to write the passphrase to the pipe.
+    std::thread writerThread([hPipe, &overlapped, passphrase]() {
+        // Wait for the client to connect.
+        DWORD waitResult = WaitForSingleObject(overlapped.hEvent, 10000); // 10-second timeout
+
+        if (waitResult == WAIT_OBJECT_0)
+        {
+            // Client has connected.
+            DWORD bytesWritten = 0;
+
+            WriteFile(hPipe, passphrase.c_str(), static_cast<DWORD>(passphrase.length()), &bytesWritten, NULL);
+            FlushFileBuffers(hPipe);
+            DisconnectNamedPipe(hPipe);
+        }
+        else
+        {
+            CancelIo(hPipe);
+        }
+    });
+
+    std::string pipeName(wPipeName.begin(), wPipeName.end());
+    std::string argv =
+        "cloudfuse mount " + mountDir + " --config-file=" + configFile + " --passphrase-pipe=" + pipeName;
     const std::wstring wargv = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(argv);
     const std::wstring wenvp = std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>().from_bytes(envp);
 
-    return ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
+    processReturn ret = ChildProcess::spawnProcess(const_cast<wchar_t *>(wargv.c_str()), wenvp);
+
+    writerThread.join();
+
+    return ret;
 }
 
 processReturn CloudfuseMngr::unmount()
