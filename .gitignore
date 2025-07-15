@@ -36,3 +36,6 @@
 
 /build/
 **/vcpkg_installed/
+/venv/
+/tools/subscription/
+/tools/key-generation/

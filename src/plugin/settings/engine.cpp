@@ -49,7 +49,6 @@ enum class SaasSubscriptionResult
 };
 
 static SaasSubscriptionResult checkSaasSubscription();
-static std::string buildCapabilities();
 static std::string generatePassphrase();
 static void enableLogging(std::string iniDir);
 static std::string parseCloudfuseError(std::string error);
@@ -79,8 +78,6 @@ std::string Engine::manifestString() const
     NX_PRINT << "cloudfuse Engine::manifestString";
     std::string result = /*suppress newline*/ 1 + (const char *)R"json(
 {
-    "capabilities": ")json" +
-                         buildCapabilities() + R"json(",
     "deviceAgentSettingsModel":
 )json" + kEngineSettingsModel +
                          R"json(
@@ -216,10 +213,14 @@ bool Engine::mount()
     return true;
 }
 
+bool Engine::isCompatible(const IDeviceInfo *deviceInfo) const
+{
+    return false;
+}
+
 void Engine::doObtainDeviceAgent(Result<IDeviceAgent *> *outResult, const IDeviceInfo *deviceInfo)
 {
-    NX_PRINT << "cloudfuse Engine::doObtainDeviceAgent";
-    *outResult = new DeviceAgent(this, deviceInfo);
+    *outResult = nullptr;
 }
 
 void Engine::getPluginSideSettings(Result<const ISettingsResponse *> *outResult) const
@@ -539,20 +540,6 @@ void enableLogging(std::string iniDir)
         // the service will need to be restarted for logging to actually begin
     }
     NX_PRINT << "cloudfuse Engine::enableLogging - plugin stderr logging file: " + stderrFilename;
-}
-
-std::string buildCapabilities()
-{
-    std::string capabilities;
-
-    if (ini().deviceDependent)
-        capabilities += "|deviceDependent";
-
-    // Delete first '|', if any.
-    if (!capabilities.empty() && capabilities.at(0) == '|')
-        capabilities.erase(0, 1);
-
-    return capabilities;
 }
 
 std::string generatePassphrase()
