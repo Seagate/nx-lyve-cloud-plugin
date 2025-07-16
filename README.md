@@ -1,7 +1,6 @@
 # Nx-Lyve-Cloud-Plugin
 
-Nx-Lyve-Cloud-Plugin is a cloud storage plugin for Network Optix VMS's including Nx Witness and Digital Watchdog
-Spectrum. This plugin allows the user to easily configure their cloud and create a local mount of their cloud on their
+Nx-Lyve-Cloud-Plugin is a cloud storage plugin for Network Optix VMS's including Nx Witness. This plugin allows the user to easily configure their cloud and create a local mount of their cloud on their
 system. This mount can then be used as a backup location for video recordings in the VMS. The plugins utilizes
 [cloudfuse](https://github.com/Seagate/cloudfuse) to create and manage the local mount.
 
@@ -12,7 +11,7 @@ The following are instructions to build our plugin from source.
 The following are the currently supported platforms and architectures:
 
 - Windows 10, 11 x64 (Microsoft Visual Studio).
-- Linux Ubuntu 18.04, 20.04, 22.04, 24.04 (GCC or Clang) x64
+- Linux Ubuntu 20.04, 22.04, 24.04 (GCC or Clang) x64
 
 ### Ubuntu
 

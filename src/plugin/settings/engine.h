@@ -35,6 +35,8 @@ class Engine : public nx::sdk::analytics::Engine
 
     virtual void getPluginSideSettings(nx::sdk::Result<const nx::sdk::ISettingsResponse *> *outResult) const override;
 
+    virtual bool isCompatible(const nx::sdk::IDeviceInfo *deviceInfo) const override;
+
     virtual void doGetSettingsOnActiveSettingChange(
         nx::sdk::Result<const nx::sdk::IActiveSettingChangedResponse *> *outResult,
         const nx::sdk::IActiveSettingChangedAction *activeSettingChangedAction) override;

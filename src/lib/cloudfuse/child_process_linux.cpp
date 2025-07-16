@@ -49,7 +49,7 @@ CloudfuseMngr::CloudfuseMngr()
     // generate template contents
     std::string systemName = getSystemName();
     // NOTE: increment the version number when the config template changes
-    templateVersionString = "template-version: 0.5";
+    templateVersionString = "template-version: 0.6";
     config_template = templateVersionString + R"(
 allow-other: true
 nonempty: true
@@ -84,6 +84,8 @@ attr_cache:
 s3storage:
   bucket-name: { BUCKET_NAME }
   endpoint: { ENDPOINT }
+  enable-dir-marker: true
+  enable-checksum: true
   subdirectory: )" + systemName +
                       "\n";
 
