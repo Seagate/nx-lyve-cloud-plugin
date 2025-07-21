@@ -176,37 +176,35 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     // write new settings to previous
     m_prevSettings = values;
 
-    // Uncomment below to enforce SAAS subscription
-    // // SaaS subscription
-    // // default to true, since initial checks are error-prone
-    // m_saasSubscriptionValid = true;
-    // // check whether this plugin is authorized by an active SaaS subscription
-    // SaasSubscriptionResult subscriptionCheckResult = checkSaasSubscription();
-    // // only update the state if there was no error
-    // auto subscriptionStatusJson = kStatusUnkownSaaSSubscription;
-    // if (subscriptionCheckResult != SaasSubscriptionResult::Error)
-    // {
-    //     m_saasSubscriptionValid = subscriptionCheckResult == SaasSubscriptionResult::SubscriptionValid;
-    //     subscriptionStatusJson = m_saasSubscriptionValid ? kStatusSaaSSubscriptionVerified :
-    //     kStatusNoSaaSSubscription;
-    //     // enforce subscription requirement
-    //     if (!m_saasSubscriptionValid)
-    //     {
-    //         NX_PRINT << "Enforcing subscription requirement";
-    //         mountRequired = false;
-    //         if (m_cfManager.isMounted())
-    //         {
-    //             NX_PRINT << "Unmounting due to invalid subscription";
-    //             m_cfManager.unmount();
-    //         }
-    //     }
-    // }
-    // // update the UI to show the user a banner
-    // if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson))
-    // {
-    //     // on failure, no changes will be written to the model
-    //     NX_PRINT << "SaaS subscription status message update failed!";
-    // }
+    // SaaS subscription
+    // default to true, since initial checks are error-prone
+    m_saasSubscriptionValid = true;
+    // check whether this plugin is authorized by an active SaaS subscription
+    SaasSubscriptionResult subscriptionCheckResult = checkSaasSubscription();
+    // only update the state if there was no error
+    auto subscriptionStatusJson = kStatusUnkownSaaSSubscription;
+    if (subscriptionCheckResult != SaasSubscriptionResult::Error)
+    {
+        m_saasSubscriptionValid = subscriptionCheckResult == SaasSubscriptionResult::SubscriptionValid;
+        subscriptionStatusJson = m_saasSubscriptionValid ? kStatusSaaSSubscriptionVerified : kStatusNoSaaSSubscription;
+        // enforce subscription requirement
+        if (!m_saasSubscriptionValid)
+        {
+            NX_PRINT << "Enforcing subscription requirement";
+            mountRequired = false;
+            if (m_cfManager.isMounted())
+            {
+                NX_PRINT << "Unmounting due to invalid subscription";
+                m_cfManager.unmount();
+            }
+        }
+    }
+    // update the UI to show the user a banner
+    if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson))
+    {
+        // on failure, no changes will be written to the model
+        NX_PRINT << "SaaS subscription status message update failed!";
+    }
 
     // if settings have changed, mount the container
     bool mountSuccessful = false;
