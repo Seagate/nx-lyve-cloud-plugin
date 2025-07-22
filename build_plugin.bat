@@ -59,6 +59,9 @@ if not exist "%ARTIFACT%" (
 echo:
 echo Built: %ARTIFACT%
 
+:: Build and run unit tests if needed
+if [%NO_TESTS%] == [1] echo NOTE: Unit tests were not built. & goto :skip_tests
+
 ::Build Tests
 set SOURCE_DIR=%BASE_DIR%\src\unit_tests
 set UNIT_TESTS="unit_tests"
@@ -81,8 +84,7 @@ if not exist "%ARTIFACT%" (
 echo:
 echo Built: %ARTIFACT%
 
-:: Run unit tests if needed.
-if [%NO_TESTS%] == [1] echo NOTE: Unit tests were not run. & goto :skip_tests
+:: Run Tests
 echo on
     cd "%BUILD_DIR%\unit_tests" || @goto :exit
 
