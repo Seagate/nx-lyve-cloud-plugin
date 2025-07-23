@@ -118,44 +118,54 @@ std::vector<unsigned char> base64Decode(const std::string &base64_string)
     return buffer;
 }
 
-bool verifyEd25519Signature(const std::vector<unsigned char> &data, const std::vector<unsigned char> &signature,
-                            const std::vector<unsigned char> &public_key)
+nx::sdk::Error verifyEd25519Signature(const std::vector<unsigned char> &data,
+                                      const std::vector<unsigned char> &signature,
+                                      const std::vector<unsigned char> &public_key)
 {
+    std::string message;
+    nx::sdk::Error verificationError = Error(ErrorCode::noError, nullptr);
     EVP_PKEY *pkey = EVP_PKEY_new_raw_public_key(EVP_PKEY_ED25519, nullptr, public_key.data(), public_key.size());
-    if (!pkey)
+    if (pkey)
     {
-        NX_PRINT << "Error creating public key object";
-        return false;
-    }
-
-    bool result = false;
-    EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
-    if (md_ctx)
-    {
-        if (EVP_DigestVerifyInit_ex(md_ctx, nullptr, nullptr, nullptr, nullptr, pkey, nullptr))
+        EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
+        if (md_ctx)
         {
-            if (EVP_DigestVerify(md_ctx, signature.data(), signature.size(), data.data(), data.size()))
+            if (EVP_DigestVerifyInit_ex(md_ctx, nullptr, nullptr, nullptr, nullptr, pkey, nullptr))
             {
-                // signature valid
-                result = true;
+                if (EVP_DigestVerify(md_ctx, signature.data(), signature.size(), data.data(), data.size()))
+                {
+                    message = "Signature verified";
+                }
+                else
+                {
+                    message =
+                        "Signature verification failed: " + std::string(ERR_error_string(ERR_get_error(), nullptr));
+                    verificationError = error(ErrorCode::invalidParams, message);
+                }
             }
             else
             {
-                NX_PRINT << "Signature verification failed: " << ERR_error_string(ERR_get_error(), nullptr);
+                message = "Internal error during signature verification: EVP_DigestVerifyInit_ex failed";
+                verificationError = error(ErrorCode::internalError, message);
             }
+            EVP_MD_CTX_free(md_ctx);
         }
         else
         {
-            NX_PRINT << "EVP_DigestVerifyInit_ex failed";
+            message = "Internal error during signature verification: Error creating MD_CTX";
+            verificationError = error(ErrorCode::internalError, message);
         }
-        EVP_MD_CTX_free(md_ctx);
+        EVP_PKEY_free(pkey);
     }
     else
     {
-        NX_PRINT << "Error creating MD_CTX";
+        message = "Internal error during signature verification: Invalid public key";
+        verificationError = error(ErrorCode::internalError, message);
     }
-    EVP_PKEY_free(pkey);
-    return result;
+
+    // return result
+    NX_PRINT << message;
+    return verificationError;
 }
 
 Result<const ISettingsResponse *> Engine::settingsReceived()
@@ -173,8 +183,6 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     std::map<std::string, std::string> values = currentSettings();
     // check if settings changed
     bool mountRequired = settingsChanged();
-    // write new settings to previous
-    m_prevSettings = values;
 
     // SaaS subscription
     // default to true, since initial checks are error-prone
@@ -200,31 +208,49 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
         }
     }
     // update the UI to show the user a banner
-    if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson))
+    if (!setStatusBanner(&model, kSubscriptionStatusBannerId, subscriptionStatusJson, ""))
     {
         // on failure, no changes will be written to the model
         NX_PRINT << "SaaS subscription status message update failed!";
     }
 
     // if settings have changed, mount the container
+    std::string statusMessage;
     bool mountSuccessful = false;
     if (mountRequired)
     {
         NX_PRINT << "Settings changed.";
-        mountSuccessful = mount();
-        if (!mountSuccessful)
+        auto mountError = mount();
+        if (mountError.isOk())
         {
-            NX_PRINT << "Mount failed.";
+            mountSuccessful = true;
+        }
+        else
+        {
+            if (m_cfManager.isMounted())
+            {
+                statusMessage = "Reverting to previous subscription key. ";
+            }
+            statusMessage += "Mount failed: " + std::string(Ptr(mountError.errorMessage())->str());
+            NX_PRINT << statusMessage;
         }
     }
     else
     {
-        NX_PRINT << "Settings have not changed.";
+        statusMessage = "No changes detected.";
+        NX_PRINT << statusMessage;
         mountSuccessful = m_cfManager.isMounted();
     }
+
+    // update our stored settings, but not if the new settings broke a working mount
+    if (mountSuccessful || !m_cfManager.isMounted())
+    {
+        m_prevSettings = values;
+    }
+
     // update the model so user can see mount status
     auto statusJson = mountSuccessful ? kStatusSuccess : kStatusFailure;
-    if (!setStatusBanner(&model, kBucketStatusBannerId, statusJson))
+    if (!setStatusBanner(&model, kBucketStatusBannerId, statusJson, statusMessage))
     {
         // on failure, no changes will be written to the model
         NX_PRINT << "Status message update failed!";
@@ -248,7 +274,7 @@ Result<const ISettingsResponse *> Engine::settingsReceived()
     return settingsResponse;
 }
 
-bool Engine::mount()
+nx::sdk::Error Engine::mount()
 {
     // generate the config passphrase
     NX_PRINT << "Generating passphrase...";
@@ -258,7 +284,7 @@ bool Engine::mount()
         std::string errorMessage = "OpenSSL Error: Unable to generate secure passphrase";
         NX_PRINT << errorMessage;
         pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "OpenSSL Error", errorMessage);
-        return false;
+        return error(ErrorCode::internalError, errorMessage);
     }
 
     auto validationErr = validateMount();
@@ -268,7 +294,7 @@ bool Engine::mount()
             "mount aborted (validation failed). Here's why: " + std::string(Ptr(validationErr.errorMessage())->str());
         NX_PRINT << errorMessage;
         pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Connection Error", errorMessage);
-        return false;
+        return error(ErrorCode::internalError, errorMessage);
     }
 
     auto mountErr = spawnMount();
@@ -278,10 +304,10 @@ bool Engine::mount()
         std::string errorMessage = "mount failed. Here's why: " + std::string(Ptr(mountErr.errorMessage())->str());
         NX_PRINT << errorMessage;
         pushPluginDiagnosticEvent(IPluginDiagnosticEvent::Level::error, "Cloud Storage Mount Error", errorMessage);
-        return false;
+        return error(ErrorCode::internalError, errorMessage);
     }
 
-    return true;
+    return Error(ErrorCode::noError, nullptr);
 }
 
 bool Engine::isCompatible(const IDeviceInfo *deviceInfo) const
@@ -341,16 +367,16 @@ bool Engine::settingsChanged()
     return false;
 }
 
-nx::sdk::Error Engine::validateMount()
+// decode the subscription key, verify the signature, and return its subscription info
+nx::sdk::Error Engine::parseSubscriptionKey(std::string subscriptionKeyBase64, SubscriptionInfo &output)
 {
-    NX_PRINT << "Validating mount options...";
-    std::map<std::string, std::string> values = currentSettings();
-    // get subscription key and decode base64
-    auto subscriptionKeyJsonBytes = base64Decode(values[kSubscriptionKeyFieldId]);
+    NX_PRINT << "Verifying and parsing subscription key...";
+    // decode the key from base64
+    auto subscriptionKeyJsonBytes = base64Decode(subscriptionKeyBase64);
     if (subscriptionKeyJsonBytes.empty())
     {
         NX_PRINT << "Failed to parse subscription key base64";
-        return error(ErrorCode::internalError, "Failed to parse subscription key base64. Check subscription key.");
+        return error(ErrorCode::invalidParams, "Failed to parse subscription key base64. Check subscription key.");
     }
     // decode JSON string
     std::string subscriptionKeyJsonString(subscriptionKeyJsonBytes.begin(), subscriptionKeyJsonBytes.end());
@@ -361,13 +387,13 @@ nx::sdk::Error Engine::validateMount()
     {
         auto errorMessage = "Failed to parse subscription key JSON. Here's why: " + jsonParseErr;
         NX_PRINT << errorMessage;
-        return error(ErrorCode::internalError, errorMessage);
+        return error(ErrorCode::invalidParams, errorMessage);
     }
     if (!subscriptionKey.has_shape({{"subscriptionInfo", Json::STRING}, {"signature", Json::STRING}}, jsonParseErr))
     {
         auto errorMessage = "Subscription key format error. Expected 'subscriptionInfo' and 'signature' string fields.";
         NX_PRINT << errorMessage;
-        return error(ErrorCode::internalError, errorMessage);
+        return error(ErrorCode::invalidParams, errorMessage);
     }
     // extract subscriptionInfo and signature from JSON
     std::string subscriptionInfoBase64 = subscriptionKey["subscriptionInfo"].string_value();
@@ -379,45 +405,58 @@ nx::sdk::Error Engine::validateMount()
     auto signatureBytes = base64Decode(signatureBase64);
 
     // verify signature
-    if (!verifyEd25519Signature(subscriptionInfoBytes, signatureBytes, publicKeyRawBytes))
+    auto signatureVerificationError = verifyEd25519Signature(subscriptionInfoBytes, signatureBytes, publicKeyRawBytes);
+    if (!signatureVerificationError.isOk())
     {
-        auto errorMessage = "Subscription signature verification failed";
-        NX_PRINT << errorMessage;
-        return error(ErrorCode::internalError, errorMessage);
+        return signatureVerificationError;
     }
 
     // parse cloud storage info
     std::string subscriptionInfoJsonString(subscriptionInfoBytes.begin(), subscriptionInfoBytes.end());
     // parse Json
     std::string subscriptionInfoJsonParseErr;
-    m_subscriptionInfo = Json::parse(subscriptionInfoJsonString, subscriptionInfoJsonParseErr);
+    auto subscriptionInfo = Json::parse(subscriptionInfoJsonString, subscriptionInfoJsonParseErr);
     if (!jsonParseErr.empty())
     {
         auto errorMessage = "Failed to parse subscription info JSON. Here's why: " + jsonParseErr;
         NX_PRINT << errorMessage;
-        return error(ErrorCode::internalError, errorMessage);
+        return error(ErrorCode::invalidParams, errorMessage);
     }
     // verify shape
-    if (!m_subscriptionInfo.has_shape({{"bucket-name", Json::STRING},
-                                       {"access-key-id", Json::STRING},
-                                       {"secret-key", Json::STRING},
-                                       {"endpoint", Json::STRING},
-                                       {"region", Json::STRING},
-                                       {"bucket-capacity-gb", Json::NUMBER}},
-                                      jsonParseErr))
+    if (!subscriptionInfo.has_shape({{"bucket-name", Json::STRING},
+                                     {"access-key-id", Json::STRING},
+                                     {"secret-key", Json::STRING},
+                                     {"endpoint", Json::STRING},
+                                     {"region", Json::STRING},
+                                     {"bucket-capacity-gb", Json::NUMBER}},
+                                    jsonParseErr))
     {
         auto errorMessage = "Subscription info format error. Expected fields: 'bucket-name', 'access-key-id', "
                             "'secret-key', 'endpoint', and 'region' (strings), and 'bucket-capacity-gb' (number).";
         NX_PRINT << errorMessage;
-        return error(ErrorCode::internalError, errorMessage);
+        return error(ErrorCode::invalidParams, errorMessage);
     }
     // extract bucket info
-    std::string bucketName = m_subscriptionInfo["bucket-name"].string_value();
-    std::string keyId = m_subscriptionInfo["access-key-id"].string_value();
-    std::string secretKey = m_subscriptionInfo["secret-key"].string_value();
-    std::string endpointUrl = m_subscriptionInfo["endpoint"].string_value();
-    std::string region = m_subscriptionInfo["region"].string_value();
-    uint64_t bucketCapacityGB = (uint64_t)m_subscriptionInfo["bucket-capacity-gb"].int_value();
+    output.bucketName = subscriptionInfo["bucket-name"].string_value();
+    output.keyId = subscriptionInfo["access-key-id"].string_value();
+    output.secretKey = subscriptionInfo["secret-key"].string_value();
+    output.endpointUrl = subscriptionInfo["endpoint"].string_value();
+    output.region = subscriptionInfo["region"].string_value();
+    output.bucketCapacityGB = (uint64_t)subscriptionInfo["bucket-capacity-gb"].int_value();
+    // success
+    return Error(ErrorCode::noError, nullptr);
+}
+
+nx::sdk::Error Engine::validateMount()
+{
+    NX_PRINT << "Validating mount options...";
+    SubscriptionInfo subInfo;
+    std::map<std::string, std::string> values = currentSettings();
+    auto subscriptionKeyParsingError = parseSubscriptionKey(values[kSubscriptionKeyFieldId], subInfo);
+    if (!subscriptionKeyParsingError.isOk())
+    {
+        return subscriptionKeyParsingError;
+    }
     // prepare mount paths
     std::string mountDir = m_cfManager.getMountDir();
     std::string fileCacheDir = m_cfManager.getFileCacheDir();
@@ -499,10 +538,11 @@ nx::sdk::Error Engine::validateMount()
     NX_PRINT << "spawning process from genS3Config";
 #if defined(__linux__)
     const processReturn dryGenConfig =
-        m_cfManager.genS3Config(endpointUrl, bucketName, bucketCapacityGB * 1024, m_passphrase);
+        m_cfManager.genS3Config(subInfo.endpointUrl, subInfo.bucketName, subInfo.bucketCapacityGB * 1024, m_passphrase);
 #elif defined(_WIN32)
     const processReturn dryGenConfig =
-        m_cfManager.genS3Config(keyId, secretKey, endpointUrl, bucketName, bucketCapacityGB * 1024, m_passphrase);
+        m_cfManager.genS3Config(subInfo.keyId, subInfo.secretKey, subInfo.endpointUrl, subInfo.bucketName,
+                                subInfo.bucketCapacityGB * 1024, m_passphrase);
 #endif
     if (dryGenConfig.errCode != 0)
     {
@@ -512,7 +552,7 @@ nx::sdk::Error Engine::validateMount()
     // do a dry run to verify user credentials
     NX_PRINT << "Checking cloud credentials (cloudfuse dry run)";
 #if defined(__linux__)
-    const processReturn dryRunRet = m_cfManager.dryRun(keyId, secretKey, m_passphrase);
+    const processReturn dryRunRet = m_cfManager.dryRun(subInfo.keyId, subInfo.secretKey, m_passphrase);
 #elif defined(_WIN32)
     const processReturn dryRunRet = m_cfManager.dryRun(m_passphrase);
 #endif
@@ -536,6 +576,8 @@ nx::sdk::Error Engine::validateMount()
         return error(ErrorCode::internalError,
                      "Unable to validate credentials with error: " + parseCloudfuseError(dryRunRet.output));
     }
+    // if we passed dry run, then save the subscription info so mount can use it
+    m_subscriptionInfo = subInfo;
     return Error(ErrorCode::noError, nullptr);
 }
 
@@ -544,10 +586,8 @@ nx::sdk::Error Engine::spawnMount()
     // mount the bucket
     NX_PRINT << "Starting cloud storage mount";
 #if defined(__linux__)
-    // get bucket credentials
-    std::string keyId = m_subscriptionInfo["access-key-id"].string_value();
-    std::string secretKey = m_subscriptionInfo["secret-key"].string_value();
-    const processReturn mountRet = m_cfManager.mount(keyId, secretKey, m_passphrase);
+    const processReturn mountRet =
+        m_cfManager.mount(m_subscriptionInfo.keyId, m_subscriptionInfo.secretKey, m_passphrase);
 #elif defined(_WIN32)
     const processReturn mountRet = m_cfManager.mount(m_passphrase);
 #endif
@@ -574,7 +614,8 @@ nx::sdk::Error Engine::spawnMount()
     return Error(ErrorCode::noError, nullptr);
 }
 
-bool Engine::setStatusBanner(Json::object *model, std::string bannerId, std::string updatedJson) const
+bool Engine::setStatusBanner(Json::object *model, std::string bannerId, std::string updatedJson,
+                             std::string dynamicMessage) const
 {
     NX_PRINT << "cloudfuse Engine::setStatusBanner " << bannerId;
 
@@ -585,6 +626,33 @@ bool Engine::setStatusBanner(Json::object *model, std::string bannerId, std::str
     {
         NX_PRINT << "Failed to parse status JSON with error: " << error;
         return false;
+    }
+
+    // if there is a custom string to add to the banner text, add it
+    if (dynamicMessage != "")
+    {
+        NX_PRINT << "Adding message to banner: " << dynamicMessage;
+        if (newStatus.is_object())
+        {
+            auto bannerMap = newStatus.object_items();
+            // Get the existing text value (if it exists and is a string)
+            std::string staticText;
+            auto it = bannerMap.find("text");
+            if (it != bannerMap.end() && it->second.is_string())
+            {
+                staticText = it->second.string_value();
+            }
+            // update the banner text
+            std::string dynamicText = staticText + " [" + dynamicMessage + "]";
+            bannerMap["text"] = Json(dynamicText);
+            // overwrite the status Json object with the new contents
+            newStatus = Json(bannerMap);
+        }
+        else
+        {
+            // don't return here - we still want the banner to be added
+            NX_PRINT << "Failed to add message to 'text' field in status banner: could not locate 'text' field.";
+        }
     }
 
     // find where to put it

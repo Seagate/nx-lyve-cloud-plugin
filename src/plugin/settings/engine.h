@@ -23,11 +23,21 @@ class Engine : public nx::sdk::analytics::Engine
         return m_plugin;
     }
 
+    struct SubscriptionInfo
+    {
+        std::string bucketName;
+        std::string keyId;
+        std::string secretKey;
+        std::string endpointUrl;
+        std::string region;
+        uint64_t bucketCapacityGB;
+    };
+
   protected:
     virtual std::string manifestString() const override;
 
     virtual nx::sdk::Result<const nx::sdk::ISettingsResponse *> settingsReceived() override;
-    bool mount();
+    nx::sdk::Error mount();
 
   protected:
     virtual void doObtainDeviceAgent(nx::sdk::Result<nx::sdk::analytics::IDeviceAgent *> *outResult,
@@ -43,17 +53,18 @@ class Engine : public nx::sdk::analytics::Engine
 
   private:
     bool settingsChanged();
+    nx::sdk::Error parseSubscriptionKey(std::string subscriptionKey, SubscriptionInfo &output);
     nx::sdk::Error validateMount();
     nx::sdk::Error spawnMount();
-    bool setStatusBanner(nx::kit::detail::json11::Json::object *model, std::string bannerId,
-                         std::string updatedContent) const;
+    bool setStatusBanner(nx::kit::detail::json11::Json::object *model, std::string bannerId, std::string updatedContent,
+                         std::string dynamicMessage) const;
 
   private:
     nx::sdk::analytics::Plugin *const m_plugin;
     CloudfuseMngr m_cfManager;
     std::map<std::string, std::string> m_prevSettings;
     std::string m_passphrase;
-    nx::kit::detail::json11::Json m_subscriptionInfo;
+    SubscriptionInfo m_subscriptionInfo;
     bool m_saasSubscriptionValid;
 };
 

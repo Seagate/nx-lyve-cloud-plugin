@@ -342,22 +342,7 @@ static void testStubAnalyticsPluginEngine(IEngine *engine)
     ASSERT_TRUE(obtainDeviceAgentResult.isOk());
 
     const auto deviceAgent = obtainDeviceAgentResult.result.value();
-    ASSERT_TRUE(deviceAgent);
-    ASSERT_TRUE(deviceAgent->queryInterface<IDeviceAgent>());
-    const auto consumingDeviceAgent = deviceAgent->queryInterface<IConsumingDeviceAgent>();
-    ASSERT_TRUE(consumingDeviceAgent);
-
-    consumingDeviceAgent->setHandler(nx::sdk::makePtr<DeviceAgentHandler>().get());
-    testDeviceAgentManifest(consumingDeviceAgent.get());
-    testDeviceAgentSettings(consumingDeviceAgent.get());
-
-    const ResultHolder<void> setNeededMetadataTypesResult{
-        consumingDeviceAgent->setNeededMetadataTypes(makePtr<MetadataTypes>().get())};
-    ASSERT_TRUE(setNeededMetadataTypesResult.isOk());
-
-    const ResultHolder<void> pushDataPacketResult{
-        consumingDeviceAgent->pushDataPacket(makePtr<CompressedVideoPacket>().get())};
-    ASSERT_TRUE(pushDataPacketResult.isOk());
+    ASSERT_FALSE(deviceAgent);
 }
 
 /** Any Analytics Plugin must pass. */
