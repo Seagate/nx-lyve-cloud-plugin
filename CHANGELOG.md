@@ -1,5 +1,17 @@
 # DW Cumulus Changelog #
 
+## **0.8.0** ##
+
+July 23rd 2025
+This release is packaged with Cloudfuse [v1.12.1](https://github.com/Seagate/cloudfuse/releases/tag/v1.12.1).
+
+### Changes ###
+
+- [#34](https://github.com/dwrnd/DW-Cumulus/pull/34) Improve error feedback for subscription key
+- [#32](https://github.com/dwrnd/DW-Cumulus/pull/32) Enforce SAAS subscription
+- [#27](https://github.com/dwrnd/DW-Cumulus/pull/27) Mount using named pipes
+- [#29](https://github.com/dwrnd/DW-Cumulus/pull/29) Add validation to subscription key field
+
 ## **0.7.0** ##
 
 June 10th 2025
