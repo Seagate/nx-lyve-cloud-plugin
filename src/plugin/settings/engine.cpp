@@ -399,7 +399,7 @@ nx::sdk::Error Engine::parseSubscriptionKey(std::string subscriptionKeyBase64, S
     std::string subscriptionInfoBase64 = subscriptionKey["subscriptionInfo"].string_value();
     std::string signatureBase64 = subscriptionKey["signature"].string_value();
     // convert base64 to byte data (prepare for verification)
-    std::string publicKeyRawBase64 = "0efxam97iR/yaL9pjZpaRrqxkpjOxeZj00qelt+FLas=";
+    std::string publicKeyRawBase64 = "ivHUrWbg1dvVcyUs/avK3+VzZgqAdgdoDiecUDhE8Ns=";
     auto publicKeyRawBytes = base64Decode(publicKeyRawBase64);
     auto subscriptionInfoBytes = base64Decode(subscriptionInfoBase64);
     auto signatureBytes = base64Decode(signatureBase64);

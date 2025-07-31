@@ -1,5 +1,14 @@
 # DW Cumulus Changelog #
 
+## **0.9.0** ##
+
+July 31st 2025
+This release is packaged with Cloudfuse [v1.12.1](https://github.com/Seagate/cloudfuse/releases/tag/v1.12.1).
+
+### Changes ###
+
+- [#35](https://github.com/dwrnd/DW-Cumulus/pull/35) Use new public key
+
 ## **0.8.0** ##
 
 July 23rd 2025
