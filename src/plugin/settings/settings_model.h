@@ -63,7 +63,7 @@ static const std::string kStatusSaaSSubscriptionVerified = R"json(
             "name": ")json" + kSubscriptionStatusBannerId +
                                                            R"json(",
             "icon": "info",
-            "text": "Plugin authorized - SaaS subscription verified"
+            "text": "Enterprise subscription verified"
         }
 )json";
 static const std::string kStatusNoSaaSSubscription = R"json(
@@ -72,7 +72,7 @@ static const std::string kStatusNoSaaSSubscription = R"json(
             "name": ")json" + kSubscriptionStatusBannerId +
                                                      R"json(",
             "icon": "warning",
-            "text": "Plugin unauthorized - SaaS subscription required"
+            "text": "Invalid enterprise subscription"
         }
 )json";
 static const std::string kStatusUnkownSaaSSubscription = R"json(
@@ -81,7 +81,7 @@ static const std::string kStatusUnkownSaaSSubscription = R"json(
             "name": ")json" + kSubscriptionStatusBannerId +
                                                          R"json(",
             "icon": "info",
-            "text": "SaaS subscription status: Pending verification"
+            "text": "Enterprise subscription verification pending..."
         }
 )json";
 
