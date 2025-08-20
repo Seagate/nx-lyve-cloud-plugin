@@ -5,8 +5,8 @@ set -e
 
 # Function to prompt for username and password
 prompt_credentials() {
-    read -rp "Enter DW server username: " username
-    read -srp "Enter DW server password: " password
+    read -rp "Enter DW Spectrum username: " username
+    read -srp "Enter DW Spectrum password: " password
     echo
 }
 
@@ -42,6 +42,8 @@ fi
 
 # Prompt for credentials
 prompt_credentials
+
+apt-get install curl
 
 # Send a request to the login endpoint
 login_url="https://localhost:$port/rest/v2/login/sessions"
@@ -90,7 +92,7 @@ fi
 
 ### Install Cloudfuse
 echo "Installing Cloudfuse"
-apt-get install libssl-dev
+apt-get install libssl-dev libfuse3-dev
 apt-get install ./cloudfuse*.deb
 
 ### Install plugin
